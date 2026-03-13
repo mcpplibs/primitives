@@ -1,6 +1,7 @@
 # xmake
 .xmake
-build
+build/
+build-*/
 
 # xlings
 .xlings
