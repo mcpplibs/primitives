@@ -43,6 +43,9 @@ jobs:
       - name: Install GCC 15.1 with Xlings
         run: |
           xlings install gcc@15.1 -y
+          ls -al $HOME/.xlings/subos/current/bin/cc
+          cat $HOME/.xlings/.xlings.json
+          cc --version
 
       - name: Build
         run: |
