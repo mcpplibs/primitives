@@ -1,30 +1,73 @@
-cmake_minimum_required(VERSION 4.0.2)
+set(CMAKE_VERSION_MINIMUM 3.31)
+cmake_minimum_required(VERSION ${CMAKE_VERSION_MINIMUM})
+message(STATUS "Cmake version: ${CMAKE_VERSION} (>= ${CMAKE_VERSION_MINIMUM} ✓)")
 
-# https://github.com/Kitware/CMake/blob/master/Help/dev/experimental.rst
-set(CMAKE_EXPERIMENTAL_CXX_IMPORT_STD "a9e1cf81-9932-4810-974b-6eccaf14e457")
 set(CMAKE_CXX_STANDARD 23)
-set(CMAKE_CXX_MODULE_STD 1)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+set(CMAKE_CXX_EXTENSIONS OFF)
 
-project(mcpplibs-templates VERSION 1.0.0 LANGUAGES CXX)
+project(mcpplibs-primitives VERSION 1.0.0 LANGUAGES CXX)
+
+find_package(Threads REQUIRED)
+
+if (CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
+    set(COMPILER_GCC_VERSION_MINIMUM 14.0)
+    if (CMAKE_CXX_COMPILER_VERSION VERSION_LESS ${COMPILER_GCC_VERSION_MINIMUM})
+        message(FATAL_ERROR "GCC version too old for C++ Modules.\nGCC version: ${CMAKE_CXX_COMPILER_VERSION} (>= ${COMPILER_GCC_VERSION_MINIMUM} X)")
+    else()
+        message(STATUS "GCC version: ${CMAKE_CXX_COMPILER_VERSION} (>= ${COMPILER_GCC_VERSION_MINIMUM} ✓)")
+    endif()
+elseif (CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
+    set(COMPILER_CLANG_VERSION_MINIMUM 17.0)
+    if (CMAKE_CXX_COMPILER_VERSION VERSION_LESS ${COMPILER_CLANG_VERSION_MINIMUM})
+        message(FATAL_ERROR "Clang version too old for C++ Modules.\nClang version: ${CMAKE_CXX_COMPILER_VERSION} (>= ${COMPILER_CLANG_VERSION_MINIMUM} X)")
+    else()
+        message(STATUS "Clang version: ${CMAKE_CXX_COMPILER_VERSION} (>= ${COMPILER_CLANG_VERSION_MINIMUM} ✓)")
+    endif()
+elseif (MSVC)
+    set(COMPILER_MSVC_VERSION_MINIMUM 1934)
+    if (MSVC_VERSION LESS ${COMPILER_MSVC_VERSION_MINIMUM})
+        message(FATAL_ERROR "MSVC version too old for C++ Modules.\nMSVC version: ${MSVC_VERSION} (>= ${COMPILER_MSVC_VERSION_MINIMUM} X)")
+    else()
+        message(STATUS "MSVC version: ${MSVC_VERSION} (>= ${COMPILER_MSVC_VERSION_MINIMUM} ✓)")
+    endif()
+endif()
 
 # Library
-add_library(mcpplibs-templates STATIC)
+add_library(mcpplibs-primitives STATIC)
 
-file(GLOB_RECURSE MODULE_SOURCES "src/*.cppm")
-
-target_sources(mcpplibs-templates
-    PUBLIC
-        FILE_SET CXX_MODULES FILES
-        ${MODULE_SOURCES}
+file(GLOB_RECURSE CXX_MODULE_FILES
+    src/*.cppm
 )
 
-# Test
-add_executable(templates_test tests/main.cpp)
-target_link_libraries(templates_test PRIVATE mcpplibs-templates)
+target_sources(mcpplibs-primitives
+    PUBLIC
+        FILE_SET CXX_MODULES TYPE CXX_MODULES FILES
+        ${CXX_MODULE_FILES}
+    PRIVATE
+        src/primitives.cpp
+)
 
-enable_testing()
-add_test(NAME mcpplibs-templates-test COMMAND templates_test)
+if (CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
+    target_compile_options(mcpplibs-primitives PRIVATE -fmodules-ts)
+endif()
 
-# Example
+target_link_libraries(mcpplibs-primitives PRIVATE Threads::Threads)
+
+target_include_directories(mcpplibs-primitives PUBLIC
+    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/src>
+    $<INSTALL_INTERFACE:include>
+)
+
+# Examples
 add_executable(basic examples/basic.cpp)
-target_link_libraries(basic PRIVATE mcpplibs-templates)
+target_link_libraries(basic PRIVATE mcpplibs-primitives)
+
+# Testing
+option(BUILD_TESTING "Build the testing directories" ON)
+
+if (BUILD_TESTING)
+    include(CTest)
+    enable_testing()
+    add_subdirectory(tests)
+endif()
