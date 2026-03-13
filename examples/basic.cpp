@@ -1,8 +1,9 @@
-import std;
+#include <iostream>
+
 import mcpplibs.templates;
 
 int main() {
-    std::println("=== mcpplibs.templates basic example ===");
-    mcpplibs::templates::hello_mcpp();
-    return 0;
+  std::cout << "=== mcpplibs.templates basic example ===\n";
+  mcpplibs::templates::hello_mcpp();
+  return 0;
 }
