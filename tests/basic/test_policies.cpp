@@ -2,7 +2,6 @@
 
 import mcpplibs.primitives;
 
-namespace {} // namespace
 
 using namespace mcpplibs::primitives;
 
