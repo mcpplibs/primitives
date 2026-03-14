@@ -50,7 +50,7 @@ jobs:
           xmake -y -vv -j$(nproc)
 
       - name: Test
-        run: xmake run templates_test
+        run: xmake run primitives_test
 
       - name: Run examples
         run: xmake run basic
