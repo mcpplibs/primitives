@@ -1,11 +1,9 @@
 module;
 #include <type_traits>
 
-export module mcpplibs.primitive.traits.policy;
+export module mcpplibs.primitives.traits.policy;
 
-export namespace mcpplibs::primitive {
-
-namespace policy {
+export namespace mcpplibs::primitives::policy {
 
 enum class category { value, type, error, concurrency };
 
@@ -112,6 +110,4 @@ template <typename P>
 concept concurrency_policy =
     policy_type<P> && (traits<P>::kind == category::concurrency);
 
-} // namespace policy
-
-} // namespace mcpplibs::primitive
+} // namespace mcpplibs::primitives::policy

@@ -2,9 +2,9 @@ module;
 #include <concepts>
 #include <type_traits>
 
-export module mcpplibs.primitive.traits.underlying;
+export module mcpplibs.primitives.traits.underlying;
 
-export namespace mcpplibs::primitive {
+export namespace mcpplibs::primitives {
 
 template <typename T>
 concept std_bool = std::same_as<std::remove_cv_t<T>, bool>;
@@ -70,9 +70,9 @@ template <std_underlying_type T> struct traits<T> {
 };
 } // namespace underlying
 
-} // namespace mcpplibs::primitive
+} // namespace mcpplibs::primitives
 
-namespace mcpplibs::primitive::underlying::details {
+namespace mcpplibs::primitives::underlying::details {
 
 template <typename T>
 concept enabled = traits<std::remove_cv_t<T>>::enabled;
@@ -125,9 +125,9 @@ concept has_consistent_category =
      category_of_std_underlying_type<
          typename traits<std::remove_cv_t<T>>::rep_type>());
 
-} // namespace mcpplibs::primitive::underlying::details
+} // namespace mcpplibs::primitives::underlying::details
 
-export namespace mcpplibs::primitive {
+export namespace mcpplibs::primitives {
 
 template <typename T>
 concept underlying_type =
@@ -136,4 +136,4 @@ concept underlying_type =
     underlying::details::has_std_rep_type<T> &&
     underlying::details::has_consistent_category<T>;
 
-} // namespace mcpplibs::primitive
+} // namespace mcpplibs::primitives
