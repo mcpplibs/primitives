@@ -13,7 +13,7 @@ using default_value_policy = policy::unchecked_value;
 using default_type_policy = policy::transparent_type;
 using default_error_policy = policy::throw_error;
 using default_concurrency_policy = policy::single_thread;
-}
+} // namespace mcpplibs::primitives
 
 // Internal implementation details — not exported.
 namespace mcpplibs::primitives::traits::details {
@@ -50,8 +50,7 @@ template <policy_category C, policy::policy_type First,
           policy::policy_type... Rest>
 struct find_first_impl<C, First, Rest...> {
   static constexpr bool is_match =
-      policy::traits<First>::enabled &&
-      policy::traits<First>::kind == C;
+      policy::traits<First>::enabled && policy::traits<First>::kind == C;
   using type = std::conditional_t<is_match, First,
                                   typename find_first_impl<C, Rest...>::type>;
 };
@@ -69,43 +68,39 @@ struct resolve_policy_impl {
       std::is_same_v<found, void>,
       std::conditional_t<
           C == policy_category::value, default_value_policy,
-          std::conditional_t<
-              C == policy_category::type, default_type_policy,
-              std::conditional_t<C == policy_category::error,
-                                 default_error_policy,
-                                 default_concurrency_policy>>>,
+          std::conditional_t<C == policy_category::type, default_type_policy,
+                             std::conditional_t<C == policy_category::error,
+                                                default_error_policy,
+                                                default_concurrency_policy>>>,
       found>;
 };
 
-template <policy_category C,
-          policy::policy_type... Policies>
+template <policy_category C, policy::policy_type... Policies>
 using resolve_policy_t = resolve_policy_impl<C, Policies...>::type;
 
 } // namespace mcpplibs::primitives::traits::details
 
 // Public API exported from this module.
 export namespace mcpplibs::primitives::traits {
-    using policy_category = policy::category;
+using policy_category = policy::category;
 
-    template <policy_category C, policy::policy_type... Policies>
-    using resolve_policy_t = details::resolve_policy_t<C, Policies...>;
+template <policy_category C, policy::policy_type... Policies>
+using resolve_policy_t = details::resolve_policy_t<C, Policies...>;
 
-    template <typename P> struct primitive_traits; // customization point for users
+template <typename P> struct primitive_traits; // customization point for users
 
-    // Forward-declare exported `primitive` (defined in impl module).
-    template <typename T, policy::policy_type... Policies>
-    struct primitive;
+// Forward-declare exported `primitive` (defined in impl module).
+template <typename T, policy::policy_type... Policies> struct primitive;
 
-    template <typename T, policy::policy_type... Policies>
-    struct primitive_traits<primitive<T, Policies...>> {
-        using value_type = T;
-        using policies = std::tuple<Policies...>;
-        using value_policy = resolve_policy_t<policy_category::value, Policies...>;
-        using type_policy = resolve_policy_t<policy_category::type, Policies...>;
-        using error_policy = resolve_policy_t<policy_category::error, Policies...>;
-        using concurrency_policy =
-            resolve_policy_t<policy_category::concurrency, Policies...>;
-    };
+template <typename T, policy::policy_type... Policies>
+struct primitive_traits<primitive<T, Policies...>> {
+  using value_type = T;
+  using policies = std::tuple<Policies...>;
+  using value_policy = resolve_policy_t<policy_category::value, Policies...>;
+  using type_policy = resolve_policy_t<policy_category::type, Policies...>;
+  using error_policy = resolve_policy_t<policy_category::error, Policies...>;
+  using concurrency_policy =
+      resolve_policy_t<policy_category::concurrency, Policies...>;
+};
 
-} // namespace traits::traits
-
+} // namespace mcpplibs::primitives::traits

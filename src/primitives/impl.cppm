@@ -20,4 +20,7 @@ private:
   T value_;
 };
 
+// `primitive_constant` removed: NTTP-based compile-time primitives
+// can be added later if needed. For MVP, keep only the runtime `primitive`.
+
 } // namespace mcpplibs::primitives
