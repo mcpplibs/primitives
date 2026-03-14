@@ -133,6 +133,48 @@ ctest --test-dir build
 3. 实现无运算的 primitive 包装壳（只存值与策略标签）
 4. 将 xmake target 命名从 `templates` 统一迁移到 `primitives`
 
+## 策略（Policy）模块
+
+项目中新增了 `mcpplibs::primitive::policy` 模块，用来表达运行时/编译期的策略标签。核心要点：
+
+- `policy::category`：一个枚举，用以表示四类策略：`value`、`type`、`error`、`concurrency`。
+- 每个 policy 类型匹配一个 `policy::traits<P>` 特化，`traits` 提供 `enabled` 和 `kind`（category）。
+- 提供了 `policy::policy_type<P>` 概念用于识别有效的 policy 类型。
+- `policy::default_policies` 提供库的默认策略集合（`value`, `type`, `error`, `concurrency`）。
+
+示例用法见 [examples/basic.cpp](examples/basic.cpp#L1)（演示如何查询默认策略与内建策略的类别）。
+
+## Primitive 类模板 设计（草案）
+
+目标：提供零开销、策略化的 `primitive<T, Policies...>` 类模板，作为后续实现 `Integer/ Floating/ Boolean/ Char` 等包装器的基础。
+
+设计要点：
+
+- 定位：实现放置在 `src/primitive.cppm` 的分区或 `src/primitives/primitive.cppm`（按模块组织），导出至 `mcpplibs.primitive`。
+- 存储：`primitive<T, Policies...>` 应仅持有 `T`（或 `value_type`）的值，不含运行时策略开销；策略仅作为类型标签存在。
+- 策略传播：添加 `traits/primitive_traits.cppm`，提供 `primitive_traits<Primitive>`，包含：
+  - `using value_type` — 底层类型
+  - `using policies = std::tuple<...>` — 策略标签元组
+  - `using default_policies = policy::default_policies`
+  - 编译期谓词 `has_policy_category<Primitive, policy::category::value>` 等，便于操作 trait 的约束和重载。
+- 可扩展性：`primitive` 的操作（例如算术、比较）将通过独立的 operation traits 和 concepts 实现，使用 `primitive_traits` 中的 policy 信息进行选择。
+
+示例 API 草案：
+
+```cpp
+template<typename T, typename...Policies>
+struct primitive {
+  using value_type = T;
+  using policies = std::tuple<Policies...>;
+  constexpr explicit primitive(T v) noexcept : value(v) {}
+  T value;
+};
+
+template<typename P> struct primitive_traits; // 特化以导出信息
+```
+
+下一步：我将实现 `primitive` 模板与 `primitive_traits`，并添加单元测试与示例。
+
 ## 参考
 
 - RFC: `RFC.md`

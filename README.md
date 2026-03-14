@@ -1,8 +1,8 @@
-# mcpplibs templates
+# mcpplibs primitives
 
-> C++23 模块化库项目模板 - `import mcpplibs.templates;`
+> C++23 模块化原语库 - `import mcpplibs.primitive;`
 
-基于 C++23 模块的库项目模板，提供标准化的项目结构、构建配置和 CI/CD 流水线，帮助快速创建 mcpplibs 风格的模块化 C++ 库。
+本仓库实现了底层强类型 primitive 基础设施（traits、policy、underlying 类型分类），供上层 `Integer`/`Floating`/`Boolean` 等封装使用。
 
 ## 特性
 
@@ -15,9 +15,9 @@
 ## 项目结构
 
 ```
-mcpplibs-templates/
+mcpplibs-primitives/
 ├── src/                    # 模块源码
-│   └── templates.cppm      # 主模块接口
+│   └── primitive.cppm      # 主模块接口（导出 traits 与 primitive 聚合）
 ├── tests/                  # 测试
 │   ├── main.cpp
 │   └── xmake.lua
@@ -37,10 +37,10 @@ mcpplibs-templates/
 
 ```cpp
 import std;
-import mcpplibs.templates;
+import mcpplibs.primitive;
 
 int main() {
-    mcpplibs::templates::hello_mcpp();
+    static_assert(mcpplibs::primitive::std_integer<int>);
     return 0;
 }
 ```
@@ -58,7 +58,7 @@ xlings install
 ```bash
 xmake build                 # 构建库
 xmake run basic             # 运行基础示例
-xmake run templates_test    # 运行测试
+xmake run primitives_test   # 运行测试
 ```
 
 **使用 CMake**

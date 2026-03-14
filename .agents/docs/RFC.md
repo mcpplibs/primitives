@@ -48,32 +48,34 @@
 
 ### 值安全
 
-- `checked_value_policy`（默认）
-- `unchecked_value_policy`
-- `saturating_value_policy`
+- `checked_value`（默认）
+- `unchecked_value`
+- `saturating_value`
 
 关注点：和底层类型的互转、构造，底层类型值域限制，算术/比较的溢出/下溢/除零行为。
  
 ### 类型安全
 
-- `strict_type_policy`（默认）
-- `relaxed_type_policy`
+- `strict_type`（默认）
+- `relaxed_type`
 
 关注点：primitive 之间的隐式/显式转换规则，是否允许跨类型算术（如 `Integer + Floating`）或比较。 
 
 ### 错误模型 / 异常安全
 
-- `throw_error_policy`（默认）
-- `expected_error_policy`
-- `terminate_error_policy`
+- `throw_error`（默认）
+- `expected_error`
+- `terminate_error`
 
 关注点：错误处理方式，是否允许异常，是否提供 `expected` 风格的错误返回。
 
 ### 并发安全
 
-- `single_thread_policy`（默认）
-- `atomic_policy`
-- `locked_policy<Mutex>`
+- `single_thread`（默认）
+- `atomic`
+- `locked<Mutex>`
+
+注意：项目已将原先带后缀的 policy 名称（例如 `checked_value_policy`）重命名为无后缀形式（`checked_value`）。文档与代码中的示例均已更新以反映此变更。
 
 关注点：是否允许在多线程环境中使用，是否提供原子操作支持，是否需要外部锁。
 
@@ -88,13 +90,13 @@
 
 ### 第二阶段
 
-- 引入 `expected_error_policy`
+-- 引入 `expected_error`
 - 引入 `unchecked/saturating`
 - 完善行为矩阵文档
 
 ### 第三阶段
 
-- 引入 `atomic_policy`
+-- 引入 `atomic`
 - 引入语义标签桥接（非强绑定）
 
 ### 第四阶段
