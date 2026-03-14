@@ -109,4 +109,12 @@ template <typename P>
 concept concurrency_policy =
     policy_type<P> && (traits<P>::kind == category::concurrency);
 
+using default_value = checked_value;
+
+using default_type = strict_type;
+
+using default_error = throw_error;
+
+using default_concurrency = single_thread;
+
 } // namespace mcpplibs::primitives::policy

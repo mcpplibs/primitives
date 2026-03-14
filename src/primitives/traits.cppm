@@ -7,13 +7,6 @@ export module mcpplibs.primitives.primitive.traits;
 // Import the policy taxonomy so we can inspect policy::traits<>.
 export import mcpplibs.primitives.traits.policy;
 
-// Public default policy aliases — these must be visible to internal details.
-export namespace mcpplibs::primitives {
-using default_value_policy = policy::unchecked_value;
-using default_type_policy = policy::transparent_type;
-using default_error_policy = policy::throw_error;
-using default_concurrency_policy = policy::single_thread;
-} // namespace mcpplibs::primitives
 
 // Internal implementation details — not exported.
 namespace mcpplibs::primitives::traits::details {
@@ -67,11 +60,11 @@ struct resolve_policy_impl {
   using type = std::conditional_t<
       std::is_same_v<found, void>,
       std::conditional_t<
-          C == policy_category::value, default_value_policy,
-          std::conditional_t<C == policy_category::type, default_type_policy,
+          C == policy_category::value, policy::default_value,
+          std::conditional_t<C == policy_category::type, policy::default_type,
                              std::conditional_t<C == policy_category::error,
-                                                default_error_policy,
-                                                default_concurrency_policy>>>,
+                                                policy::default_error,
+                                                policy::default_concurrency>>>,
       found>;
 };
 
