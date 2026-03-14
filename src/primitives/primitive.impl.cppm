@@ -8,8 +8,6 @@ import mcpplibs.primitives.traits.underlying;
 
 export namespace mcpplibs::primitives {
 
-template <typename T, primitive::policy::policy_type... Policies>
-struct primitive {
 template <underlying_type T,
           policy::policy_type... Policies>
 template <underlying_type T,
