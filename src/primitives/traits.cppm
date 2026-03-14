@@ -4,8 +4,9 @@ module;
 
 export module mcpplibs.primitives.primitive.traits;
 
-// Import the policy taxonomy so we can inspect policy::traits<>.
-export import mcpplibs.primitives.traits.policy;
+import mcpplibs.primitives.primitive.impl;
+import mcpplibs.primitives.traits.policy;
+import mcpplibs.primitives.traits.underlying;
 
 
 // Internal implementation details — not exported.
