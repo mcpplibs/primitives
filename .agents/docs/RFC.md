@@ -44,7 +44,7 @@
 4. 零开销抽象，未启用策略不额外付费，`constexpr`友好。
 5. 允许渐进迁移。
 
-## 安全策略体系提案
+## 安全策略体系
 
 ### 值安全
 
@@ -52,14 +52,15 @@
 - `unchecked_value`
 - `saturating_value`
 
-关注点：和底层类型的互转、构造，底层类型值域限制，算术/比较的溢出/下溢/除零行为。
+关注点：`underlying_type` 值域限制，算术/比较的溢出/下溢/除零行为。
  
 ### 类型安全
 
-- `strict_type`（默认）
-- `relaxed_type`
+- `strict_type`
+- `category_compatible_type`
+- `transparent_type`（原 `relaxed_type`，最宽松）
 
-关注点：primitive 之间的隐式/显式转换规则，是否允许跨类型算术（如 `Integer + Floating`）或比较。 
+关注点：`primitive` 之间/ `primitive` 与 `underlying_type` 的隐式/显式转换规则，是否允许跨类型算术（如 `Integer + Floating`）或比较。 
 
 ### 错误模型 / 异常安全
 

@@ -137,10 +137,8 @@ ctest --test-dir build
 
 项目中新增了 `mcpplibs::primitive::policy` 模块，用来表达运行时/编译期的策略标签。核心要点：
 
-- `policy::category`：一个枚举，用以表示四类策略：`value`、`type`、`error`、`concurrency`。
-- 每个 policy 类型匹配一个 `policy::traits<P>` 特化，`traits` 提供 `enabled` 和 `kind`（category）。
-- 提供了 `policy::policy_type<P>` 概念用于识别有效的 policy 类型。
-- `policy::default_policies` 提供库的默认策略集合（`value`, `type`, `error`, `concurrency`）。
+库默认策略别名由 `mcpplibs::primitives` 导出：`default_value_policy`, `default_type_policy`, `default_error_policy`, `default_concurrency_policy`。
+
 
 示例用法见 [examples/basic.cpp](examples/basic.cpp#L1)（演示如何查询默认策略与内建策略的类别）。
 
@@ -155,7 +153,7 @@ ctest --test-dir build
 - 策略传播：添加 `traits/primitive_traits.cppm`，提供 `primitive_traits<Primitive>`，包含：
   - `using value_type` — 底层类型
   - `using policies = std::tuple<...>` — 策略标签元组
-  - `using default_policies = policy::default_policies`
+  - 默认策略别名可通过 `mcpplibs::primitives::default_*_policy` 访问（例如 `default_value_policy`）。
   - 编译期谓词 `has_policy_category<Primitive, policy::category::value>` 等，便于操作 trait 的约束和重载。
 - 可扩展性：`primitive` 的操作（例如算术、比较）将通过独立的 operation traits 和 concepts 实现，使用 `primitive_traits` 中的 policy 信息进行选择。
 
