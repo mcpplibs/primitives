@@ -4,9 +4,9 @@ set_languages("c++23")
 
 add_requires("gtest")
 
-target("templates_test")
+target("primitives_test")
     set_kind("binary")
     add_files("*.cpp")
-    add_deps("mcpplibs-templates")
+    add_deps("mcpplibs-primitives")
     add_packages("gtest")
     set_policy("build.c++.modules", true)

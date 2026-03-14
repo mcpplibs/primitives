@@ -109,9 +109,13 @@ cmake --build build
 ctest --test-dir build
 ```
 
-### xmake（待命名同步）
+### xmake
 
-当前 `xmake.lua` 与子目录配置仍保留部分 `templates` 历史 target 名称（例如 `mcpplibs-templates`、`templates_test`），后续建议统一为 `primitives` 命名体系。
+当前 xmake 目标命名已与 primitives 体系对齐：
+
+- 库目标：`mcpplibs-primitives`
+- 测试目标：`primitives_test`
+- 示例 `basic` 依赖：`mcpplibs-primitives`
 
 ## 测试策略
 
