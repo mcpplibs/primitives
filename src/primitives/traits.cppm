@@ -81,12 +81,16 @@ using policy_category = policy::category;
 template <policy_category C, policy::policy_type... Policies>
 using resolve_policy_t = details::resolve_policy_t<C, Policies...>;
 
-template <typename P> struct primitive_traits; // customization point for users
+template <typename T, typename PoliciesTuple> struct make_primitive;
 
-// Forward-declare exported `primitive` (defined in impl module).
-template <typename T, policy::policy_type... Policies> struct primitive;
+template <underlying_type T, policy::policy_type... Policies>
+struct make_primitive<T, std::tuple<Policies...>> {
+  using type = primitive<T, Policies...>;
+};
 
-template <typename T, policy::policy_type... Policies>
+template <underlying_type T, typename PoliciesTuple>
+using make_primitive_t = make_primitive<T, PoliciesTuple>::type;
+
 using default_policies =
     std::tuple<
         policy::default_value,
