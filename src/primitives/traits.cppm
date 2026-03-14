@@ -87,6 +87,13 @@ template <typename P> struct primitive_traits; // customization point for users
 template <typename T, policy::policy_type... Policies> struct primitive;
 
 template <typename T, policy::policy_type... Policies>
+using default_policies =
+    std::tuple<
+        policy::default_value,
+        policy::default_type,
+        policy::default_error,
+        policy::default_concurrency
+    >;
 struct primitive_traits<primitive<T, Policies...>> {
   using value_type = T;
   using policies = std::tuple<Policies...>;
