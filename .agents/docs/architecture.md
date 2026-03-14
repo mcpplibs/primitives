@@ -36,33 +36,33 @@ primitives/
 
 ```mermaid
 graph TD
-    A["src/primitive.cppm\nmodule mcpplibs.primitive"] --> B["src/traits/traits.cppm\nmodule mcpplibs.primitive.traits"]
-    B --> C["src/traits/underlying.cppm\nmodule mcpplibs.primitive.traits.underlying"]
-    T["tests/basic/test_templates.cpp"] --> A
-    E["examples/basic.cpp"] --> A
+  A["src/primitive.cppm\nmodule mcpplibs.primitives"] --> B["src/traits/traits.cppm\nmodule mcpplibs.primitives.traits"]
+  B --> C["src/traits/underlying.cppm\nmodule mcpplibs.primitives.traits.underlying"]
+  T["tests/basic/test_templates.cpp"] --> A
+  E["examples/basic.cpp"] --> A
 ```
 
 ### 聚合关系
 
-- `mcpplibs.primitive` 再导出 `mcpplibs.primitive.traits`
-- `mcpplibs.primitive.traits` 再导出 `mcpplibs.primitive.traits.underlying`
+- `mcpplibs.primitives` 再导出 `mcpplibs.primitives.traits`
+ - `mcpplibs.primitives.traits` 再导出 `mcpplibs.primitives.traits.underlying`
 
 ## 命名空间与 API 边界
 
 ### 公共 API（导出，稳定承诺）
 
-- `mcpplibs::primitive::std_bool`
-- `mcpplibs::primitive::std_char`
-- `mcpplibs::primitive::std_integer`
-- `mcpplibs::primitive::std_floating`
-- `mcpplibs::primitive::std_underlying_type`
-- `mcpplibs::primitive::underlying::category`
-- `mcpplibs::primitive::underlying::traits<T>`
-- `mcpplibs::primitive::underlying_type`
+- `mcpplibs::primitives::std_bool`
+- `mcpplibs::primitives::std_char`
+- `mcpplibs::primitives::std_integer`
+- `mcpplibs::primitives::std_floating`
+- `mcpplibs::primitives::std_underlying_type`
+- `mcpplibs::primitives::underlying::category`
+- `mcpplibs::primitives::underlying::traits<T>`
+- `mcpplibs::primitives::underlying_type`
 
 ### 内部实现（不导出，不承诺稳定）
 
-- `mcpplibs::primitive::underlying::details::*`
+- `mcpplibs::primitives::underlying::details::*`
 
 ### 约定
 
@@ -135,7 +135,7 @@ ctest --test-dir build
 
 ## 策略（Policy）模块
 
-项目中新增了 `mcpplibs::primitive::policy` 模块，用来表达运行时/编译期的策略标签。核心要点：
+项目中新增了 `mcpplibs::primitives::policy` 模块，用来表达运行时/编译期的策略标签。核心要点：
 
 库默认策略别名由 `mcpplibs::primitives` 导出：`default_value_policy`, `default_type_policy`, `default_error_policy`, `default_concurrency_policy`。
 
@@ -148,7 +148,7 @@ ctest --test-dir build
 
 设计要点：
 
-- 定位：实现放置在 `src/primitive.cppm` 的分区或 `src/primitives/primitive.cppm`（按模块组织），导出至 `mcpplibs.primitive`。
+- 定位：实现放置在 `src/primitive.cppm` 的分区或 `src/primitives/primitive.cppm`（按模块组织），导出至 `mcpplibs.primitives`。
 - 存储：`primitive<T, Policies...>` 应仅持有 `T`（或 `value_type`）的值，不含运行时策略开销；策略仅作为类型标签存在。
 - 策略传播：添加 `traits/primitive_traits.cppm`，提供 `primitive_traits<Primitive>`，包含：
   - `using value_type` — 底层类型
