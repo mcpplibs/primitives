@@ -12,6 +12,8 @@ template <typename T, primitive::policy::policy_type... Policies>
 struct primitive {
 template <underlying_type T,
           policy::policy_type... Policies>
+template <underlying_type T,
+          policy::policy_type... Policies>
   using value_type = T;
   using policies = std::tuple<Policies...>;
   constexpr explicit primitive(T v) noexcept : value(v) {}
