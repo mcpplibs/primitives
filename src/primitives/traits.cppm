@@ -98,6 +98,10 @@ using default_policies =
         policy::default_error,
         policy::default_concurrency
     >;
+
+template <typename T> struct primitive_traits;
+
+template <underlying_type T, policy::policy_type... Policies>
 struct primitive_traits<primitive<T, Policies...>> {
   using value_type = T;
   using policies = std::tuple<Policies...>;
