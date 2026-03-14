@@ -14,7 +14,7 @@ int main() {
 
   std::cout
       << "default value policy is unchecked_value: "
-      << std::is_same_v<default_value_policy, unchecked_value> << "\n";
+      << std::is_same_v<default_value, checked_value> << "\n";
 
   std::cout << "checked_value is a policy_type: "
             << policy_type<checked_value> << "\n";
