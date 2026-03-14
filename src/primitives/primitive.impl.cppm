@@ -8,14 +8,16 @@ import mcpplibs.primitives.traits.underlying;
 
 export namespace mcpplibs::primitives {
 
-template <underlying_type T,
-          policy::policy_type... Policies>
-template <underlying_type T,
-          policy::policy_type... Policies>
+template <underlying_type T, policy::policy_type... Policies> class primitive {
+public:
   using value_type = T;
   using policies = std::tuple<Policies...>;
-  constexpr explicit primitive(T v) noexcept : value(v) {}
-  T value;
+  constexpr explicit primitive(T v) noexcept : value_(v) {}
+  constexpr value_type &value() noexcept { return value_; }
+  constexpr value_type const &value() const noexcept { return value_; }
+
+private:
+  T value_;
 };
 
 } // namespace mcpplibs::primitives
