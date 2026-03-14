@@ -1,6 +1,6 @@
 #include <gtest/gtest.h>
 
-import mcpplibs.primitive;
+import mcpplibs.primitives;
 
 namespace {
 
@@ -23,12 +23,12 @@ struct BadKind {
 } // namespace
 
 template <>
-struct mcpplibs::primitive::underlying::traits<UserInteger> {
+struct mcpplibs::primitives::underlying::traits<UserInteger> {
   using value_type = UserInteger;
   using rep_type = int;
 
   static constexpr bool enabled = true;
-  static constexpr auto kind = mcpplibs::primitive::underlying::category::integer;
+  static constexpr auto kind = category::integer;
 
   static constexpr rep_type to_rep(value_type value) noexcept { return value.value; }
 
@@ -38,12 +38,12 @@ struct mcpplibs::primitive::underlying::traits<UserInteger> {
 };
 
 template <>
-struct mcpplibs::primitive::underlying::traits<BadRep> {
+struct mcpplibs::primitives::underlying::traits<BadRep> {
   using value_type = BadRep;
   using rep_type = BadRep;
 
   static constexpr bool enabled = true;
-  static constexpr auto kind = mcpplibs::primitive::underlying::category::integer;
+  static constexpr auto kind = category::integer;
 
   static constexpr rep_type to_rep(value_type value) noexcept { return value; }
 
@@ -53,12 +53,12 @@ struct mcpplibs::primitive::underlying::traits<BadRep> {
 };
 
 template <>
-struct mcpplibs::primitive::underlying::traits<BadKind> {
+struct mcpplibs::primitives::underlying::traits<BadKind> {
   using value_type = BadKind;
   using rep_type = int;
 
   static constexpr bool enabled = true;
-  static constexpr auto kind = mcpplibs::primitive::underlying::category::floating;
+  static constexpr auto kind = category::floating;
 
   static constexpr rep_type to_rep(value_type value) noexcept { return value.value; }
 
@@ -68,45 +68,45 @@ struct mcpplibs::primitive::underlying::traits<BadKind> {
 };
 
 TEST(PrimitiveTraitsTest, StandardTypeConcepts) {
-  EXPECT_TRUE((mcpplibs::primitive::std_integer<int>));
-  EXPECT_TRUE((mcpplibs::primitive::std_integer<long long>));
-  EXPECT_FALSE((mcpplibs::primitive::std_integer<bool>));
-  EXPECT_FALSE((mcpplibs::primitive::std_integer<char>));
+  EXPECT_TRUE((mcpplibs::primitives::std_integer<int>));
+  EXPECT_TRUE((mcpplibs::primitives::std_integer<long long>));
+  EXPECT_FALSE((mcpplibs::primitives::std_integer<bool>));
+  EXPECT_FALSE((mcpplibs::primitives::std_integer<char>));
 
-  EXPECT_TRUE((mcpplibs::primitive::std_floating<float>));
-  EXPECT_TRUE((mcpplibs::primitive::std_floating<double>));
-  EXPECT_TRUE((mcpplibs::primitive::std_floating<long double>));
+  EXPECT_TRUE((mcpplibs::primitives::std_floating<float>));
+  EXPECT_TRUE((mcpplibs::primitives::std_floating<double>));
+  EXPECT_TRUE((mcpplibs::primitives::std_floating<long double>));
 
-  EXPECT_TRUE((mcpplibs::primitive::std_bool<bool>));
-  EXPECT_FALSE((mcpplibs::primitive::std_bool<int>));
+  EXPECT_TRUE((mcpplibs::primitives::std_bool<bool>));
+  EXPECT_FALSE((mcpplibs::primitives::std_bool<int>));
 
-  EXPECT_TRUE((mcpplibs::primitive::std_char<char>));
-  EXPECT_TRUE((mcpplibs::primitive::std_char<char8_t>));
-  EXPECT_TRUE((mcpplibs::primitive::std_char<wchar_t>));
+  EXPECT_TRUE((mcpplibs::primitives::std_char<char>));
+  EXPECT_TRUE((mcpplibs::primitives::std_char<char8_t>));
+  EXPECT_TRUE((mcpplibs::primitives::std_char<wchar_t>));
 
-  EXPECT_TRUE((mcpplibs::primitive::std_underlying_type<int>));
-  EXPECT_TRUE((mcpplibs::primitive::std_underlying_type<double>));
-  EXPECT_FALSE((mcpplibs::primitive::std_underlying_type<void*>));
+  EXPECT_TRUE((mcpplibs::primitives::std_underlying_type<int>));
+  EXPECT_TRUE((mcpplibs::primitives::std_underlying_type<double>));
+  EXPECT_FALSE((mcpplibs::primitives::std_underlying_type<void*>));
 }
 
 TEST(PrimitiveTraitsTest, UnderlyingTraitsDefaultsAndCustomRegistration) {
-  EXPECT_TRUE((mcpplibs::primitive::underlying_type<int>));
-  EXPECT_EQ(mcpplibs::primitive::underlying::traits<int>::kind,
-            mcpplibs::primitive::underlying::category::integer);
+  EXPECT_TRUE((mcpplibs::primitives::underlying_type<int>));
+  EXPECT_EQ(mcpplibs::primitives::underlying::traits<int>::kind,
+            mcpplibs::primitives::underlying::category::integer);
 
-  EXPECT_TRUE((mcpplibs::primitive::underlying_type<UserInteger>));
-  EXPECT_EQ(mcpplibs::primitive::underlying::traits<UserInteger>::to_rep(UserInteger{7}), 7);
+  EXPECT_TRUE((mcpplibs::primitives::underlying_type<UserInteger>));
+  EXPECT_EQ(mcpplibs::primitives::underlying::traits<UserInteger>::to_rep(UserInteger{7}), 7);
 
-  EXPECT_FALSE((mcpplibs::primitive::underlying_type<NotRegistered>));
-  EXPECT_FALSE((mcpplibs::primitive::underlying::traits<NotRegistered>::enabled));
+  EXPECT_FALSE((mcpplibs::primitives::underlying_type<NotRegistered>));
+  EXPECT_FALSE((mcpplibs::primitives::underlying::traits<NotRegistered>::enabled));
 }
 
 TEST(PrimitiveTraitsTest, UnderlyingTypeRequiresValidRepTypeAndCategoryConsistency) {
-  EXPECT_TRUE((mcpplibs::primitive::underlying::traits<BadRep>::enabled));
-  EXPECT_FALSE((mcpplibs::primitive::underlying_type<BadRep>));
+  EXPECT_TRUE((mcpplibs::primitives::underlying::traits<BadRep>::enabled));
+  EXPECT_FALSE((mcpplibs::primitives::underlying_type<BadRep>));
 
-  EXPECT_TRUE((mcpplibs::primitive::underlying::traits<BadKind>::enabled));
-  EXPECT_FALSE((mcpplibs::primitive::underlying_type<BadKind>));
+  EXPECT_TRUE((mcpplibs::primitives::underlying::traits<BadKind>::enabled));
+  EXPECT_FALSE((mcpplibs::primitives::underlying_type<BadKind>));
 }
 
 int main(int argc, char **argv) {
