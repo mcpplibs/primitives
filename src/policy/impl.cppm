@@ -6,21 +6,6 @@ import mcpplibs.primitives.policy.traits;
 
 export namespace mcpplibs::primitives::policy {
 
-struct checked_value {};
-struct unchecked_value {};
-struct saturating_value {};
-
-struct strict_type {};
-struct category_compatible_type {};
-struct transparent_type {};
-
-struct throw_error {};
-struct expected_error {};
-struct terminate_error {};
-
-struct single_thread {};
-struct atomic {};
-
 template <> struct traits<checked_value> {
   using policy_type = checked_value;
   static constexpr bool enabled = true;
@@ -102,13 +87,5 @@ concept error_policy = policy_type<P> && (traits<P>::kind == category::error);
 template <typename P>
 concept concurrency_policy =
     policy_type<P> && (traits<P>::kind == category::concurrency);
-
-using default_value = checked_value;
-
-using default_type = strict_type;
-
-using default_error = throw_error;
-
-using default_concurrency = single_thread;
 
 } // namespace mcpplibs::primitives::policy
