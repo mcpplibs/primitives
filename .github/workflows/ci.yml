@@ -14,6 +14,9 @@ concurrency:
   group: ci-${{ github.ref }}
   cancel-in-progress: true
 
+env:
+  XLINGS_VERSION: v0.4.2
+
 jobs:
   build-linux:
     runs-on: ubuntu-latest
@@ -54,27 +57,33 @@ jobs:
 
   build-macos:
     runs-on: macos-15
-    timeout-minutes: 20
     steps:
-      - name: Checkout
+      - name: Checkout code
         uses: actions/checkout@v4
 
       - name: Install Xlings
         env:
           XLINGS_NON_INTERACTIVE: 1
         run: |
-          curl -fsSL https://raw.githubusercontent.com/d2learn/xlings/refs/heads/main/tools/other/quick_install.sh | bash
+          VERSION_NUM="${XLINGS_VERSION#v}"
+          TARBALL="xlings-${VERSION_NUM}-macosx-arm64.tar.gz"
+          curl -fSL -o "$RUNNER_TEMP/$TARBALL" "https://github.com/d2learn/xlings/releases/download/${XLINGS_VERSION}/${TARBALL}"
+          tar -xzf "$RUNNER_TEMP/$TARBALL" -C "$RUNNER_TEMP"
+          EXTRACT_DIR=$(find "$RUNNER_TEMP" -maxdepth 1 -type d -name "xlings-*" | head -1)
+          xattr -dr com.apple.quarantine "$EXTRACT_DIR" 2>/dev/null || true
+          chmod +x "$EXTRACT_DIR/bin/xlings"
+          "$EXTRACT_DIR/bin/xlings" self install
           echo "PATH=$HOME/.xlings/subos/current/bin:$PATH" >> "$GITHUB_ENV"
 
-      - name: Install LLVM 20 with Xlings
+      - name: Install Project Dependencies via Xlings
         run: |
-          xlings install --verbose
-          xmake --version
+          xlings install
           clang --version
 
-      - name: Build
+      - name: Build with xmake
         run: |
-          xmake f -m release --toolchain=llvm -y -vv
+          xmake f -m release --toolchain=llvm -vv -y
+          xmake -j$(nproc)
 
   build-windows:
     runs-on: windows-latest
