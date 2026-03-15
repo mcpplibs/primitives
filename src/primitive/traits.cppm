@@ -5,9 +5,8 @@ module;
 export module mcpplibs.primitives.primitive.traits;
 
 import mcpplibs.primitives.primitive.impl;
-import mcpplibs.primitives.traits.policy;
-import mcpplibs.primitives.traits.underlying;
-
+import mcpplibs.primitives.policy;
+import mcpplibs.primitives.underlying;
 
 // Internal implementation details — not exported.
 namespace mcpplibs::primitives::traits::details {
@@ -61,12 +60,20 @@ struct resolve_policy_impl {
   using type = std::conditional_t<
       std::is_same_v<found, void>,
       std::conditional_t<
-          C == policy_category::value, policy::default_value,
-          std::conditional_t<C == policy_category::type, policy::default_type,
-                             std::conditional_t<C == policy_category::error,
-                                                policy::default_error,
-                                                policy::default_concurrency>>>,
-      found>;
+          C == policy_category::value,
+          policy::default_value,
+          std::conditional_t<
+              C == policy_category::type,
+              policy::default_type,
+              std::conditional_t<
+                  C == policy_category::error,
+                  policy::default_error,
+                  policy::default_concurrency
+              >
+          >
+      >,
+      found
+  >;
 };
 
 template <policy_category C, policy::policy_type... Policies>
@@ -92,12 +99,8 @@ template <underlying_type T, typename PoliciesTuple>
 using make_primitive_t = make_primitive<T, PoliciesTuple>::type;
 
 using default_policies =
-    std::tuple<
-        policy::default_value,
-        policy::default_type,
-        policy::default_error,
-        policy::default_concurrency
-    >;
+    std::tuple<policy::default_value, policy::default_type,
+               policy::default_error, policy::default_concurrency>;
 
 template <typename T> struct primitive_traits;
 
