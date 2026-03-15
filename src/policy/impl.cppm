@@ -1,19 +1,10 @@
 module;
-#include <type_traits>
 
-export module mcpplibs.primitive.traits.policy;
+export module mcpplibs.primitives.policy.impl;
 
-export namespace mcpplibs::primitive {
+import mcpplibs.primitives.policy.traits;
 
-namespace policy {
-
-enum class category { value, type, error, concurrency };
-
-template <typename P> struct traits {
-  using policy_type = void;
-  static constexpr bool enabled = false;
-  static constexpr category kind = static_cast<category>(-1);
-};
+export namespace mcpplibs::primitives::policy {
 
 struct checked_value {};
 struct unchecked_value {};
@@ -33,67 +24,67 @@ struct atomic {};
 template <> struct traits<checked_value> {
   using policy_type = checked_value;
   static constexpr bool enabled = true;
-  static constexpr category kind = category::value;
+  static constexpr auto kind = category::value;
 };
 
 template <> struct traits<unchecked_value> {
   using policy_type = unchecked_value;
   static constexpr bool enabled = true;
-  static constexpr category kind = category::value;
+  static constexpr auto kind = category::value;
 };
 
 template <> struct traits<saturating_value> {
   using policy_type = saturating_value;
   static constexpr bool enabled = true;
-  static constexpr category kind = category::value;
+  static constexpr auto kind = category::value;
 };
 
 template <> struct traits<strict_type> {
   using policy_type = strict_type;
   static constexpr bool enabled = true;
-  static constexpr category kind = category::type;
+  static constexpr auto kind = category::type;
 };
 
 template <> struct traits<category_compatible_type> {
   using policy_type = category_compatible_type;
   static constexpr bool enabled = true;
-  static constexpr category kind = category::type;
+  static constexpr auto kind = category::type;
 };
 
 template <> struct traits<transparent_type> {
   using policy_type = transparent_type;
   static constexpr bool enabled = true;
-  static constexpr category kind = category::type;
+  static constexpr auto kind = category::type;
 };
 
 template <> struct traits<throw_error> {
   using policy_type = throw_error;
   static constexpr bool enabled = true;
-  static constexpr category kind = category::error;
+  static constexpr auto kind = category::error;
 };
 
 template <> struct traits<expected_error> {
   using policy_type = expected_error;
   static constexpr bool enabled = true;
-  static constexpr category kind = category::error;
+  static constexpr auto kind = category::error;
 };
 
 template <> struct traits<terminate_error> {
   using policy_type = terminate_error;
   static constexpr bool enabled = true;
-  static constexpr category kind = category::error;
+  static constexpr auto kind = category::error;
 };
 
 template <> struct traits<single_thread> {
   using policy_type = single_thread;
   static constexpr bool enabled = true;
-  static constexpr category kind = category::concurrency;
+  static constexpr auto kind = category::concurrency;
 };
 
 template <> struct traits<atomic> {
   using policy_type = atomic;
   static constexpr bool enabled = true;
-  static constexpr category kind = category::concurrency;
+  static constexpr auto kind = category::concurrency;
 };
 
 template <typename P>
@@ -112,6 +103,12 @@ template <typename P>
 concept concurrency_policy =
     policy_type<P> && (traits<P>::kind == category::concurrency);
 
-} // namespace policy
+using default_value = checked_value;
 
-} // namespace mcpplibs::primitive
+using default_type = strict_type;
+
+using default_error = throw_error;
+
+using default_concurrency = single_thread;
+
+} // namespace mcpplibs::primitives::policy

@@ -56,7 +56,7 @@
  
 ### 类型安全
 
-- `strict_type`
+- `strict_type`（默认）
 - `category_compatible_type`
 - `transparent_type`（原 `relaxed_type`，最宽松）
 

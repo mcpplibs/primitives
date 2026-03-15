@@ -1,6 +1,6 @@
 # mcpplibs primitives
 
-> C++23 模块化原语库 - `import mcpplibs.primitive;`
+> C++23 模块化原语库 - `import mcpplibs.primitives;`
 
 本仓库实现了底层强类型 primitive 基础设施（traits、policy、underlying 类型分类），供上层 `Integer`/`Floating`/`Boolean` 等封装使用。
 
@@ -37,10 +37,10 @@ mcpplibs-primitives/
 
 ```cpp
 import std;
-import mcpplibs.primitive;
+import mcpplibs.primitives;
 
 int main() {
-    static_assert(mcpplibs::primitive::std_integer<int>);
+    static_assert(mcpplibs::primitives::std_integer<int>);
     return 0;
 }
 ```

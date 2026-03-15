@@ -1,10 +1,9 @@
 #include <gtest/gtest.h>
 
-import mcpplibs.primitive;
+import mcpplibs.primitives;
 
-namespace {} // namespace
 
-using namespace mcpplibs::primitive;
+using namespace mcpplibs::primitives;
 
 TEST(PolicyTraitsTest, BuiltinPoliciesHaveCategories) {
   using namespace policy;
@@ -40,11 +39,9 @@ TEST(PolicyTraitsTest, BuiltinPoliciesHaveCategories) {
   EXPECT_TRUE((policy_type<policy::terminate_error>));
   EXPECT_FALSE((policy_type<int>));
 
-  EXPECT_TRUE((std::is_same_v<::mcpplibs::primitives::default_value_policy,
-                              ::mcpplibs::primitive::policy::unchecked_value>));
+  EXPECT_TRUE((std::is_same_v<policy::default_value, policy::checked_value>));
   EXPECT_TRUE(
-      (std::is_same_v<::mcpplibs::primitives::default_type_policy,
-                      ::mcpplibs::primitive::policy::transparent_type>));
+      (std::is_same_v<policy::default_type, policy::strict_type>));
 }
 
 // Use the existing test runner main from other test translation unit.

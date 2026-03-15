@@ -2,9 +2,9 @@ module;
 #include <concepts>
 #include <type_traits>
 
-export module mcpplibs.primitive.traits.underlying;
+export module mcpplibs.primitives.underlying.traits;
 
-export namespace mcpplibs::primitive {
+export namespace mcpplibs::primitives {
 
 template <typename T>
 concept std_bool = std::same_as<std::remove_cv_t<T>, bool>;
@@ -39,40 +39,26 @@ enum class category {
 };
 
 template <typename T> struct traits {
+  using value_type = void;
+  using rep_type = void;
+
   static constexpr bool enabled = false;
-};
 
-template <std_underlying_type T> struct traits<T> {
-  using value_type = std::remove_cv_t<T>;
-  using rep_type = value_type;
+  static constexpr auto kind = static_cast<category>(-1);
 
-  static constexpr bool enabled = true;
+  template <typename U> static constexpr rep_type to_rep(U) noexcept {}
 
-  static constexpr category kind = [] {
-    if constexpr (std_bool<value_type>) {
-      return category::boolean;
-    } else if constexpr (std_char<value_type>) {
-      return category::character;
-    } else if constexpr (std_integer<value_type>) {
-      return category::integer;
-    } else {
-      return category::floating;
-    }
-  }();
+  template <typename U> static constexpr value_type from_rep(U) noexcept {}
 
-  static constexpr rep_type to_rep(value_type value) noexcept { return value; }
-
-  static constexpr value_type from_rep(rep_type value) noexcept {
-    return value;
+  template <typename U> static constexpr bool is_valid_rep(U) noexcept {
+    return false;
   }
-
-  static constexpr bool is_valid_rep(rep_type) noexcept { return true; }
 };
+
 } // namespace underlying
+}
 
-} // namespace mcpplibs::primitive
-
-namespace mcpplibs::primitive::underlying::details {
+namespace mcpplibs::primitives::underlying::details {
 
 template <typename T>
 concept enabled = traits<std::remove_cv_t<T>>::enabled;
@@ -102,8 +88,7 @@ concept has_rep_bridge =
 
 template <typename T>
 concept has_std_rep_type =
-    has_rep_type<T> &&
-    std_underlying_type<typename traits<std::remove_cv_t<T>>::rep_type>;
+    has_rep_type<T> && std_underlying_type<typename traits<std::remove_cv_t<T>>::rep_type>;
 
 template <std_underlying_type T>
 consteval category category_of_std_underlying_type() {
@@ -125,15 +110,17 @@ concept has_consistent_category =
      category_of_std_underlying_type<
          typename traits<std::remove_cv_t<T>>::rep_type>());
 
-} // namespace mcpplibs::primitive::underlying::details
+} // namespace mcpplibs::primitives::underlying::details
 
-export namespace mcpplibs::primitive {
+export namespace mcpplibs::primitives {
 
 template <typename T>
 concept underlying_type =
-    underlying::details::enabled<T> && underlying::details::has_category<T> &&
+    underlying::details::enabled<T> && 
+    underlying::details::has_category<T> &&
     underlying::details::has_rep_bridge<T> &&
     underlying::details::has_std_rep_type<T> &&
     underlying::details::has_consistent_category<T>;
 
-} // namespace mcpplibs::primitive
+} // namespace mcpplibs::primitives
+
