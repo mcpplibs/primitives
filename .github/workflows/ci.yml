@@ -57,22 +57,16 @@ jobs:
 
   build-macos:
     runs-on: macos-15
+    timeout-minutes: 20
     steps:
-      - name: Checkout code
+      - name: Checkout
         uses: actions/checkout@v4
 
       - name: Install Xlings
         env:
           XLINGS_NON_INTERACTIVE: 1
         run: |
-          VERSION_NUM="${XLINGS_VERSION#v}"
-          TARBALL="xlings-${VERSION_NUM}-macosx-arm64.tar.gz"
-          curl -fSL -o "$RUNNER_TEMP/$TARBALL" "https://github.com/d2learn/xlings/releases/download/${XLINGS_VERSION}/${TARBALL}"
-          tar -xzf "$RUNNER_TEMP/$TARBALL" -C "$RUNNER_TEMP"
-          EXTRACT_DIR=$(find "$RUNNER_TEMP" -maxdepth 1 -type d -name "xlings-*" | head -1)
-          xattr -dr com.apple.quarantine "$EXTRACT_DIR" 2>/dev/null || true
-          chmod +x "$EXTRACT_DIR/bin/xlings"
-          "$EXTRACT_DIR/bin/xlings" self install
+          curl -fsSL https://d2learn.org/xlings-install.sh | bash
           echo "PATH=$HOME/.xlings/subos/current/bin:$PATH" >> "$GITHUB_ENV"
 
       - name: Install Project Dependencies via Xlings
