@@ -19,7 +19,7 @@ int main() {
   std::cout << "checked_value is a policy_type: "
             << policy_type<checked_value> << "\n";
   std::cout << "checked_value category == value: "
-            << (traits<checked_value>::kind == category::value)
+            << (policy::traits<checked_value>::kind == category::value)
             << "\n";
 
   return 0;
