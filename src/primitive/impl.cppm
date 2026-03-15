@@ -12,15 +12,13 @@ template <underlying_type T, policy::policy_type... Policies> class primitive {
 public:
   using value_type = T;
   using policies = std::tuple<Policies...>;
-  constexpr explicit primitive(T v) noexcept : value_(v) {}
+  constexpr explicit primitive(value_type v) noexcept : value_(v) {}
   constexpr value_type &value() noexcept { return value_; }
-  constexpr value_type const &value() const noexcept { return value_; }
+  [[nodiscard]] constexpr value_type const &value() const noexcept { return value_; }
+  constexpr explicit operator value_type() const noexcept { return value_; }
 
 private:
-  T value_;
+  value_type value_;
 };
-
-// `primitive_constant` removed: NTTP-based compile-time primitives
-// can be added later if needed. For MVP, keep only the runtime `primitive`.
 
 } // namespace mcpplibs::primitives
