@@ -1,16 +1,10 @@
 module;
 
-export module mcpplibs.primitives.traits.policy;
+export module mcpplibs.primitives.policy.impl;
+
+import mcpplibs.primitives.policy.traits;
 
 export namespace mcpplibs::primitives::policy {
-
-enum class category { value, type, error, concurrency };
-
-template <typename P> struct traits {
-  using policy_type = void;
-  static constexpr bool enabled = false;
-  static constexpr auto kind = static_cast<category>(-1);
-};
 
 struct checked_value {};
 struct unchecked_value {};
