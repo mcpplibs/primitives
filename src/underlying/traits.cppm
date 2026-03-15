@@ -26,6 +26,9 @@ concept std_integer =
     std::integral<std::remove_cv_t<T>> && (!std_bool<T>) && (!std_char<T>);
 
 template <typename T>
+concept std_numeric = std_integer<T> || std_floating<T>;    
+
+template <typename T>
 concept std_underlying_type =
     std_bool<T> || std_char<T> || std_integer<T> || std_floating<T>;
 
@@ -122,5 +125,27 @@ concept underlying_type =
     underlying::details::has_std_rep_type<T> &&
     underlying::details::has_consistent_category<T>;
 
+template <typename T>
+concept boolean_underlying_type =
+    underlying_type<T> && (underlying::traits<std::remove_cv_t<T>>::kind ==
+                          underlying::category::boolean);    
+
+template <typename T>
+concept character_underlying_type =
+    underlying_type<T> && (underlying::traits<std::remove_cv_t<T>>::kind ==
+                          underlying::category::character);    
+
+template <typename T>
+concept integer_underlying_type =
+    underlying_type<T> && (underlying::traits<std::remove_cv_t<T>>::kind ==
+                          underlying::category::integer);    
+
+template <typename T>
+concept floating_underlying_type =
+    underlying_type<T> && (underlying::traits<std::remove_cv_t<T>>::kind ==
+                          underlying::category::floating);    
+
+template <typename T>
+concept numeric_underlying_type = integer_underlying_type<T> || floating_underlying_type<T>;
 } // namespace mcpplibs::primitives
 

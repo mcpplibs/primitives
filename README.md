@@ -4,13 +4,38 @@
 
 本仓库实现了底层强类型 primitive 基础设施（traits、policy、underlying 类型分类），供上层 `Integer`/`Floating`/`Boolean` 等封装使用。
 
+> [!WARNING]
+> 目前项目还在开发中，API会随着后续演进而改变
+
 ## 特性
 
-- **C++23 模块** — `import mcpplibs.templates;`
+- **C++23 模块** — `import mcpplibs.primitives;`
 - **双构建系统** — 同时支持 xmake 和 CMake
 - **CI/CD** — GitHub Actions 多平台构建（Linux / macOS / Windows）
 - **标准化结构** — 遵循 [mcpp-style-ref](https://github.com/mcpp-community/mcpp-style-ref) 编码规范
 - **开箱即用** — 包含示例、测试和架构文档
+
+## Operators
+
+该库在 `primitive` 类型上重载了常见的 C++ 算术、位运算和一元运算符。算术行为受策略（policy）控制：
+
+- 值策略（`checked_value` / `saturating_value` / `unchecked_value`）决定溢出行为；
+- 错误策略（`throw_error` / `expected_error` / `terminate_error`）决定在 `checked_value` 且发生错误时的处理方式。
+
+示例：
+
+```cpp
+import mcpplibs.primitives;
+using namespace mcpplibs::primitives;
+using namespace mcpplibs::primitives::policy;
+
+primitive<int> a{1}, b{2};
+auto c = a + b; // primitive<int>
+
+primitive<int, expected_error> x{std::numeric_limits<int>::max()};
+primitive<int, expected_error> y{1};
+auto maybe = x + y; // std::expected<primitive<int, expected_error>, std::overflow_error>
+```
 
 ## 项目结构
 
