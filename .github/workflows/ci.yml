@@ -14,6 +14,9 @@ concurrency:
   group: ci-${{ github.ref }}
   cancel-in-progress: true
 
+env:
+  XLINGS_VERSION: v0.4.2
+
 jobs:
   build-linux:
     runs-on: ubuntu-latest
@@ -21,12 +24,6 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-
-      - name: Setup xmake
-        uses: xmake-io/github-action-setup-xmake@v1
-        with:
-          xmake-version: latest
-          package-cache: true
 
       - name: Install dependencies
         run: |
@@ -42,7 +39,10 @@ jobs:
 
       - name: Install GCC 15.1 with Xlings
         run: |
-          xlings install gcc@15.1 -y
+          xlings install --verbose
+          xmake --version
+          gcc --version
+          cc --version
 
       - name: Build
         run: |
@@ -50,26 +50,34 @@ jobs:
           xmake -y -vv -j$(nproc)
 
       - name: Test
-        run: xmake run templates_test
+        run: xmake run primitives_test
 
       - name: Run examples
         run: xmake run basic
 
   build-macos:
-    runs-on: macos-14
+    runs-on: macos-15
     timeout-minutes: 20
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Install dependencies
-        run: brew install xmake llvm@20
-
-      - name: Build
+      - name: Install Xlings
+        env:
+          XLINGS_NON_INTERACTIVE: 1
         run: |
-          export PATH=/opt/homebrew/opt/llvm@20/bin:$PATH
-          xmake f --toolchain=llvm --sdk=/opt/homebrew/opt/llvm@20 -m release -y -vv
-          xmake -y -vv -j$(sysctl -n hw.ncpu)
+          curl -fsSL https://d2learn.org/xlings-install.sh | bash
+          echo "PATH=$HOME/.xlings/subos/current/bin:$PATH" >> "$GITHUB_ENV"
+
+      - name: Install Project Dependencies via Xlings
+        run: |
+          xlings install
+          clang --version
+
+      - name: Build with xmake
+        run: |
+          xmake f -m release --toolchain=llvm -vv -y
+          xmake -j$(nproc)
 
   build-windows:
     runs-on: windows-latest
@@ -90,7 +98,7 @@ jobs:
           xmake -y -vv -j$env:NUMBER_OF_PROCESSORS
 
       - name: Test
-        run: xmake run templates_test
+        run: xmake run primitives_test
 
       - name: Run examples
         run: xmake run basic

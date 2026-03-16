@@ -1,0 +1,9 @@
+{
+  "workspace": {
+    "cmake": "4.0.2",
+    "ninja": "1.12.1",
+    "xmake": "3.0.7",
+    "gcc": { "linux": "15.1.0" },
+    "llvm": { "macosx": "20" }
+  }
+}
