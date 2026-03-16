@@ -72,20 +72,4 @@ template <> struct traits<atomic> {
   static constexpr auto kind = category::concurrency;
 };
 
-template <typename P>
-concept policy_type = traits<P>::enabled;
-
-template <typename P>
-concept value_policy = policy_type<P> && (traits<P>::kind == category::value);
-
-template <typename P>
-concept type_policy = policy_type<P> && (traits<P>::kind == category::type);
-
-template <typename P>
-concept error_policy = policy_type<P> && (traits<P>::kind == category::error);
-
-template <typename P>
-concept concurrency_policy =
-    policy_type<P> && (traits<P>::kind == category::concurrency);
-
 } // namespace mcpplibs::primitives::policy

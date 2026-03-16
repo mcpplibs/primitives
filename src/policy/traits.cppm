@@ -33,6 +33,22 @@ template <typename P> struct traits {
   static constexpr auto kind = static_cast<category>(-1);
 };
 
+template <typename P>
+concept policy_type = traits<P>::enabled;
+
+template <typename P>
+concept value_policy = policy_type<P> && (traits<P>::kind == category::value);
+
+template <typename P>
+concept type_policy = policy_type<P> && (traits<P>::kind == category::type);
+
+template <typename P>
+concept error_policy = policy_type<P> && (traits<P>::kind == category::error);
+
+template <typename P>
+concept concurrency_policy =
+    policy_type<P> && (traits<P>::kind == category::concurrency);
+
 // Customizable priority hooks — users can specialize these templates to
 // change how the library decides which policy wins when multiple are
 // provided. Specializations live in implementation or user code.
