@@ -7,6 +7,34 @@ export module mcpplibs.primitives.policy.utility;
 import mcpplibs.primitives.policy.traits;
 import mcpplibs.primitives.policy.impl;
 
+namespace mcpplibs::primitives::policy::details {
+
+template <typename T, typename... Ts> struct contains : std::false_type {};
+template <typename T, typename Head, typename... Tail>
+struct contains<T, Head, Tail...>
+    : std::conditional_t<std::is_same_v<T, Head>, std::true_type,
+                         contains<T, Tail...>> {};
+
+template <typename Default, typename PriorityTuple, typename... Ps>
+struct pick_first_from_priority_impl;
+
+template <typename Default, typename FirstPriority, typename... RestPriorities,
+          typename... Ps>
+struct pick_first_from_priority_impl<
+    Default, std::tuple<FirstPriority, RestPriorities...>, Ps...> {
+  using type = std::conditional_t<
+      contains<FirstPriority, Ps...>::value, FirstPriority,
+      typename pick_first_from_priority_impl<
+          Default, std::tuple<RestPriorities...>, Ps...>::type>;
+};
+
+template <typename Default, typename... Ps>
+struct pick_first_from_priority_impl<Default, std::tuple<>, Ps...> {
+  using type = Default;
+};
+
+} // namespace mcpplibs::primitives::policy::details
+
 export namespace mcpplibs::primitives::policy {
 
 // Users can specialize these templates to customize policy selection order.
@@ -39,33 +67,6 @@ template <> struct priority_error<void> {
 template <> struct priority_concurrency<void> {
   using type = std::tuple<atomic, single_thread>;
 };
-
-namespace details {
-template <typename T, typename... Ts> struct contains : std::false_type {};
-template <typename T, typename Head, typename... Tail>
-struct contains<T, Head, Tail...>
-    : std::conditional_t<std::is_same_v<T, Head>, std::true_type,
-                         contains<T, Tail...>> {};
-
-template <typename Default, typename PriorityTuple, typename... Ps>
-struct pick_first_from_priority_impl;
-
-template <typename Default, typename FirstPriority, typename... RestPriorities,
-          typename... Ps>
-struct pick_first_from_priority_impl<
-    Default, std::tuple<FirstPriority, RestPriorities...>, Ps...> {
-  using type = std::conditional_t<
-      contains<FirstPriority, Ps...>::value, FirstPriority,
-      typename pick_first_from_priority_impl<
-          Default, std::tuple<RestPriorities...>, Ps...>::type>;
-};
-
-template <typename Default, typename... Ps>
-struct pick_first_from_priority_impl<Default, std::tuple<>, Ps...> {
-  using type = Default;
-};
-
-} // namespace details
 
 template <typename... Ps> struct common_policies {
   using value_policy = details::pick_first_from_priority_impl<
