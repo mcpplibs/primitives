@@ -106,10 +106,10 @@ template <> struct traits<concurrency::atomic> {
 };
 
 namespace defaults {
-using value = policy::value::checked;
-using type = policy::type::strict;
-using error = policy::error::throwing;
-using concurrency = policy::concurrency::none;
+using value = value::checked;
+using type = type::strict;
+using error = error::throwing;
+using concurrency = concurrency::none;
 } // namespace defaults
 
 namespace details {
