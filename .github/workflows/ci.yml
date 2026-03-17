@@ -34,7 +34,7 @@ jobs:
         env:
           XLINGS_NON_INTERACTIVE: 1
         run: |
-          curl -fsSL https://raw.githubusercontent.com/d2learn/xlings/refs/heads/main/tools/other/quick_install.sh | bash
+          curl -fsSL https://raw.githubusercontent.com/d2learn/xlings/refs/heads/main/tools/other/quick_install.sh | bash -s -- $XLINGS_VERSION
           echo "PATH=$HOME/.xlings/subos/current/bin:$PATH" >> "$GITHUB_ENV"
 
       - name: Install GCC 15.1 with Xlings
@@ -66,7 +66,7 @@ jobs:
         env:
           XLINGS_NON_INTERACTIVE: 1
         run: |
-          curl -fsSL https://d2learn.org/xlings-install.sh | bash
+          curl -fsSL https://raw.githubusercontent.com/d2learn/xlings/refs/heads/main/tools/other/quick_install.sh | bash -s -- $XLINGS_VERSION
           echo "PATH=$HOME/.xlings/subos/current/bin:$PATH" >> "$GITHUB_ENV"
 
       - name: Install Project Dependencies via Xlings
