@@ -16,91 +16,101 @@ import mcpplibs.primitives.underlying.traits;
 
 export namespace mcpplibs::primitives::policy {
 
-struct checked_value {};
-struct unchecked_value {};
-struct saturating_value {};
+namespace value {
+struct checked {};
+struct unchecked {};
+struct saturating {};
+} // namespace value
 
-struct strict_type {};
-struct category_compatible_type {};
-struct transparent_type {};
+namespace type {
+struct strict {};
+struct compatible {};
+struct transparent {};
+} // namespace type
 
-struct throw_error {};
-struct expected_error {};
-struct terminate_error {};
+namespace error {
+struct throwing {};
+struct expected {};
+struct terminate {};
+} // namespace error
 
-struct single_thread {};
+namespace concurrency {
+struct none {};
 struct atomic {};
+} // namespace concurrency
 
-template <> struct traits<checked_value> {
-  using policy_type = checked_value;
+template <> struct traits<value::checked> {
+  using policy_type = value::checked;
   static constexpr bool enabled = true;
   static constexpr auto kind = category::value;
 };
 
-template <> struct traits<unchecked_value> {
-  using policy_type = unchecked_value;
+template <> struct traits<value::unchecked> {
+  using policy_type = value::unchecked;
   static constexpr bool enabled = true;
   static constexpr auto kind = category::value;
 };
 
-template <> struct traits<saturating_value> {
-  using policy_type = saturating_value;
+template <> struct traits<value::saturating> {
+  using policy_type = value::saturating;
   static constexpr bool enabled = true;
   static constexpr auto kind = category::value;
 };
 
-template <> struct traits<strict_type> {
-  using policy_type = strict_type;
+template <> struct traits<type::strict> {
+  using policy_type = type::strict;
   static constexpr bool enabled = true;
   static constexpr auto kind = category::type;
 };
 
-template <> struct traits<category_compatible_type> {
-  using policy_type = category_compatible_type;
+template <> struct traits<type::compatible> {
+  using policy_type = type::compatible;
   static constexpr bool enabled = true;
   static constexpr auto kind = category::type;
 };
 
-template <> struct traits<transparent_type> {
-  using policy_type = transparent_type;
+template <> struct traits<type::transparent> {
+  using policy_type = type::transparent;
   static constexpr bool enabled = true;
   static constexpr auto kind = category::type;
 };
 
-template <> struct traits<throw_error> {
-  using policy_type = throw_error;
+template <> struct traits<error::throwing> {
+  using policy_type = error::throwing;
   static constexpr bool enabled = true;
   static constexpr auto kind = category::error;
 };
 
-template <> struct traits<expected_error> {
-  using policy_type = expected_error;
+template <> struct traits<error::expected> {
+  using policy_type = error::expected;
   static constexpr bool enabled = true;
   static constexpr auto kind = category::error;
 };
 
-template <> struct traits<terminate_error> {
-  using policy_type = terminate_error;
+template <> struct traits<error::terminate> {
+  using policy_type = error::terminate;
   static constexpr bool enabled = true;
   static constexpr auto kind = category::error;
 };
 
-template <> struct traits<single_thread> {
-  using policy_type = single_thread;
+template <> struct traits<concurrency::none> {
+  using policy_type = concurrency::none;
   static constexpr bool enabled = true;
   static constexpr auto kind = category::concurrency;
 };
 
-template <> struct traits<atomic> {
-  using policy_type = atomic;
+template <> struct traits<concurrency::atomic> {
+  using policy_type = concurrency::atomic;
   static constexpr bool enabled = true;
   static constexpr auto kind = category::concurrency;
 };
 
-using default_value = checked_value;
-using default_type = strict_type;
-using default_error = throw_error;
-using default_concurrency = single_thread;
+namespace defaults {
+using value = policy::value::checked;
+using type = policy::type::strict;
+using error = policy::error::throwing;
+using concurrency = policy::concurrency::none;
+} // namespace defaults
 
 namespace details {
 
@@ -120,7 +130,7 @@ inline constexpr bool rejects_arithmetic_for_boolean_or_character_v =
 
 // Default protocol specializations.
 template <operations::operation OpTag, typename LhsRep, typename RhsRep>
-struct type::handler<strict_type, OpTag, LhsRep, RhsRep> {
+struct type::handler<type::strict, OpTag, LhsRep, RhsRep> {
   static constexpr bool enabled = true;
   static constexpr bool allowed =
       std::same_as<LhsRep, RhsRep> &&
@@ -135,7 +145,7 @@ struct type::handler<strict_type, OpTag, LhsRep, RhsRep> {
 };
 
 template <operations::operation OpTag, typename LhsRep, typename RhsRep>
-struct type::handler<category_compatible_type, OpTag, LhsRep, RhsRep> {
+struct type::handler<type::compatible, OpTag, LhsRep, RhsRep> {
   static constexpr bool enabled = true;
   static constexpr bool allowed =
       std::is_arithmetic_v<LhsRep> && std::is_arithmetic_v<RhsRep> &&
@@ -151,7 +161,7 @@ struct type::handler<category_compatible_type, OpTag, LhsRep, RhsRep> {
 };
 
 template <operations::operation OpTag, typename LhsRep, typename RhsRep>
-struct type::handler<transparent_type, OpTag, LhsRep, RhsRep> {
+struct type::handler<type::transparent, OpTag, LhsRep, RhsRep> {
   static constexpr bool enabled = true;
   static constexpr bool allowed =
       !details::rejects_arithmetic_for_boolean_or_character_v<OpTag, LhsRep,
@@ -162,7 +172,7 @@ struct type::handler<transparent_type, OpTag, LhsRep, RhsRep> {
 
 template <operations::operation OpTag, typename CommonRep,
           typename ErrorPayload>
-struct concurrency::handler<single_thread, OpTag, CommonRep, ErrorPayload> {
+struct concurrency::handler<concurrency::none, OpTag, CommonRep, ErrorPayload> {
   static constexpr bool enabled = true;
   static constexpr bool requires_external_sync = false;
   using injection_type = concurrency::injection;
@@ -175,7 +185,8 @@ struct concurrency::handler<single_thread, OpTag, CommonRep, ErrorPayload> {
 
 template <operations::operation OpTag, typename CommonRep,
           typename ErrorPayload>
-struct concurrency::handler<atomic, OpTag, CommonRep, ErrorPayload> {
+struct concurrency::handler<concurrency::atomic, OpTag, CommonRep,
+                            ErrorPayload> {
   static constexpr bool enabled = true;
   static constexpr bool requires_external_sync = true;
   using injection_type = concurrency::injection;
@@ -191,7 +202,7 @@ struct concurrency::handler<atomic, OpTag, CommonRep, ErrorPayload> {
 
 template <operations::operation OpTag, typename CommonRep,
           typename ErrorPayload>
-struct value::handler<checked_value, OpTag, CommonRep, ErrorPayload> {
+struct value::handler<value::checked, OpTag, CommonRep, ErrorPayload> {
   static constexpr bool enabled = true;
   static constexpr bool may_adjust_value = false;
   using decision_type = value::decision<CommonRep>;
@@ -206,7 +217,7 @@ struct value::handler<checked_value, OpTag, CommonRep, ErrorPayload> {
 
 template <operations::operation OpTag, typename CommonRep,
           typename ErrorPayload>
-struct value::handler<unchecked_value, OpTag, CommonRep, ErrorPayload> {
+struct value::handler<value::unchecked, OpTag, CommonRep, ErrorPayload> {
   static constexpr bool enabled = true;
   static constexpr bool may_adjust_value = false;
   using decision_type = value::decision<CommonRep>;
@@ -221,7 +232,7 @@ struct value::handler<unchecked_value, OpTag, CommonRep, ErrorPayload> {
 
 template <operations::operation OpTag, typename CommonRep,
           typename ErrorPayload>
-struct value::handler<saturating_value, OpTag, CommonRep, ErrorPayload> {
+struct value::handler<value::saturating, OpTag, CommonRep, ErrorPayload> {
   static constexpr bool enabled = true;
   static constexpr bool may_adjust_value = true;
   using decision_type = value::decision<CommonRep>;
@@ -248,7 +259,7 @@ constexpr auto to_error_payload(error::kind kind) -> ErrorPayload {
 
 template <operations::operation OpTag, typename CommonRep,
           typename ErrorPayload>
-struct error::handler<throw_error, OpTag, CommonRep, ErrorPayload> {
+struct error::handler<error::throwing, OpTag, CommonRep, ErrorPayload> {
   static constexpr bool enabled = true;
   static constexpr bool converts_to_expected = true;
   using request_type = error::request<CommonRep>;
@@ -261,7 +272,7 @@ struct error::handler<throw_error, OpTag, CommonRep, ErrorPayload> {
 
 template <operations::operation OpTag, typename CommonRep,
           typename ErrorPayload>
-struct error::handler<expected_error, OpTag, CommonRep, ErrorPayload> {
+struct error::handler<error::expected, OpTag, CommonRep, ErrorPayload> {
   static constexpr bool enabled = true;
   static constexpr bool converts_to_expected = true;
   using request_type = error::request<CommonRep>;
@@ -275,7 +286,7 @@ struct error::handler<expected_error, OpTag, CommonRep, ErrorPayload> {
 
 template <operations::operation OpTag, typename CommonRep,
           typename ErrorPayload>
-struct error::handler<terminate_error, OpTag, CommonRep, ErrorPayload> {
+struct error::handler<error::terminate, OpTag, CommonRep, ErrorPayload> {
   static constexpr bool enabled = true;
   static constexpr bool converts_to_expected = false;
   using request_type = error::request<CommonRep>;

@@ -381,7 +381,7 @@ struct op_binding {
 };
 
 template <typename CommonRep>
-struct op_binding<Addition, policy::checked_value, CommonRep> {
+struct op_binding<Addition, policy::value::checked, CommonRep> {
   static constexpr bool enabled = true;
 
   static constexpr auto apply(CommonRep lhs, CommonRep rhs)
@@ -396,7 +396,7 @@ struct op_binding<Addition, policy::checked_value, CommonRep> {
 };
 
 template <typename CommonRep>
-struct op_binding<Subtraction, policy::checked_value, CommonRep> {
+struct op_binding<Subtraction, policy::value::checked, CommonRep> {
   static constexpr bool enabled = true;
 
   static constexpr auto apply(CommonRep lhs, CommonRep rhs)
@@ -411,7 +411,7 @@ struct op_binding<Subtraction, policy::checked_value, CommonRep> {
 };
 
 template <typename CommonRep>
-struct op_binding<Multiplication, policy::checked_value, CommonRep> {
+struct op_binding<Multiplication, policy::value::checked, CommonRep> {
   static constexpr bool enabled = true;
 
   static constexpr auto apply(CommonRep lhs, CommonRep rhs)
@@ -426,7 +426,7 @@ struct op_binding<Multiplication, policy::checked_value, CommonRep> {
 };
 
 template <typename CommonRep>
-struct op_binding<Division, policy::checked_value, CommonRep> {
+struct op_binding<Division, policy::value::checked, CommonRep> {
   static constexpr bool enabled = true;
 
   static constexpr auto apply(CommonRep lhs, CommonRep rhs)
@@ -441,7 +441,7 @@ struct op_binding<Division, policy::checked_value, CommonRep> {
 };
 
 template <typename CommonRep>
-struct op_binding<Addition, policy::unchecked_value, CommonRep> {
+struct op_binding<Addition, policy::value::unchecked, CommonRep> {
   static constexpr bool enabled = true;
 
   static constexpr auto apply(CommonRep lhs, CommonRep rhs)
@@ -451,7 +451,7 @@ struct op_binding<Addition, policy::unchecked_value, CommonRep> {
 };
 
 template <typename CommonRep>
-struct op_binding<Subtraction, policy::unchecked_value, CommonRep> {
+struct op_binding<Subtraction, policy::value::unchecked, CommonRep> {
   static constexpr bool enabled = true;
 
   static constexpr auto apply(CommonRep lhs, CommonRep rhs)
@@ -461,7 +461,7 @@ struct op_binding<Subtraction, policy::unchecked_value, CommonRep> {
 };
 
 template <typename CommonRep>
-struct op_binding<Multiplication, policy::unchecked_value, CommonRep> {
+struct op_binding<Multiplication, policy::value::unchecked, CommonRep> {
   static constexpr bool enabled = true;
 
   static constexpr auto apply(CommonRep lhs, CommonRep rhs)
@@ -471,7 +471,7 @@ struct op_binding<Multiplication, policy::unchecked_value, CommonRep> {
 };
 
 template <typename CommonRep>
-struct op_binding<Division, policy::unchecked_value, CommonRep> {
+struct op_binding<Division, policy::value::unchecked, CommonRep> {
   static constexpr bool enabled = true;
 
   static constexpr auto apply(CommonRep lhs, CommonRep rhs)
@@ -481,7 +481,7 @@ struct op_binding<Division, policy::unchecked_value, CommonRep> {
 };
 
 template <typename CommonRep>
-struct op_binding<Addition, policy::saturating_value, CommonRep> {
+struct op_binding<Addition, policy::value::saturating, CommonRep> {
   static constexpr bool enabled = true;
 
   static constexpr auto apply(CommonRep lhs, CommonRep rhs)
@@ -498,7 +498,7 @@ struct op_binding<Addition, policy::saturating_value, CommonRep> {
 };
 
 template <typename CommonRep>
-struct op_binding<Subtraction, policy::saturating_value, CommonRep> {
+struct op_binding<Subtraction, policy::value::saturating, CommonRep> {
   static constexpr bool enabled = true;
 
   static constexpr auto apply(CommonRep lhs, CommonRep rhs)
@@ -515,7 +515,7 @@ struct op_binding<Subtraction, policy::saturating_value, CommonRep> {
 };
 
 template <typename CommonRep>
-struct op_binding<Multiplication, policy::saturating_value, CommonRep> {
+struct op_binding<Multiplication, policy::value::saturating, CommonRep> {
   static constexpr bool enabled = true;
 
   static constexpr auto apply(CommonRep lhs, CommonRep rhs)
@@ -532,7 +532,7 @@ struct op_binding<Multiplication, policy::saturating_value, CommonRep> {
 };
 
 template <typename CommonRep>
-struct op_binding<Division, policy::saturating_value, CommonRep> {
+struct op_binding<Division, policy::value::saturating, CommonRep> {
   static constexpr bool enabled = true;
 
   static constexpr auto apply(CommonRep lhs, CommonRep rhs)
@@ -555,7 +555,7 @@ struct op_binding<Division, policy::saturating_value, CommonRep> {
 };
 
 template <typename CommonRep>
-struct op_binding<Equal, policy::checked_value, CommonRep> {
+struct op_binding<Equal, policy::value::checked, CommonRep> {
   static constexpr bool enabled = true;
 
   static constexpr auto apply(CommonRep lhs, CommonRep rhs)
@@ -565,7 +565,7 @@ struct op_binding<Equal, policy::checked_value, CommonRep> {
 };
 
 template <typename CommonRep>
-struct op_binding<Equal, policy::unchecked_value, CommonRep> {
+struct op_binding<Equal, policy::value::unchecked, CommonRep> {
   static constexpr bool enabled = true;
 
   static constexpr auto apply(CommonRep lhs, CommonRep rhs)
@@ -575,7 +575,7 @@ struct op_binding<Equal, policy::unchecked_value, CommonRep> {
 };
 
 template <typename CommonRep>
-struct op_binding<Equal, policy::saturating_value, CommonRep> {
+struct op_binding<Equal, policy::value::saturating, CommonRep> {
   static constexpr bool enabled = true;
 
   static constexpr auto apply(CommonRep lhs, CommonRep rhs)
@@ -585,7 +585,7 @@ struct op_binding<Equal, policy::saturating_value, CommonRep> {
 };
 
 template <typename CommonRep>
-struct op_binding<NotEqual, policy::checked_value, CommonRep> {
+struct op_binding<NotEqual, policy::value::checked, CommonRep> {
   static constexpr bool enabled = true;
 
   static constexpr auto apply(CommonRep lhs, CommonRep rhs)
@@ -595,7 +595,7 @@ struct op_binding<NotEqual, policy::checked_value, CommonRep> {
 };
 
 template <typename CommonRep>
-struct op_binding<NotEqual, policy::unchecked_value, CommonRep> {
+struct op_binding<NotEqual, policy::value::unchecked, CommonRep> {
   static constexpr bool enabled = true;
 
   static constexpr auto apply(CommonRep lhs, CommonRep rhs)
@@ -605,7 +605,7 @@ struct op_binding<NotEqual, policy::unchecked_value, CommonRep> {
 };
 
 template <typename CommonRep>
-struct op_binding<NotEqual, policy::saturating_value, CommonRep> {
+struct op_binding<NotEqual, policy::value::saturating, CommonRep> {
   static constexpr bool enabled = true;
 
   static constexpr auto apply(CommonRep lhs, CommonRep rhs)

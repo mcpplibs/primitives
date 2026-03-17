@@ -52,34 +52,33 @@ template <typename = void> struct priority_concurrency {
 };
 
 template <> struct priority_value<void> {
-  using type = std::tuple<checked_value, saturating_value, unchecked_value>;
+  using type = std::tuple<value::checked, value::saturating, value::unchecked>;
 };
 
 template <> struct priority_type<void> {
-  using type =
-      std::tuple<strict_type, category_compatible_type, transparent_type>;
+  using type = std::tuple<type::strict, type::compatible, type::transparent>;
 };
 
 template <> struct priority_error<void> {
-  using type = std::tuple<throw_error, expected_error, terminate_error>;
+  using type = std::tuple<error::throwing, error::expected, error::terminate>;
 };
 
 template <> struct priority_concurrency<void> {
-  using type = std::tuple<atomic, single_thread>;
+  using type = std::tuple<concurrency::atomic, concurrency::none>;
 };
 
 template <typename... Ps> struct common_policies {
   using value_policy = details::pick_first_from_priority_impl<
-      default_value, priority_value<>::type, Ps...>::type;
+      defaults::value, priority_value<>::type, Ps...>::type;
 
   using type_policy = details::pick_first_from_priority_impl<
-      default_type, priority_type<>::type, Ps...>::type;
+      defaults::type, priority_type<>::type, Ps...>::type;
 
   using error_policy = details::pick_first_from_priority_impl<
-      default_error, priority_error<>::type, Ps...>::type;
+      defaults::error, priority_error<>::type, Ps...>::type;
 
   using concurrency_policy = details::pick_first_from_priority_impl<
-      default_concurrency, priority_concurrency<>::type, Ps...>::type;
+      defaults::concurrency, priority_concurrency<>::type, Ps...>::type;
 
   using type =
       std::tuple<value_policy, type_policy, error_policy, concurrency_policy>;
