@@ -132,7 +132,7 @@ constexpr auto dispatch(Lhs const &lhs, Rhs const &rhs)
       !underlying::traits<typename meta::rhs_value_type>::is_valid_rep(
           rhs_rep_raw)) {
     policy::error::request<common_rep> request{};
-    request.kind = policy::error::kind::domain_error;
+    request.code = policy::error::kind::domain_error;
     request.reason = "invalid underlying representation";
     return runtime::resolve_error<typename meta::error_policy, OpTag,
                                   common_rep, ErrorPayload>(request);

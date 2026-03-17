@@ -28,7 +28,7 @@ enum class kind : unsigned char {
 };
 
 template <typename CommonRep> struct request {
-  kind kind = kind::none;
+  kind code = kind::none;
   std::string_view reason{};
   std::optional<CommonRep> lhs_value{};
   std::optional<CommonRep> rhs_value{};

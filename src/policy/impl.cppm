@@ -280,7 +280,7 @@ struct error::handler<error::expected, OpTag, CommonRep, ErrorPayload> {
 
   static constexpr auto resolve(request_type const &request) -> result_type {
     return std::unexpected(
-        details::to_error_payload<ErrorPayload>(request.kind));
+        details::to_error_payload<ErrorPayload>(request.code));
   }
 };
 

@@ -27,7 +27,7 @@ constexpr auto make_error(policy::error::kind kind, char const *reason,
     -> policy::value::decision<CommonRep> {
   policy::value::decision<CommonRep> out{};
   out.has_value = false;
-  out.error.kind = kind;
+  out.error.code = kind;
   out.error.reason = reason;
   out.error.lhs_value = lhs;
   out.error.rhs_value = rhs;
@@ -385,7 +385,7 @@ struct op_binding {
       -> policy::value::decision<CommonRep> {
     policy::value::decision<CommonRep> out{};
     out.has_value = false;
-    out.error.kind = policy::error::kind::unspecified;
+    out.error.code = policy::error::kind::unspecified;
     out.error.reason = "operation binding is not implemented";
     return out;
   }
