@@ -104,15 +104,18 @@
 8. 行为一致性验证：
 9. 四则运算对默认策略与自定义策略均返回 expected。
 10. 失败路径（溢出/除零/不兼容类型）按 error policy 语义编码到 expected 错误值。
-11. 导出稳定性验证：
-12. 通过聚合模块导入可直接访问 policy 协议、operation 分发、primitive 运算。
-13. 运行 tests 与示例构建，确认无回归。
+11. unchecked_value 路径验证：
+12. 不触发 error policy，保持原生算术语义（含 UB 风险）并通过测试明确边界。
+13. 导出稳定性验证：
+14. 通过聚合模块导入可直接访问 policy 协议、operation 分发、primitive 运算。
+15. 运行 tests 与示例构建，确认无回归。
 
 **Decisions**
-- 错误通道：所有运算统一返回 expected。
+- 错误通道：默认路径统一返回 expected。
 - dispatcher 形态：type 协商前移到编译期，运行期固定三层链路 concurrency -> value -> error，不开放顺序重排。
 - 跨底层类型运算：由 type policy 在编译期决定可行性与 common type。
 - value 层职责：判定溢出并决定“本层值修正”或“下放 error 层处理”。
+- unchecked_value 语义：不做错误处理，不调用 error policy，行为尽量贴近原生 C/C++（包含 UB 风险）。
 - 扩展边界：仅开放 policy handler 特化，不开放分发规则。
 - 第一阶段覆盖范围：Addition/Subtraction/Multiplication/Division 全部纳入。
 - In scope：policy 行为协议、operation 分发、primitive 路由、测试与文档。
@@ -121,3 +124,5 @@
 **Further Considerations**
 1. expected 的错误载体类型建议先统一为轻量错误枚举，再逐步演进到可扩展错误域，以减少首版模板复杂度。
 2. type policy 的 common type 规则建议先采用“显式白名单 + static_assert 诊断”，避免首版引入过宽的隐式提升。
+3. 后续可新增“native 快速路径”作为可选 API：当组合为 primitive<unchecked_value, transparent_type, single_thread> 时，提供非 expected 返回通道以最大化贴近原生 C/C++ 性能与行为。
+4. 后续可新增 C API 适配层（extern "C" 薄封装，POD 入参与返回值），内部复用 unchecked/native 路径，优先保障与现有 C 调用约定兼容。

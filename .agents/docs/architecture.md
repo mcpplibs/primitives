@@ -49,6 +49,22 @@ graph TD
 
 ## 命名空间与 API 边界
 
+### 标准库依赖使用方式
+
+由于`import std;`在目前 CMake 的构建系统中属于实验性特性，故使用标准库依赖仍然采用头文件方式。
+使用的预处理指令放于模块源文件的全局模块部分，示例：
+```c++
+module;
+#include <type_traits>
+#include <concepts>
+
+export module mcpplibs.primitives.submodule;
+
+export namespace mcpplibs::primitives::subnamepsace {
+    // Implements
+}
+```
+
 ### 公共 API（导出，稳定承诺）
 
 - `mcpplibs::primitives::std_bool`
@@ -62,7 +78,7 @@ graph TD
 
 ### 内部实现（不导出，不承诺稳定）
 
-- `mcpplibs::primitives::underlying::details::*`
+- `mcpplibs::primitives::**::details::*`
 
 ### 约定
 
