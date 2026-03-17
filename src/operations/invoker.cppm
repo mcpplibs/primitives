@@ -198,7 +198,7 @@ constexpr auto compare_equal(T lhs, T rhs) -> policy::value::decision<T> {
   policy::value::decision<T> out{};
   if constexpr (requires { lhs == rhs; }) {
     out.has_value = true;
-    out.value = static_cast<T>(lhs == rhs);
+    out.value = T{lhs == rhs};
     return out;
   }
 
@@ -212,7 +212,7 @@ constexpr auto compare_not_equal(T lhs, T rhs) -> policy::value::decision<T> {
   policy::value::decision<T> out{};
   if constexpr (requires { lhs != rhs; }) {
     out.has_value = true;
-    out.value = static_cast<T>(lhs != rhs);
+    out.value = T{lhs != rhs};
     return out;
   }
 
