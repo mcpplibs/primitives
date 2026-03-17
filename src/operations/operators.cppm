@@ -65,6 +65,20 @@ constexpr auto div(Lhs const &lhs, Rhs const &rhs)
   return apply<Division, Lhs, Rhs, ErrorPayload>(lhs, rhs);
 }
 
+template <primitive_instance Lhs, primitive_instance Rhs,
+          typename ErrorPayload = policy::runtime_error_kind>
+constexpr auto equal(Lhs const &lhs, Rhs const &rhs)
+    -> primitive_dispatch_result_t<Equal, Lhs, Rhs, ErrorPayload> {
+  return apply<Equal, Lhs, Rhs, ErrorPayload>(lhs, rhs);
+}
+
+template <primitive_instance Lhs, primitive_instance Rhs,
+          typename ErrorPayload = policy::runtime_error_kind>
+constexpr auto not_equal(Lhs const &lhs, Rhs const &rhs)
+    -> primitive_dispatch_result_t<NotEqual, Lhs, Rhs, ErrorPayload> {
+  return apply<NotEqual, Lhs, Rhs, ErrorPayload>(lhs, rhs);
+}
+
 } // namespace mcpplibs::primitives::operations
 
 export namespace mcpplibs::primitives::operators {
@@ -97,6 +111,20 @@ template <operations::primitive_instance Lhs,
 constexpr auto operator/(Lhs const &lhs, Rhs const &rhs)
     -> operations::primitive_dispatch_result_t<operations::Division, Lhs, Rhs> {
   return operations::div(lhs, rhs);
+}
+
+template <operations::primitive_instance Lhs,
+          operations::primitive_instance Rhs>
+constexpr auto operator==(Lhs const &lhs, Rhs const &rhs)
+    -> operations::primitive_dispatch_result_t<operations::Equal, Lhs, Rhs> {
+  return operations::equal(lhs, rhs);
+}
+
+template <operations::primitive_instance Lhs,
+          operations::primitive_instance Rhs>
+constexpr auto operator!=(Lhs const &lhs, Rhs const &rhs)
+    -> operations::primitive_dispatch_result_t<operations::NotEqual, Lhs, Rhs> {
+  return operations::not_equal(lhs, rhs);
 }
 
 } // namespace mcpplibs::primitives::operators
