@@ -8,7 +8,7 @@ import mcpplibs.primitives.primitive.impl;
 import mcpplibs.primitives.policy;
 import mcpplibs.primitives.underlying;
 
-// Internal implementation details — not exported.
+// Internal implementation details - not exported.
 namespace mcpplibs::primitives::traits::details {
 using policy_category = policy::category;
 
