@@ -1,185 +1,338 @@
-#include <limits>
-#include <type_traits>
 #include <gtest/gtest.h>
+#include <type_traits>
+#include <atomic>
+#include <cstdint>
+#include <thread>
+#include <vector>
 
 import mcpplibs.primitives;
 
 using namespace mcpplibs::primitives;
 
-namespace {
+TEST(OperationsTest, AddReturnsExpectedPrimitive) {
+  using lhs_t = primitive<int, policy::value::checked>;
+  using rhs_t = primitive<int, policy::value::checked>;
 
-struct debug_value_policy {};
-struct debug_type_policy {};
-struct debug_error_policy {};
-struct debug_concurrency_policy {};
+  auto const lhs = lhs_t{10};
+  auto const rhs = rhs_t{32};
 
-} // namespace
+  auto const result = operations::add(lhs, rhs);
 
-template <>
-struct policy::traits<debug_value_policy> {
-  using policy_type = debug_value_policy;
-  static constexpr bool enabled = true;
-  static constexpr auto kind = category::value;
-};
-
-template <>
-struct policy::traits<debug_type_policy> {
-  using policy_type = debug_type_policy;
-  static constexpr bool enabled = true;
-  static constexpr auto kind = category::type;
-};
-
-template <>
-struct policy::traits<debug_error_policy> {
-  using policy_type = debug_error_policy;
-  static constexpr bool enabled = true;
-  static constexpr auto kind = category::error;
-};
-
-template <>
-struct policy::traits<debug_concurrency_policy> {
-  using policy_type = debug_concurrency_policy;
-  static constexpr bool enabled = true;
-  static constexpr auto kind =
-      category::concurrency;
-};
-
-template <typename OpTag>
-struct operations::value_policy_behavior<
-    debug_value_policy, OpTag> {
-  template <typename T>
-  static constexpr T add(T lhs, T rhs) noexcept {
-    return static_cast<T>(lhs + rhs + 100);
-  }
-
-  template <typename T>
-  static constexpr T sub(T lhs, T rhs) noexcept {
-    return static_cast<T>(lhs - rhs - 100);
-  }
-
-  template <typename T>
-  static constexpr T mul(T lhs, T rhs) noexcept {
-    return static_cast<T>(lhs * rhs * 2);
-  }
-};
-
-template <typename OpTag>
-struct operations::type_policy_behavior<
-    debug_type_policy, OpTag> {
-  template <typename L, typename R>
-  using result_type = long long;
-
-  template <typename Out, typename In>
-  static constexpr Out cast_lhs(In const &value) noexcept {
-    return static_cast<Out>(value + 1);
-  }
-
-  template <typename Out, typename In>
-  static constexpr Out cast_rhs(In const &value) noexcept {
-    return static_cast<Out>(value + 2);
-  }
-};
-
-template <typename OpTag>
-struct operations::error_policy_behavior<
-    debug_error_policy, OpTag> {
-  template <typename Result, typename Fn>
-  static constexpr Result evaluate(Fn &&fn) noexcept(noexcept(fn())) {
-    return static_cast<Result>(fn() + static_cast<Result>(1000));
-  }
-};
-
-template <typename OpTag>
-struct operations::concurrency_policy_behavior<
-    debug_concurrency_policy, OpTag> {
-  template <typename Fn>
-  static constexpr auto execute(Fn &&fn) noexcept(noexcept(fn()))
-      -> decltype(fn()) {
-    return fn() + 7;
-  }
-};
-
-
-
-template <>
-struct operations::value_policy_behavior<
-    debug_value_policy, operations::add_tag> {
-  template <typename T>
-  static constexpr T add(T lhs, T rhs) noexcept {
-    return static_cast<T>(lhs + rhs + 200);
-  }
-
-  template <typename T>
-  static constexpr T sub(T lhs, T rhs) noexcept {
-    return static_cast<T>(lhs - rhs - 100);
-  }
-
-  template <typename T>
-  static constexpr T mul(T lhs, T rhs) noexcept {
-    return static_cast<T>(lhs * rhs * 2);
-  }
-};
-
-TEST(OperationsTest, UnderlyingOperationsWork) {
-  static_assert(operations::binary_operation<operations::add_tag, int, int>);
-  static_assert(operations::binary_operation<operations::sub_tag, int, int>);
-  static_assert(operations::binary_operation<operations::mul_tag, int, int>);
-
-  EXPECT_EQ(operations::add(2, 3), 5);
-  EXPECT_EQ(operations::sub(9, 4), 5);
-  EXPECT_EQ(operations::mul(3, 4), 12);
+  ASSERT_TRUE(result.has_value());
+  EXPECT_EQ(result->value(), 42);
 }
 
-TEST(OperationsTest, PrimitiveOperationsWork) {
+TEST(OperationsTest, DivisionByZeroReturnsError) {
+  using value_t = primitive<int, policy::value::checked, policy::error::expected>;
+
+  auto const lhs = value_t{100};
+  auto const rhs = value_t{0};
+
+  auto const result = operations::div(lhs, rhs);
+
+  ASSERT_FALSE(result.has_value());
+  EXPECT_EQ(result.error(), policy::error::kind::divide_by_zero);
+}
+
+TEST(OperationsTest, SaturatingAdditionClampsUnsignedOverflow) {
+  using value_t = primitive<std::uint16_t, policy::value::saturating>;
+
+  auto const lhs = value_t{static_cast<std::uint16_t>(65530)};
+  auto const rhs = value_t{static_cast<std::uint16_t>(20)};
+
+  auto const result = operations::add(lhs, rhs);
+
+  ASSERT_TRUE(result.has_value());
+  EXPECT_EQ(result->value(), static_cast<std::uint16_t>(65535));
+}
+
+TEST(OperationsTest, CheckedAdditionReportsUnsignedOverflow) {
+  using value_t =
+      primitive<std::uint16_t, policy::value::checked, policy::error::expected>;
+
+  auto const lhs = value_t{static_cast<std::uint16_t>(65530)};
+  auto const rhs = value_t{static_cast<std::uint16_t>(20)};
+
+  auto const result = operations::add(lhs, rhs);
+
+  ASSERT_FALSE(result.has_value());
+  EXPECT_EQ(result.error(), policy::error::kind::overflow);
+}
+
+TEST(OperationsTest, UncheckedAdditionWrapsUnsignedOverflow) {
+  using value_t =
+      primitive<std::uint16_t, policy::value::unchecked, policy::error::expected>;
+
+  auto const lhs = value_t{static_cast<std::uint16_t>(65530)};
+  auto const rhs = value_t{static_cast<std::uint16_t>(20)};
+
+  auto const result = operations::add(lhs, rhs);
+
+  ASSERT_TRUE(result.has_value());
+  EXPECT_EQ(result->value(), static_cast<std::uint16_t>(14));
+}
+
+TEST(OperationsTest, UncheckedDivisionUsesRawArithmeticWhenValid) {
+  using value_t =
+      primitive<int, policy::value::unchecked, policy::error::expected>;
+
+  auto const lhs = value_t{100};
+  auto const rhs = value_t{4};
+
+  auto const result = operations::div(lhs, rhs);
+
+  ASSERT_TRUE(result.has_value());
+  EXPECT_EQ(result->value(), 25);
+}
+
+TEST(OperationsTest, AtomicPolicyPathReturnsExpectedValue) {
+  using value_t = primitive<int, policy::value::checked, policy::concurrency::atomic,
+                            policy::error::expected>;
+
+  auto const lhs = value_t{12};
+  auto const rhs = value_t{30};
+
+  auto const result = operations::add(lhs, rhs);
+
+  ASSERT_TRUE(result.has_value());
+  EXPECT_EQ(result->value(), 42);
+}
+
+TEST(OperationsTest, AtomicPolicyConcurrentInvocationsRemainConsistent) {
+  using value_t = primitive<int, policy::value::checked, policy::concurrency::atomic,
+                            policy::error::expected>;
+
+  constexpr int kThreadCount = 8;
+  constexpr int kIterationsPerThread = 20000;
+
+  auto const lhs = value_t{12};
+  auto const rhs = value_t{30};
+
+  std::atomic<int> mismatch_count{0};
+  std::atomic<int> error_count{0};
+  std::atomic<bool> start{false};
+
+  std::vector<std::thread> workers;
+  workers.reserve(kThreadCount);
+
+  for (int i = 0; i < kThreadCount; ++i) {
+    workers.emplace_back([&]() {
+      while (!start.load(std::memory_order_acquire)) {
+      }
+
+      for (int n = 0; n < kIterationsPerThread; ++n) {
+        auto const result = operations::add(lhs, rhs);
+        if (!result.has_value()) {
+          error_count.fetch_add(1, std::memory_order_relaxed);
+          continue;
+        }
+
+        if (result->value() != 42) {
+          mismatch_count.fetch_add(1, std::memory_order_relaxed);
+        }
+      }
+    });
+  }
+
+  start.store(true, std::memory_order_release);
+
+  for (auto &worker : workers) {
+    worker.join();
+  }
+
+  EXPECT_EQ(error_count.load(std::memory_order_relaxed), 0);
+  EXPECT_EQ(mismatch_count.load(std::memory_order_relaxed), 0);
+}
+
+TEST(OperationsTest, StrictTypeRejectsMixedTypesAtCompileTime) {
+  using lhs_t = primitive<int, policy::value::checked, policy::type::strict,
+                          policy::error::expected>;
+  using rhs_t = primitive<long long, policy::value::checked, policy::type::strict,
+                          policy::error::expected>;
+
+  using strict_handler =
+      policy::type::handler<policy::type::strict, operations::Addition, int,
+                            long long>;
+  using strict_meta = operations::dispatcher_meta<operations::Addition, lhs_t,
+                                                  rhs_t, policy::error::kind>;
+
+  static_assert(strict_handler::enabled);
+  static_assert(!strict_handler::allowed);
+  static_assert(std::is_same_v<typename strict_meta::common_rep, void>);
+
+  EXPECT_EQ(strict_handler::diagnostic_id, 1u);
+}
+
+TEST(OperationsTest, StrictTypeAllowsSameTypeAtRuntime) {
+  using value_t = primitive<int, policy::value::checked, policy::type::strict,
+                            policy::error::expected>;
+
+  auto const lhs = value_t{19};
+  auto const rhs = value_t{23};
+
+  auto const result = operations::add(lhs, rhs);
+
+  ASSERT_TRUE(result.has_value());
+  EXPECT_EQ(result->value(), 42);
+}
+
+TEST(OperationsTest, BoolUnderlyingRejectsArithmeticOperationsAtCompileTime) {
+  using value_t = primitive<bool, policy::value::checked, policy::type::strict,
+                            policy::error::expected>;
+  using bool_handler = policy::type::handler<policy::type::strict,
+                                             operations::Addition, bool, bool>;
+  using bool_meta = operations::dispatcher_meta<operations::Addition, value_t,
+                                                value_t, policy::error::kind>;
+
+  static_assert(bool_handler::enabled);
+  static_assert(!bool_handler::allowed);
+  static_assert(std::is_same_v<typename bool_meta::common_rep, void>);
+
+  EXPECT_EQ(bool_handler::diagnostic_id, 3u);
+}
+
+TEST(OperationsTest, CharUnderlyingRejectsArithmeticEvenWithTransparentType) {
+  using value_t = primitive<char, policy::value::checked,
+                            policy::type::transparent, policy::error::expected>;
+  using char_handler = policy::type::handler<policy::type::transparent,
+                                             operations::Addition, char, char>;
+  using char_meta = operations::dispatcher_meta<operations::Addition, value_t,
+                                                value_t, policy::error::kind>;
+
+  static_assert(char_handler::enabled);
+  static_assert(!char_handler::allowed);
+  static_assert(std::is_same_v<typename char_meta::common_rep, char>);
+
+  EXPECT_EQ(char_handler::diagnostic_id, 3u);
+}
+
+TEST(OperationsTest, SignedAndUnsignedCharRejectArithmeticAtCompileTime) {
+  using signed_handler =
+      policy::type::handler<policy::type::transparent, operations::Addition,
+                            signed char, signed char>;
+  using unsigned_handler =
+      policy::type::handler<policy::type::transparent, operations::Addition,
+                            unsigned char, unsigned char>;
+
+  static_assert(signed_handler::enabled);
+  static_assert(!signed_handler::allowed);
+  static_assert(unsigned_handler::enabled);
+  static_assert(!unsigned_handler::allowed);
+
+  EXPECT_EQ(signed_handler::diagnostic_id, 3u);
+  EXPECT_EQ(unsigned_handler::diagnostic_id, 3u);
+}
+
+TEST(OperationsTest, BoolUnderlyingAllowsComparisonOperations) {
+  using value_t = primitive<bool, policy::value::checked, policy::type::strict,
+                            policy::error::expected>;
+
+  auto const lhs = value_t{true};
+  auto const rhs = value_t{false};
+
+  auto const eq_result = operations::equal(lhs, rhs);
+  auto const ne_result = operations::not_equal(lhs, rhs);
+
+  ASSERT_TRUE(eq_result.has_value());
+  ASSERT_TRUE(ne_result.has_value());
+  EXPECT_FALSE(eq_result->value());
+  EXPECT_TRUE(ne_result->value());
+}
+
+TEST(OperationsTest, CharUnderlyingAllowsComparisonWithTransparentType) {
+  using value_t = primitive<char, policy::value::checked,
+                            policy::type::transparent, policy::error::expected>;
+
+  auto const lhs = value_t{'a'};
+  auto const rhs = value_t{'a'};
+
+  auto const eq_result = operations::equal(lhs, rhs);
+
+  ASSERT_TRUE(eq_result.has_value());
+  EXPECT_EQ(eq_result->value(), static_cast<char>(1));
+}
+
+TEST(OperationsTest, PrimitiveAliasWorksWithFrameworkOperators) {
   using namespace mcpplibs::primitives::types;
+  using namespace mcpplibs::primitives::operators;
+  using value_t = I32<policy::value::checked, policy::error::expected>;
 
-  using lhs_t = I8<>;
-  using rhs_t = I8<>;
+  auto const lhs = value_t{20};
+  auto const rhs = value_t{22};
 
-  lhs_t lhs{10};
-  rhs_t rhs{5};
+  auto const result = lhs + rhs;
 
-  auto added = operations::add(lhs, rhs);
-  auto subed = operations::sub(lhs, rhs);
-  auto muled = operations::mul(lhs, rhs);
-
-  EXPECT_EQ(added.value(), 15);
-  EXPECT_EQ(subed.value(), 5);
-  EXPECT_EQ(muled.value(), 50);
+  ASSERT_TRUE(result.has_value());
+  EXPECT_EQ(result->value(), 42);
 }
 
-TEST(OperationsTest, PolicyBehaviorTraitsCoverAllPolicyCategories) {
-  EXPECT_EQ((operations::add.operator()<
-                 debug_value_policy, debug_type_policy, debug_error_policy,
-                 debug_concurrency_policy>(2, 3)),
-            1215);
-  EXPECT_EQ((operations::sub.operator()<
-                 debug_value_policy, debug_type_policy, debug_error_policy,
-                 debug_concurrency_policy>(9, 4)),
-            911);
-  EXPECT_EQ((operations::mul.operator()<
-                 debug_value_policy, debug_type_policy, debug_error_policy,
-                 debug_concurrency_policy>(3, 4)),
-            1055);
+TEST(OperationsTest, PrimitiveAliasMixesWithBuiltinArithmeticExplicitly) {
+  using namespace mcpplibs::primitives::types;
+  using namespace mcpplibs::primitives::operators;
+  using value_t = I32<policy::value::checked, policy::error::expected>;
+
+  static_assert(!std::is_convertible_v<value_t, int>);
+
+  auto const lhs = value_t{40};
+  auto const mixed = static_cast<int>(lhs) + 2;
+  EXPECT_EQ(mixed, 42);
+
+  auto const wrapped = value_t{mixed};
+  auto const result = wrapped + value_t{1};
+
+  ASSERT_TRUE(result.has_value());
+  EXPECT_EQ(result->value(), 43);
 }
 
+TEST(OperationsTest, OperatorEqualDelegatesToDispatcher) {
+  using namespace mcpplibs::primitives::operators;
+  using value_t = primitive<int, policy::value::checked, policy::type::strict,
+                            policy::error::expected>;
 
-TEST(OperationsTest, BuiltinPolicyTagsAreSpecialized) {
-  static_assert(std::is_same_v<
-      operations::result_t<operations::add_tag, int, int, policy::strict_type>,
-      int>);
-  static_assert(std::is_same_v<
-      operations::result_t<operations::add_tag, int, double,
-                           policy::transparent_type>,
-      double>);
+  auto const lhs = value_t{7};
+  auto const rhs = value_t{7};
 
-  constexpr int kMax = std::numeric_limits<int>::max();
-  constexpr int kMin = std::numeric_limits<int>::min();
+  auto const result = (lhs == rhs);
 
-  EXPECT_EQ((operations::add.operator()<policy::saturating_value>(kMax, 1)),
-            kMax);
-  EXPECT_EQ((operations::sub.operator()<policy::saturating_value>(kMin, 1)),
-            kMin);
-  EXPECT_EQ((operations::mul.operator()<policy::saturating_value>(kMax, 2)),
-            kMax);
+  ASSERT_TRUE(result.has_value());
+  EXPECT_EQ(result->value(), 1);
+}
+
+TEST(OperationsTest, OperatorPlusDelegatesToDispatcher) {
+  using namespace mcpplibs::primitives::operators;
+  using value_t = primitive<int, policy::value::checked>;
+
+  auto const lhs = value_t{7};
+  auto const rhs = value_t{8};
+
+  auto const result = lhs + rhs;
+
+  ASSERT_TRUE(result.has_value());
+  EXPECT_EQ(result->value(), 15);
+}
+
+TEST(OperationsTest, ThrowErrorPolicyThrowsException) {
+  using value_t = primitive<int, policy::value::checked, policy::error::throwing>;
+
+  auto const lhs = value_t{100};
+  auto const rhs = value_t{0};
+
+  EXPECT_THROW((void)operations::div(lhs, rhs), std::runtime_error);
+}
+
+TEST(OperationsTest, ThrowErrorPolicyExceptionHasReasonMessage) {
+  using value_t = primitive<int, policy::value::checked, policy::error::throwing>;
+
+  auto const lhs = value_t{100};
+  auto const rhs = value_t{0};
+
+  try {
+    (void)operations::div(lhs, rhs);
+    FAIL() << "Expected std::runtime_error to be thrown";
+  } catch (std::runtime_error const &e) {
+    EXPECT_NE(std::string(e.what()).find("division by zero"),
+              std::string::npos);
+  } catch (...) {
+    FAIL() << "Expected std::runtime_error";
+  }
 }

@@ -1,141 +1,130 @@
 module;
-#include <type_traits>
+
+#include <expected>
+
 export module mcpplibs.primitives.operations.operators;
 
-import mcpplibs.primitives.underlying;
-import mcpplibs.primitives.policy;
-import mcpplibs.primitives.primitive;
+import mcpplibs.primitives.operations.traits;
+import mcpplibs.primitives.operations.dispatcher;
 import mcpplibs.primitives.operations.impl;
+import mcpplibs.primitives.primitive.impl;
+import mcpplibs.primitives.primitive.traits;
+import mcpplibs.primitives.policy.handler;
+
+export namespace mcpplibs::primitives::operations {
+
+template <operation OpTag, primitive_instance Lhs, primitive_instance Rhs,
+          typename ErrorPayload = policy::error::kind>
+using primitive_dispatch_result_t = std::expected<
+    typename mcpplibs::primitives::traits::make_primitive_t<
+        typename dispatcher_meta<OpTag, Lhs, Rhs, ErrorPayload>::common_rep,
+        typename mcpplibs::primitives::traits::primitive_traits<Lhs>::policies>,
+    ErrorPayload>;
+
+template <operation OpTag, primitive_instance Lhs, primitive_instance Rhs,
+          typename ErrorPayload = policy::error::kind>
+constexpr auto apply(Lhs const &lhs, Rhs const &rhs)
+    -> primitive_dispatch_result_t<OpTag, Lhs, Rhs, ErrorPayload> {
+  using result_primitive =
+      typename primitive_dispatch_result_t<OpTag, Lhs, Rhs,
+                                           ErrorPayload>::value_type;
+
+  auto const raw = dispatch<OpTag, Lhs, Rhs, ErrorPayload>(lhs, rhs);
+  if (!raw.has_value()) {
+    return std::unexpected(raw.error());
+  }
+
+  return result_primitive{*raw};
+}
+
+template <primitive_instance Lhs, primitive_instance Rhs,
+          typename ErrorPayload = policy::error::kind>
+constexpr auto add(Lhs const &lhs, Rhs const &rhs)
+    -> primitive_dispatch_result_t<Addition, Lhs, Rhs, ErrorPayload> {
+  return apply<Addition, Lhs, Rhs, ErrorPayload>(lhs, rhs);
+}
+
+template <primitive_instance Lhs, primitive_instance Rhs,
+          typename ErrorPayload = policy::error::kind>
+constexpr auto sub(Lhs const &lhs, Rhs const &rhs)
+    -> primitive_dispatch_result_t<Subtraction, Lhs, Rhs, ErrorPayload> {
+  return apply<Subtraction, Lhs, Rhs, ErrorPayload>(lhs, rhs);
+}
+
+template <primitive_instance Lhs, primitive_instance Rhs,
+          typename ErrorPayload = policy::error::kind>
+constexpr auto mul(Lhs const &lhs, Rhs const &rhs)
+    -> primitive_dispatch_result_t<Multiplication, Lhs, Rhs, ErrorPayload> {
+  return apply<Multiplication, Lhs, Rhs, ErrorPayload>(lhs, rhs);
+}
+
+template <primitive_instance Lhs, primitive_instance Rhs,
+          typename ErrorPayload = policy::error::kind>
+constexpr auto div(Lhs const &lhs, Rhs const &rhs)
+    -> primitive_dispatch_result_t<Division, Lhs, Rhs, ErrorPayload> {
+  return apply<Division, Lhs, Rhs, ErrorPayload>(lhs, rhs);
+}
+
+template <primitive_instance Lhs, primitive_instance Rhs,
+          typename ErrorPayload = policy::error::kind>
+constexpr auto equal(Lhs const &lhs, Rhs const &rhs)
+    -> primitive_dispatch_result_t<Equal, Lhs, Rhs, ErrorPayload> {
+  return apply<Equal, Lhs, Rhs, ErrorPayload>(lhs, rhs);
+}
+
+template <primitive_instance Lhs, primitive_instance Rhs,
+          typename ErrorPayload = policy::error::kind>
+constexpr auto not_equal(Lhs const &lhs, Rhs const &rhs)
+    -> primitive_dispatch_result_t<NotEqual, Lhs, Rhs, ErrorPayload> {
+  return apply<NotEqual, Lhs, Rhs, ErrorPayload>(lhs, rhs);
+}
+
+} // namespace mcpplibs::primitives::operations
 
 export namespace mcpplibs::primitives::operators {
-template <typename T, policy::policy_type... Policies>
-  requires std_numeric<T>
-constexpr auto operator~(const primitive<T, Policies...> &p) {
-  // Placeholder: unary bitwise NOT not yet forwarded to operations layer.
-  // TODO: forward to operations::bit_not when implemented.
-  return primitives::primitive<T, Policies...>(~p.value());
-}
 
-template <typename T, policy::policy_type... Policies>
-  requires std_numeric<T>
-constexpr auto operator+(const primitive<T, Policies...> &p) {
-  // Placeholder: unary plus not yet forwarded to operations layer.
-  // TODO: forward to operations::unary_plus when implemented.
-  return primitives::primitive<T, Policies...>(+p.value());
-}
-
-template <typename T, policy::policy_type... Policies>
-  requires std_numeric<T>
-constexpr auto operator-(const primitive<T, Policies...> &p) {
-  // Placeholder: unary minus not yet forwarded to operations layer.
-  // TODO: forward to operations::unary_neg when implemented.
-  return primitives::primitive<T, Policies...>(-p.value());
-}
-
-template <typename LHS, typename RHS, policy::policy_type... PoliciesLHS,
-          policy::policy_type... PoliciesRHS>
-  requires std_numeric<LHS> && std_numeric<RHS>
-constexpr auto operator+(const primitive<LHS, PoliciesLHS...> &lhs,
-                         const primitive<RHS, PoliciesRHS...> &rhs) {
+template <operations::primitive_instance Lhs,
+          operations::primitive_instance Rhs>
+constexpr auto operator+(Lhs const &lhs, Rhs const &rhs)
+    -> operations::primitive_dispatch_result_t<operations::Addition, Lhs, Rhs> {
   return operations::add(lhs, rhs);
 }
 
-template <typename LHS, typename RHS, policy::policy_type... PoliciesLHS,
-          policy::policy_type... PoliciesRHS>
-  requires std_numeric<LHS> && std_numeric<RHS>
-constexpr auto operator-(const primitive<LHS, PoliciesLHS...> &lhs,
-                         const primitive<RHS, PoliciesRHS...> &rhs) {
+template <operations::primitive_instance Lhs,
+          operations::primitive_instance Rhs>
+constexpr auto operator-(Lhs const &lhs, Rhs const &rhs)
+    -> operations::primitive_dispatch_result_t<operations::Subtraction, Lhs,
+                                               Rhs> {
   return operations::sub(lhs, rhs);
 }
 
-template <std_numeric LHS, std_numeric RHS, policy::policy_type... PoliciesLHS,
-          policy::policy_type... PoliciesRHS>
-constexpr auto operator*(const primitive<LHS, PoliciesLHS...> &lhs,
-                         const primitive<RHS, PoliciesRHS...> &rhs) {
+template <operations::primitive_instance Lhs,
+          operations::primitive_instance Rhs>
+constexpr auto operator*(Lhs const &lhs, Rhs const &rhs)
+    -> operations::primitive_dispatch_result_t<operations::Multiplication, Lhs,
+                                               Rhs> {
   return operations::mul(lhs, rhs);
 }
 
-template <std_numeric LHS, std_numeric RHS, policy::policy_type... PoliciesLHS,
-          policy::policy_type... PoliciesRHS>
-constexpr auto operator/(const primitive<LHS, PoliciesLHS...> &lhs,
-                         const primitive<RHS, PoliciesRHS...> &rhs) {
-  // Placeholder: division not yet forwarded to operations layer.
-  // TODO: forward to operations::div when implemented (handle policies).
-  using result_type = std::common_type_t<LHS, RHS>;
-  return primitives::primitive<result_type, PoliciesLHS..., PoliciesRHS...>(
-      static_cast<result_type>(lhs.value()) /
-      static_cast<result_type>(rhs.value()));
+template <operations::primitive_instance Lhs,
+          operations::primitive_instance Rhs>
+constexpr auto operator/(Lhs const &lhs, Rhs const &rhs)
+    -> operations::primitive_dispatch_result_t<operations::Division, Lhs, Rhs> {
+  return operations::div(lhs, rhs);
 }
 
-template <std_numeric LHS, std_numeric RHS, policy::policy_type... PoliciesLHS,
-          policy::policy_type... PoliciesRHS>
-constexpr auto operator%(const primitive<LHS, PoliciesLHS...> &lhs,
-                         const primitive<RHS, PoliciesRHS...> &rhs) {
-  // Placeholder: modulo not yet forwarded to operations layer.
-  // TODO: forward to operations::mod when implemented (handle policies).
-  using result_type = std::common_type_t<LHS, RHS>;
-  return primitives::primitive<result_type, PoliciesLHS..., PoliciesRHS...>(
-      static_cast<result_type>(lhs.value()) %
-      static_cast<result_type>(rhs.value()));
+template <operations::primitive_instance Lhs,
+          operations::primitive_instance Rhs>
+constexpr auto operator==(Lhs const &lhs, Rhs const &rhs)
+    -> operations::primitive_dispatch_result_t<operations::Equal, Lhs, Rhs> {
+  return operations::equal(lhs, rhs);
 }
 
-template <std_numeric LHS, std_numeric RHS, policy::policy_type... PoliciesLHS,
-          policy::policy_type... PoliciesRHS>
-constexpr auto operator<<(const primitive<LHS, PoliciesLHS...> &lhs,
-                          const primitive<RHS, PoliciesRHS...> &rhs) {
-  // Placeholder: left shift not yet forwarded to operations layer.
-  // TODO: forward to operations::shl when implemented (handle policies).
-  using result_type = std::common_type_t<LHS, RHS>;
-  return primitives::primitive<result_type, PoliciesLHS..., PoliciesRHS...>(
-      static_cast<result_type>(lhs.value())
-      << static_cast<result_type>(rhs.value()));
+template <operations::primitive_instance Lhs,
+          operations::primitive_instance Rhs>
+constexpr auto operator!=(Lhs const &lhs, Rhs const &rhs)
+    -> operations::primitive_dispatch_result_t<operations::NotEqual, Lhs, Rhs> {
+  return operations::not_equal(lhs, rhs);
 }
 
-template <std_numeric LHS, std_numeric RHS, policy::policy_type... PoliciesLHS,
-          policy::policy_type... PoliciesRHS>
-constexpr auto operator>>(const primitive<LHS, PoliciesLHS...> &lhs,
-                          const primitive<RHS, PoliciesRHS...> &rhs) {
-  // Placeholder: right shift not yet forwarded to operations layer.
-  // TODO: forward to operations::shr when implemented (handle policies).
-  using result_type = std::common_type_t<LHS, RHS>;
-  return primitives::primitive<result_type, PoliciesLHS..., PoliciesRHS...>(
-      static_cast<result_type>(lhs.value()) >>
-      static_cast<result_type>(rhs.value()));
-}
-
-template <std_numeric LHS, std_numeric RHS, policy::policy_type... PoliciesLHS,
-          policy::policy_type... PoliciesRHS>
-constexpr auto operator&(const primitive<LHS, PoliciesLHS...> &lhs,
-                         const primitive<RHS, PoliciesRHS...> &rhs) {
-  // Placeholder: bitwise AND not yet forwarded to operations layer.
-  // TODO: forward to operations::bit_and when implemented (handle policies).
-  using result_type = std::common_type_t<LHS, RHS>;
-  return primitives::primitive<result_type, PoliciesLHS..., PoliciesRHS...>(
-      static_cast<result_type>(lhs.value()) &
-      static_cast<result_type>(rhs.value()));
-}
-
-template <std_numeric LHS, std_numeric RHS, policy::policy_type... PoliciesLHS,
-          policy::policy_type... PoliciesRHS>
-constexpr auto operator|(const primitive<LHS, PoliciesLHS...> &lhs,
-                         const primitive<RHS, PoliciesRHS...> &rhs) {
-  // Placeholder: bitwise OR not yet forwarded to operations layer.
-  // TODO: forward to operations::bit_or when implemented (handle policies).
-  using result_type = std::common_type_t<LHS, RHS>;
-  return primitives::primitive<result_type, PoliciesLHS..., PoliciesRHS...>(
-      static_cast<result_type>(lhs.value()) |
-      static_cast<result_type>(rhs.value()));
-}
-
-template <std_numeric LHS, std_numeric RHS, policy::policy_type... PoliciesLHS,
-          policy::policy_type... PoliciesRHS>
-constexpr auto operator^(const primitive<LHS, PoliciesLHS...> &lhs,
-                         const primitive<RHS, PoliciesRHS...> &rhs) {
-  // Placeholder: bitwise XOR not yet forwarded to operations layer.
-  // TODO: forward to operations::bit_xor when implemented (handle policies).
-  using result_type = std::common_type_t<LHS, RHS>;
-  return primitives::primitive<result_type, PoliciesLHS..., PoliciesRHS...>(
-      static_cast<result_type>(lhs.value()) ^
-      static_cast<result_type>(rhs.value()));
-}
 } // namespace mcpplibs::primitives::operators

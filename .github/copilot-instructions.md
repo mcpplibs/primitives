@@ -12,6 +12,11 @@
 - 技能目录: `../.agents/skills/`
 - mcpp-style-ref: `../.agents/skills/mcpp-style-ref/SKILL.md`
 
+## 正在进行中的计划
+
+- 计划目录：`../.github/prompts/`
+- 当前计划：`../.github/prompts/plan-policyBehaviorProtocol.prompt.md`
+
 ## 说明
 
 - 新增或调整 Copilot 约束时，优先更新 `.agents/docs` 和 `.agents/skills`。

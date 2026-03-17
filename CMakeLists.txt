@@ -6,7 +6,7 @@ set(CMAKE_CXX_STANDARD 23)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
-project(mcpplibs-primitives VERSION 0.1.0 LANGUAGES CXX)
+project(mcpplibs-primitives VERSION 0.2.0 LANGUAGES CXX)
 
 find_package(Threads REQUIRED)
 
@@ -36,7 +36,7 @@ endif()
 # Library
 add_library(mcpplibs-primitives STATIC)
 
-file(GLOB_RECURSE CXX_MODULE_FILES
+file(GLOB_RECURSE CXX_MODULE_FILES CONFIGURE_DEPENDS
     src/*.cppm
 )
 
@@ -60,8 +60,7 @@ target_include_directories(mcpplibs-primitives PUBLIC
 )
 
 # Examples
-add_executable(basic examples/basic.cpp)
-target_link_libraries(basic PRIVATE mcpplibs-primitives)
+add_subdirectory(examples EXCLUDE_FROM_ALL)
 
 # Testing
 option(BUILD_TESTING "Build the testing directories" ON)
