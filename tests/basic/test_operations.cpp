@@ -176,6 +176,67 @@ TEST(OperationsTest, StrictTypeAllowsSameTypeAtRuntime) {
   EXPECT_EQ(result->value(), 42);
 }
 
+TEST(OperationsTest, BoolUnderlyingRejectsArithmeticOperationsAtCompileTime) {
+  using value_t = primitive<bool, policy::checked_value, policy::strict_type,
+                            policy::expected_error>;
+  using bool_handler = policy::type_handler<policy::strict_type,
+                                            operations::Addition, bool, bool>;
+  using bool_meta =
+      operations::dispatcher_meta<operations::Addition, value_t, value_t,
+                                  policy::runtime_error_kind>;
+
+  static_assert(bool_handler::enabled);
+  static_assert(!bool_handler::allowed);
+  static_assert(std::is_same_v<typename bool_meta::common_rep, void>);
+
+  EXPECT_EQ(bool_handler::diagnostic_id, 3u);
+}
+
+TEST(OperationsTest, CharUnderlyingRejectsArithmeticEvenWithTransparentType) {
+  using value_t = primitive<char, policy::checked_value,
+                            policy::transparent_type, policy::expected_error>;
+  using char_handler = policy::type_handler<policy::transparent_type,
+                                            operations::Addition, char, char>;
+  using char_meta =
+      operations::dispatcher_meta<operations::Addition, value_t, value_t,
+                                  policy::runtime_error_kind>;
+
+  static_assert(char_handler::enabled);
+  static_assert(!char_handler::allowed);
+  static_assert(std::is_same_v<typename char_meta::common_rep, char>);
+
+  EXPECT_EQ(char_handler::diagnostic_id, 3u);
+}
+
+TEST(OperationsTest, BoolUnderlyingAllowsComparisonOperations) {
+  using value_t = primitive<bool, policy::checked_value, policy::strict_type,
+                            policy::expected_error>;
+
+  auto const lhs = value_t{true};
+  auto const rhs = value_t{false};
+
+  auto const eq_result = operations::equal(lhs, rhs);
+  auto const ne_result = operations::not_equal(lhs, rhs);
+
+  ASSERT_TRUE(eq_result.has_value());
+  ASSERT_TRUE(ne_result.has_value());
+  EXPECT_FALSE(eq_result->value());
+  EXPECT_TRUE(ne_result->value());
+}
+
+TEST(OperationsTest, CharUnderlyingAllowsComparisonWithTransparentType) {
+  using value_t = primitive<char, policy::checked_value,
+                            policy::transparent_type, policy::expected_error>;
+
+  auto const lhs = value_t{'a'};
+  auto const rhs = value_t{'a'};
+
+  auto const eq_result = operations::equal(lhs, rhs);
+
+  ASSERT_TRUE(eq_result.has_value());
+  EXPECT_EQ(eq_result->value(), static_cast<char>(1));
+}
+
 TEST(OperationsTest, PrimitiveAliasWorksWithFrameworkOperators) {
   using namespace mcpplibs::primitives::types;
   using namespace mcpplibs::primitives::operators;
@@ -206,6 +267,20 @@ TEST(OperationsTest, PrimitiveAliasMixesWithBuiltinArithmeticExplicitly) {
 
   ASSERT_TRUE(result.has_value());
   EXPECT_EQ(result->value(), 43);
+}
+
+TEST(OperationsTest, OperatorEqualDelegatesToDispatcher) {
+  using namespace mcpplibs::primitives::operators;
+  using value_t = primitive<int, policy::checked_value, policy::strict_type,
+                            policy::expected_error>;
+
+  auto const lhs = value_t{7};
+  auto const rhs = value_t{7};
+
+  auto const result = (lhs == rhs);
+
+  ASSERT_TRUE(result.has_value());
+  EXPECT_EQ(result->value(), 1);
 }
 
 TEST(OperationsTest, OperatorPlusDelegatesToDispatcher) {
