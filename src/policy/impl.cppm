@@ -9,6 +9,7 @@ module;
 export module mcpplibs.primitives.policy.impl;
 
 import mcpplibs.primitives.operations.traits;
+import mcpplibs.primitives.operations.impl;
 import mcpplibs.primitives.policy.traits;
 import mcpplibs.primitives.policy.handler;
 
@@ -100,12 +101,39 @@ using default_type = strict_type;
 using default_error = throw_error;
 using default_concurrency = single_thread;
 
+namespace details {
+
+template <typename OpTag>
+inline constexpr bool is_arithmetic_operation_v =
+    operations::op_has_capability_v<OpTag, operations::capability::arithmetic>;
+
+template <typename T>
+inline constexpr bool is_bool_or_text_char_v =
+    std::same_as<std::remove_cv_t<T>, bool> ||
+    std::same_as<std::remove_cv_t<T>, char> ||
+    std::same_as<std::remove_cv_t<T>, wchar_t> ||
+    std::same_as<std::remove_cv_t<T>, char8_t> ||
+    std::same_as<std::remove_cv_t<T>, char16_t> ||
+    std::same_as<std::remove_cv_t<T>, char32_t>;
+
+template <typename OpTag, typename LhsRep, typename RhsRep>
+inline constexpr bool rejects_arithmetic_for_bool_or_char_v =
+    is_arithmetic_operation_v<OpTag> &&
+    (is_bool_or_text_char_v<LhsRep> || is_bool_or_text_char_v<RhsRep>);
+
+} // namespace details
+
 // Default protocol specializations.
 template <operations::operation OpTag, typename LhsRep, typename RhsRep>
 struct type_handler<strict_type, OpTag, LhsRep, RhsRep> {
   static constexpr bool enabled = true;
-  static constexpr bool allowed = std::same_as<LhsRep, RhsRep>;
-  static constexpr unsigned diagnostic_id = allowed ? 0u : 1u;
+  static constexpr bool allowed =
+      std::same_as<LhsRep, RhsRep> &&
+      !details::rejects_arithmetic_for_bool_or_char_v<OpTag, LhsRep, RhsRep>;
+  static constexpr unsigned diagnostic_id =
+      details::rejects_arithmetic_for_bool_or_char_v<OpTag, LhsRep, RhsRep>
+          ? 3u
+          : (allowed ? 0u : 1u);
   using common_rep = std::conditional_t<allowed, LhsRep, void>;
 };
 
@@ -113,8 +141,12 @@ template <operations::operation OpTag, typename LhsRep, typename RhsRep>
 struct type_handler<category_compatible_type, OpTag, LhsRep, RhsRep> {
   static constexpr bool enabled = true;
   static constexpr bool allowed =
-      std::is_arithmetic_v<LhsRep> && std::is_arithmetic_v<RhsRep>;
-  static constexpr unsigned diagnostic_id = allowed ? 0u : 2u;
+      std::is_arithmetic_v<LhsRep> && std::is_arithmetic_v<RhsRep> &&
+      !details::rejects_arithmetic_for_bool_or_char_v<OpTag, LhsRep, RhsRep>;
+  static constexpr unsigned diagnostic_id =
+      details::rejects_arithmetic_for_bool_or_char_v<OpTag, LhsRep, RhsRep>
+          ? 3u
+          : (allowed ? 0u : 2u);
   using common_rep =
       std::conditional_t<allowed, std::common_type_t<LhsRep, RhsRep>, void>;
 };
@@ -122,8 +154,9 @@ struct type_handler<category_compatible_type, OpTag, LhsRep, RhsRep> {
 template <operations::operation OpTag, typename LhsRep, typename RhsRep>
 struct type_handler<transparent_type, OpTag, LhsRep, RhsRep> {
   static constexpr bool enabled = true;
-  static constexpr bool allowed = true;
-  static constexpr unsigned diagnostic_id = 0u;
+  static constexpr bool allowed =
+      !details::rejects_arithmetic_for_bool_or_char_v<OpTag, LhsRep, RhsRep>;
+  static constexpr unsigned diagnostic_id = allowed ? 0u : 3u;
   using common_rep = std::common_type_t<LhsRep, RhsRep>;
 };
 
