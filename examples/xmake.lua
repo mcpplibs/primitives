@@ -13,6 +13,13 @@ local examples = {
     "ex08_custom_operation"
 }
 
+-- CI compatibility alias: keep `xmake run basic` working.
+target("basic")
+    set_kind("binary")
+    add_files("ex01_default_arithmetic.cpp")
+    add_deps("mcpplibs-primitives")
+    set_policy("build.c++.modules", true)
+
 for _, name in ipairs(examples) do
     target(name)
         set_kind("binary")
