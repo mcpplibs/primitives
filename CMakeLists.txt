@@ -36,7 +36,7 @@ endif()
 # Library
 add_library(mcpplibs-primitives STATIC)
 
-file(GLOB_RECURSE CXX_MODULE_FILES
+file(GLOB_RECURSE CXX_MODULE_FILES CONFIGURE_DEPENDS
     src/*.cppm
 )
 
