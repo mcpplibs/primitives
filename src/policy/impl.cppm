@@ -1,5 +1,5 @@
 module;
-
+#include <string>
 #include <concepts>
 #include <exception>
 #include <expected>
@@ -266,7 +266,7 @@ struct error::handler<error::throwing, OpTag, CommonRep, ErrorPayload> {
   using result_type = std::expected<CommonRep, ErrorPayload>;
 
   static auto resolve(request_type const &request) -> result_type {
-    throw std::runtime_error(request.reason.data());
+    throw std::runtime_error(std::string{request.reason});
   }
 };
 
