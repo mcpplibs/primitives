@@ -10,8 +10,8 @@ import mcpplibs.primitives;
 using namespace mcpplibs::primitives;
 
 TEST(OperationsTest, AddReturnsExpectedPrimitive) {
-  using lhs_t = primitive<int, policy::checked_value>;
-  using rhs_t = primitive<int, policy::checked_value>;
+  using lhs_t = primitive<int, policy::value::checked>;
+  using rhs_t = primitive<int, policy::value::checked>;
 
   auto const lhs = lhs_t{10};
   auto const rhs = rhs_t{32};
@@ -23,7 +23,7 @@ TEST(OperationsTest, AddReturnsExpectedPrimitive) {
 }
 
 TEST(OperationsTest, DivisionByZeroReturnsError) {
-  using value_t = primitive<int, policy::checked_value, policy::expected_error>;
+  using value_t = primitive<int, policy::value::checked, policy::error::expected>;
 
   auto const lhs = value_t{100};
   auto const rhs = value_t{0};
@@ -35,7 +35,7 @@ TEST(OperationsTest, DivisionByZeroReturnsError) {
 }
 
 TEST(OperationsTest, SaturatingAdditionClampsUnsignedOverflow) {
-  using value_t = primitive<std::uint16_t, policy::saturating_value>;
+  using value_t = primitive<std::uint16_t, policy::value::saturating>;
 
   auto const lhs = value_t{static_cast<std::uint16_t>(65530)};
   auto const rhs = value_t{static_cast<std::uint16_t>(20)};
@@ -48,7 +48,7 @@ TEST(OperationsTest, SaturatingAdditionClampsUnsignedOverflow) {
 
 TEST(OperationsTest, CheckedAdditionReportsUnsignedOverflow) {
   using value_t =
-      primitive<std::uint16_t, policy::checked_value, policy::expected_error>;
+      primitive<std::uint16_t, policy::value::checked, policy::error::expected>;
 
   auto const lhs = value_t{static_cast<std::uint16_t>(65530)};
   auto const rhs = value_t{static_cast<std::uint16_t>(20)};
@@ -61,7 +61,7 @@ TEST(OperationsTest, CheckedAdditionReportsUnsignedOverflow) {
 
 TEST(OperationsTest, UncheckedAdditionWrapsUnsignedOverflow) {
   using value_t =
-      primitive<std::uint16_t, policy::unchecked_value, policy::expected_error>;
+      primitive<std::uint16_t, policy::value::unchecked, policy::error::expected>;
 
   auto const lhs = value_t{static_cast<std::uint16_t>(65530)};
   auto const rhs = value_t{static_cast<std::uint16_t>(20)};
@@ -74,7 +74,7 @@ TEST(OperationsTest, UncheckedAdditionWrapsUnsignedOverflow) {
 
 TEST(OperationsTest, UncheckedDivisionUsesRawArithmeticWhenValid) {
   using value_t =
-      primitive<int, policy::unchecked_value, policy::expected_error>;
+      primitive<int, policy::value::unchecked, policy::error::expected>;
 
   auto const lhs = value_t{100};
   auto const rhs = value_t{4};
@@ -86,8 +86,8 @@ TEST(OperationsTest, UncheckedDivisionUsesRawArithmeticWhenValid) {
 }
 
 TEST(OperationsTest, AtomicPolicyPathReturnsExpectedValue) {
-  using value_t = primitive<int, policy::checked_value, policy::atomic,
-                            policy::expected_error>;
+  using value_t = primitive<int, policy::value::checked, policy::concurrency::atomic,
+                            policy::error::expected>;
 
   auto const lhs = value_t{12};
   auto const rhs = value_t{30};
@@ -99,8 +99,8 @@ TEST(OperationsTest, AtomicPolicyPathReturnsExpectedValue) {
 }
 
 TEST(OperationsTest, AtomicPolicyConcurrentInvocationsRemainConsistent) {
-  using value_t = primitive<int, policy::checked_value, policy::atomic,
-                            policy::expected_error>;
+  using value_t = primitive<int, policy::value::checked, policy::concurrency::atomic,
+                            policy::error::expected>;
 
   constexpr int kThreadCount = 8;
   constexpr int kIterationsPerThread = 20000;
@@ -145,13 +145,13 @@ TEST(OperationsTest, AtomicPolicyConcurrentInvocationsRemainConsistent) {
 }
 
 TEST(OperationsTest, StrictTypeRejectsMixedTypesAtCompileTime) {
-  using lhs_t = primitive<int, policy::checked_value, policy::strict_type,
-                          policy::expected_error>;
-  using rhs_t = primitive<long long, policy::checked_value, policy::strict_type,
-                          policy::expected_error>;
+  using lhs_t = primitive<int, policy::value::checked, policy::type::strict,
+                          policy::error::expected>;
+  using rhs_t = primitive<long long, policy::value::checked, policy::type::strict,
+                          policy::error::expected>;
 
   using strict_handler =
-      policy::type::handler<policy::strict_type, operations::Addition, int,
+      policy::type::handler<policy::type::strict, operations::Addition, int,
                             long long>;
   using strict_meta = operations::dispatcher_meta<operations::Addition, lhs_t,
                                                   rhs_t, policy::error::kind>;
@@ -164,8 +164,8 @@ TEST(OperationsTest, StrictTypeRejectsMixedTypesAtCompileTime) {
 }
 
 TEST(OperationsTest, StrictTypeAllowsSameTypeAtRuntime) {
-  using value_t = primitive<int, policy::checked_value, policy::strict_type,
-                            policy::expected_error>;
+  using value_t = primitive<int, policy::value::checked, policy::type::strict,
+                            policy::error::expected>;
 
   auto const lhs = value_t{19};
   auto const rhs = value_t{23};
@@ -177,9 +177,9 @@ TEST(OperationsTest, StrictTypeAllowsSameTypeAtRuntime) {
 }
 
 TEST(OperationsTest, BoolUnderlyingRejectsArithmeticOperationsAtCompileTime) {
-  using value_t = primitive<bool, policy::checked_value, policy::strict_type,
-                            policy::expected_error>;
-  using bool_handler = policy::type::handler<policy::strict_type,
+  using value_t = primitive<bool, policy::value::checked, policy::type::strict,
+                            policy::error::expected>;
+  using bool_handler = policy::type::handler<policy::type::strict,
                                              operations::Addition, bool, bool>;
   using bool_meta = operations::dispatcher_meta<operations::Addition, value_t,
                                                 value_t, policy::error::kind>;
@@ -192,9 +192,9 @@ TEST(OperationsTest, BoolUnderlyingRejectsArithmeticOperationsAtCompileTime) {
 }
 
 TEST(OperationsTest, CharUnderlyingRejectsArithmeticEvenWithTransparentType) {
-  using value_t = primitive<char, policy::checked_value,
-                            policy::transparent_type, policy::expected_error>;
-  using char_handler = policy::type::handler<policy::transparent_type,
+  using value_t = primitive<char, policy::value::checked,
+                            policy::type::transparent, policy::error::expected>;
+  using char_handler = policy::type::handler<policy::type::transparent,
                                              operations::Addition, char, char>;
   using char_meta = operations::dispatcher_meta<operations::Addition, value_t,
                                                 value_t, policy::error::kind>;
@@ -208,10 +208,10 @@ TEST(OperationsTest, CharUnderlyingRejectsArithmeticEvenWithTransparentType) {
 
 TEST(OperationsTest, SignedAndUnsignedCharRejectArithmeticAtCompileTime) {
   using signed_handler =
-      policy::type::handler<policy::transparent_type, operations::Addition,
+      policy::type::handler<policy::type::transparent, operations::Addition,
                             signed char, signed char>;
   using unsigned_handler =
-      policy::type::handler<policy::transparent_type, operations::Addition,
+      policy::type::handler<policy::type::transparent, operations::Addition,
                             unsigned char, unsigned char>;
 
   static_assert(signed_handler::enabled);
@@ -224,8 +224,8 @@ TEST(OperationsTest, SignedAndUnsignedCharRejectArithmeticAtCompileTime) {
 }
 
 TEST(OperationsTest, BoolUnderlyingAllowsComparisonOperations) {
-  using value_t = primitive<bool, policy::checked_value, policy::strict_type,
-                            policy::expected_error>;
+  using value_t = primitive<bool, policy::value::checked, policy::type::strict,
+                            policy::error::expected>;
 
   auto const lhs = value_t{true};
   auto const rhs = value_t{false};
@@ -240,8 +240,8 @@ TEST(OperationsTest, BoolUnderlyingAllowsComparisonOperations) {
 }
 
 TEST(OperationsTest, CharUnderlyingAllowsComparisonWithTransparentType) {
-  using value_t = primitive<char, policy::checked_value,
-                            policy::transparent_type, policy::expected_error>;
+  using value_t = primitive<char, policy::value::checked,
+                            policy::type::transparent, policy::error::expected>;
 
   auto const lhs = value_t{'a'};
   auto const rhs = value_t{'a'};
@@ -255,7 +255,7 @@ TEST(OperationsTest, CharUnderlyingAllowsComparisonWithTransparentType) {
 TEST(OperationsTest, PrimitiveAliasWorksWithFrameworkOperators) {
   using namespace mcpplibs::primitives::types;
   using namespace mcpplibs::primitives::operators;
-  using value_t = I32<policy::checked_value, policy::expected_error>;
+  using value_t = I32<policy::value::checked, policy::error::expected>;
 
   auto const lhs = value_t{20};
   auto const rhs = value_t{22};
@@ -269,7 +269,7 @@ TEST(OperationsTest, PrimitiveAliasWorksWithFrameworkOperators) {
 TEST(OperationsTest, PrimitiveAliasMixesWithBuiltinArithmeticExplicitly) {
   using namespace mcpplibs::primitives::types;
   using namespace mcpplibs::primitives::operators;
-  using value_t = I32<policy::checked_value, policy::expected_error>;
+  using value_t = I32<policy::value::checked, policy::error::expected>;
 
   static_assert(!std::is_convertible_v<value_t, int>);
 
@@ -286,8 +286,8 @@ TEST(OperationsTest, PrimitiveAliasMixesWithBuiltinArithmeticExplicitly) {
 
 TEST(OperationsTest, OperatorEqualDelegatesToDispatcher) {
   using namespace mcpplibs::primitives::operators;
-  using value_t = primitive<int, policy::checked_value, policy::strict_type,
-                            policy::expected_error>;
+  using value_t = primitive<int, policy::value::checked, policy::type::strict,
+                            policy::error::expected>;
 
   auto const lhs = value_t{7};
   auto const rhs = value_t{7};
@@ -300,7 +300,7 @@ TEST(OperationsTest, OperatorEqualDelegatesToDispatcher) {
 
 TEST(OperationsTest, OperatorPlusDelegatesToDispatcher) {
   using namespace mcpplibs::primitives::operators;
-  using value_t = primitive<int, policy::checked_value>;
+  using value_t = primitive<int, policy::value::checked>;
 
   auto const lhs = value_t{7};
   auto const rhs = value_t{8};
@@ -312,7 +312,7 @@ TEST(OperationsTest, OperatorPlusDelegatesToDispatcher) {
 }
 
 TEST(OperationsTest, ThrowErrorPolicyThrowsException) {
-  using value_t = primitive<int, policy::checked_value, policy::throw_error>;
+  using value_t = primitive<int, policy::value::checked, policy::error::throwing>;
 
   auto const lhs = value_t{100};
   auto const rhs = value_t{0};
@@ -321,7 +321,7 @@ TEST(OperationsTest, ThrowErrorPolicyThrowsException) {
 }
 
 TEST(OperationsTest, ThrowErrorPolicyExceptionHasReasonMessage) {
-  using value_t = primitive<int, policy::checked_value, policy::throw_error>;
+  using value_t = primitive<int, policy::value::checked, policy::error::throwing>;
 
   auto const lhs = value_t{100};
   auto const rhs = value_t{0};

@@ -291,8 +291,8 @@ TEST(PrimitiveTraitsTest, CustomNumericLikeRepTypeRejectsInvalidCategory) {
 
 TEST(PrimitiveTraitsTest, CustomUnderlyingParticipatesInPrimitiveOperations) {
   using value_t = mcpplibs::primitives::primitive<
-      BigIntLike, mcpplibs::primitives::policy::checked_value,
-      mcpplibs::primitives::policy::expected_error>;
+      BigIntLike, mcpplibs::primitives::policy::value::checked,
+      mcpplibs::primitives::policy::error::expected>;
 
   auto const lhs = value_t{BigIntLike{40}};
   auto const rhs = value_t{BigIntLike{2}};
@@ -305,8 +305,8 @@ TEST(PrimitiveTraitsTest, CustomUnderlyingParticipatesInPrimitiveOperations) {
 
 TEST(PrimitiveTraitsTest, CustomWrappedUnderlyingUsesRepBridgeForArithmetic) {
   using value_t = mcpplibs::primitives::primitive<
-      UserInteger, mcpplibs::primitives::policy::checked_value,
-      mcpplibs::primitives::policy::expected_error>;
+      UserInteger, mcpplibs::primitives::policy::value::checked,
+      mcpplibs::primitives::policy::error::expected>;
 
   auto const lhs = value_t{UserInteger{40}};
   auto const rhs = value_t{UserInteger{2}};
@@ -319,8 +319,8 @@ TEST(PrimitiveTraitsTest, CustomWrappedUnderlyingUsesRepBridgeForArithmetic) {
 
 TEST(PrimitiveTraitsTest, InvalidUnderlyingRepIsRejectedByDispatcher) {
   using value_t = mcpplibs::primitives::primitive<
-      NonNegativeInt, mcpplibs::primitives::policy::checked_value,
-      mcpplibs::primitives::policy::expected_error>;
+      NonNegativeInt, mcpplibs::primitives::policy::value::checked,
+      mcpplibs::primitives::policy::error::expected>;
 
   auto const lhs = value_t{NonNegativeInt{-1}};
   auto const rhs = value_t{NonNegativeInt{2}};

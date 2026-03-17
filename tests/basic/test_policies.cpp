@@ -19,52 +19,55 @@ template <> struct operations::traits<NullCapabilityProbe> {
 TEST(PolicyTraitsTest, BuiltinPoliciesHaveCategories) {
   using namespace policy;
 
-  EXPECT_TRUE((policy::traits<policy::checked_value>::enabled));
-  EXPECT_EQ(policy::traits<policy::checked_value>::kind,
+  EXPECT_TRUE((policy::traits<policy::value::checked>::enabled));
+  EXPECT_EQ(policy::traits<policy::value::checked>::kind,
             policy::category::value);
 
-  EXPECT_TRUE((policy::traits<policy::category_compatible_type>::enabled));
-  EXPECT_EQ(policy::traits<policy::category_compatible_type>::kind,
+  EXPECT_TRUE((policy::traits<policy::type::compatible>::enabled));
+  EXPECT_EQ(policy::traits<policy::type::compatible>::kind,
             policy::category::type);
 
-  EXPECT_TRUE((policy::traits<policy::transparent_type>::enabled));
-  EXPECT_EQ(policy::traits<policy::transparent_type>::kind,
+  EXPECT_TRUE((policy::traits<policy::type::transparent>::enabled));
+  EXPECT_EQ(policy::traits<policy::type::transparent>::kind,
             policy::category::type);
 
-  EXPECT_TRUE((policy::traits<policy::throw_error>::enabled));
-  EXPECT_EQ(policy::traits<policy::throw_error>::kind, policy::category::error);
-
-  EXPECT_TRUE((policy::traits<policy::terminate_error>::enabled));
-  EXPECT_EQ(policy::traits<policy::terminate_error>::kind,
+  EXPECT_TRUE((policy::traits<policy::error::throwing>::enabled));
+  EXPECT_EQ(policy::traits<policy::error::throwing>::kind,
             policy::category::error);
 
-  EXPECT_TRUE((policy::traits<policy::single_thread>::enabled));
-  EXPECT_EQ(policy::traits<policy::single_thread>::kind,
+  EXPECT_TRUE((policy::traits<policy::error::terminate>::enabled));
+  EXPECT_EQ(policy::traits<policy::error::terminate>::kind,
+            policy::category::error);
+
+  EXPECT_TRUE((policy::traits<policy::concurrency::none>::enabled));
+  EXPECT_EQ(policy::traits<policy::concurrency::none>::kind,
             policy::category::concurrency);
 
-  EXPECT_TRUE((policy::traits<policy::atomic>::enabled));
-  EXPECT_EQ(policy::traits<policy::atomic>::kind,
+  EXPECT_TRUE((policy::traits<policy::concurrency::atomic>::enabled));
+  EXPECT_EQ(policy::traits<policy::concurrency::atomic>::kind,
             policy::category::concurrency);
 
-  EXPECT_TRUE((policy::traits<policy::saturating_value>::enabled));
-  EXPECT_EQ(policy::traits<policy::saturating_value>::kind,
+  EXPECT_TRUE((policy::traits<policy::value::saturating>::enabled));
+  EXPECT_EQ(policy::traits<policy::value::saturating>::kind,
             policy::category::value);
 
-  EXPECT_TRUE((policy_type<policy::checked_value>));
-  EXPECT_TRUE((policy_type<policy::terminate_error>));
+  EXPECT_TRUE((policy_type<policy::value::checked>));
+  EXPECT_TRUE((policy_type<policy::error::terminate>));
   EXPECT_FALSE((policy_type<int>));
 
-  EXPECT_TRUE((std::is_same_v<policy::default_value, policy::checked_value>));
-  EXPECT_TRUE((std::is_same_v<policy::default_type, policy::strict_type>));
+  EXPECT_TRUE(
+      (std::is_same_v<policy::defaults::value, policy::value::checked>));
+  EXPECT_TRUE((std::is_same_v<policy::defaults::type, policy::type::strict>));
 }
 
 TEST(PolicyConcurrencyTest, AtomicInjectsFences) {
   using atomic_handler =
-      policy::concurrency::handler<policy::atomic, operations::Addition, int,
+      policy::concurrency::handler<policy::concurrency::atomic,
+                                   operations::Addition, int,
                                    policy::error::kind>;
-  using single_handler =
-      policy::concurrency::handler<policy::single_thread, operations::Addition,
-                                   int, policy::error::kind>;
+  using single_handler = policy::concurrency::handler<policy::concurrency::none,
+                                                      operations::Addition, int,
+                                                      policy::error::kind>;
 
   auto const atomic_injection = atomic_handler::inject();
   auto const single_injection = single_handler::inject();
