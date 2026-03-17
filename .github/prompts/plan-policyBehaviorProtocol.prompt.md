@@ -121,6 +121,15 @@
 - In scope：policy 行为协议、operation 分发、primitive 路由、测试与文档。
 - Out of scope：并发策略的运行时同步原语实现细节（atomic/lock-free/锁策略具体执行体）。
 
+## Underlying Bridge Execution Contract (Runtime)
+
+1. `dispatch` 在 value 阶段前统一执行 `to_rep`，将原始 value 映射到可协商的 `rep_type`。
+2. `type_handler` 的协商对象是 `lhs_rep/rhs_rep`，而非原始 value type。
+3. 若任一输入 `is_valid_rep(...) == false`，立即构造 `runtime_error_kind::domain_error` 并进入 error policy。
+4. 通过校验后执行 `from_rep -> to_rep` 规范化，再进入 value handler 与 op binding。
+5. 当前结果值仍按 `common_rep` 回传；comparison 最小闭环采用 `0/1` 表示（`static_cast<common_rep>(bool)`）。
+6. 本契约不改变 dispatcher 链路顺序，也不改变错误枚举体系。
+
 **Further Considerations**
 1. expected 的错误载体类型建议先统一为轻量错误枚举，再逐步演进到可扩展错误域，以减少首版模板复杂度。
 2. type policy 的 common type 规则建议先采用“显式白名单 + static_assert 诊断”，避免首版引入过宽的隐式提升。
