@@ -363,9 +363,8 @@ constexpr auto make_div_zero(char const *reason)
 
 } // namespace details
 
-// Placeholder op-binding protocol for end-to-end bring-up.
-// NOTE: OpTag-to-arithmetic mapping is intentionally hardcoded in this module
-// for now. It will be replaced by policy-aware operation bindings later.
+// Operation-to-value-policy binding table used by invoker runtime dispatch.
+// This module centralizes OpTag mapping and fallback diagnostics.
 template <operation OpTag, policy::value_policy ValuePolicy, typename CommonRep>
 struct op_binding {
   static constexpr bool enabled = false;
