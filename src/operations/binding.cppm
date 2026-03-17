@@ -1,6 +1,5 @@
 module;
 
-#include <concepts>
 #include <limits>
 #include <optional>
 #include <type_traits>
@@ -188,6 +187,34 @@ constexpr auto checked_div(T lhs, T rhs) -> policy::value_decision<T> {
   return make_error<T>(
       policy::runtime_error_kind::unspecified,
       "checked division not supported for negotiated common type", lhs, rhs);
+}
+
+template <typename T>
+constexpr auto compare_equal(T lhs, T rhs) -> policy::value_decision<T> {
+  policy::value_decision<T> out{};
+  if constexpr (requires { lhs == rhs; }) {
+    out.has_value = true;
+    out.value = static_cast<T>(lhs == rhs);
+    return out;
+  }
+
+  return make_error<T>(policy::runtime_error_kind::unspecified,
+                       "comparison equality not supported for negotiated "
+                       "common type");
+}
+
+template <typename T>
+constexpr auto compare_not_equal(T lhs, T rhs) -> policy::value_decision<T> {
+  policy::value_decision<T> out{};
+  if constexpr (requires { lhs != rhs; }) {
+    out.has_value = true;
+    out.value = static_cast<T>(lhs != rhs);
+    return out;
+  }
+
+  return make_error<T>(policy::runtime_error_kind::unspecified,
+                       "comparison inequality not supported for negotiated "
+                       "common type");
 }
 
 template <typename T>
@@ -525,6 +552,66 @@ struct op_binding<Division, policy::saturating_value, CommonRep> {
 
     return details::make_unsupported<CommonRep>(
         "saturating division not supported for negotiated common type");
+  }
+};
+
+template <typename CommonRep>
+struct op_binding<Equal, policy::checked_value, CommonRep> {
+  static constexpr bool enabled = true;
+
+  static constexpr auto apply(CommonRep lhs, CommonRep rhs)
+      -> policy::value_decision<CommonRep> {
+    return details::compare_equal(lhs, rhs);
+  }
+};
+
+template <typename CommonRep>
+struct op_binding<Equal, policy::unchecked_value, CommonRep> {
+  static constexpr bool enabled = true;
+
+  static constexpr auto apply(CommonRep lhs, CommonRep rhs)
+      -> policy::value_decision<CommonRep> {
+    return details::compare_equal(lhs, rhs);
+  }
+};
+
+template <typename CommonRep>
+struct op_binding<Equal, policy::saturating_value, CommonRep> {
+  static constexpr bool enabled = true;
+
+  static constexpr auto apply(CommonRep lhs, CommonRep rhs)
+      -> policy::value_decision<CommonRep> {
+    return details::compare_equal(lhs, rhs);
+  }
+};
+
+template <typename CommonRep>
+struct op_binding<NotEqual, policy::checked_value, CommonRep> {
+  static constexpr bool enabled = true;
+
+  static constexpr auto apply(CommonRep lhs, CommonRep rhs)
+      -> policy::value_decision<CommonRep> {
+    return details::compare_not_equal(lhs, rhs);
+  }
+};
+
+template <typename CommonRep>
+struct op_binding<NotEqual, policy::unchecked_value, CommonRep> {
+  static constexpr bool enabled = true;
+
+  static constexpr auto apply(CommonRep lhs, CommonRep rhs)
+      -> policy::value_decision<CommonRep> {
+    return details::compare_not_equal(lhs, rhs);
+  }
+};
+
+template <typename CommonRep>
+struct op_binding<NotEqual, policy::saturating_value, CommonRep> {
+  static constexpr bool enabled = true;
+
+  static constexpr auto apply(CommonRep lhs, CommonRep rhs)
+      -> policy::value_decision<CommonRep> {
+    return details::compare_not_equal(lhs, rhs);
   }
 };
 
