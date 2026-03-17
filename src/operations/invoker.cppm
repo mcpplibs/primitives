@@ -30,7 +30,7 @@ constexpr auto apply_runtime_fence(bool enabled) noexcept -> void {
 } // namespace details
 
 template <typename ConcurrencyHandler, typename CommonRep>
-constexpr auto inject_concurrency() -> policy::concurrency_injection {
+constexpr auto inject_concurrency() -> policy::concurrency::injection {
   static_cast<void>(sizeof(CommonRep));
 
   return ConcurrencyHandler::inject();
@@ -39,8 +39,8 @@ constexpr auto inject_concurrency() -> policy::concurrency_injection {
 template <operation OpTag, typename ValuePolicy, typename CommonRep,
           typename ValueHandler, typename ErrorPayload>
 constexpr auto run_value(CommonRep lhs, CommonRep rhs,
-                         policy::concurrency_injection const &injection)
-    -> policy::value_decision<CommonRep> {
+                         policy::concurrency::injection const &injection)
+    -> policy::value::decision<CommonRep> {
   static_cast<void>(sizeof(ErrorPayload));
 
   static_assert(
@@ -59,10 +59,10 @@ constexpr auto run_value(CommonRep lhs, CommonRep rhs,
 
 template <typename ErrorPolicy, operation OpTag, typename CommonRep,
           typename ErrorPayload>
-constexpr auto resolve_error(policy::error_request<CommonRep> const &request)
+constexpr auto resolve_error(policy::error::request<CommonRep> const &request)
     -> std::expected<CommonRep, ErrorPayload> {
   using handler_t =
-      policy::error_handler<ErrorPolicy, OpTag, CommonRep, ErrorPayload>;
+      policy::error::handler<ErrorPolicy, OpTag, CommonRep, ErrorPayload>;
   return handler_t::resolve(request);
 }
 

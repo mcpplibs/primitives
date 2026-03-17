@@ -14,7 +14,7 @@ import mcpplibs.primitives.policy.handler;
 export namespace mcpplibs::primitives::operations {
 
 template <operation OpTag, primitive_instance Lhs, primitive_instance Rhs,
-          typename ErrorPayload = policy::runtime_error_kind>
+          typename ErrorPayload = policy::error::kind>
 using primitive_dispatch_result_t = std::expected<
     typename mcpplibs::primitives::traits::make_primitive_t<
         typename dispatcher_meta<OpTag, Lhs, Rhs, ErrorPayload>::common_rep,
@@ -22,7 +22,7 @@ using primitive_dispatch_result_t = std::expected<
     ErrorPayload>;
 
 template <operation OpTag, primitive_instance Lhs, primitive_instance Rhs,
-          typename ErrorPayload = policy::runtime_error_kind>
+          typename ErrorPayload = policy::error::kind>
 constexpr auto apply(Lhs const &lhs, Rhs const &rhs)
     -> primitive_dispatch_result_t<OpTag, Lhs, Rhs, ErrorPayload> {
   using result_primitive =
@@ -38,42 +38,42 @@ constexpr auto apply(Lhs const &lhs, Rhs const &rhs)
 }
 
 template <primitive_instance Lhs, primitive_instance Rhs,
-          typename ErrorPayload = policy::runtime_error_kind>
+          typename ErrorPayload = policy::error::kind>
 constexpr auto add(Lhs const &lhs, Rhs const &rhs)
     -> primitive_dispatch_result_t<Addition, Lhs, Rhs, ErrorPayload> {
   return apply<Addition, Lhs, Rhs, ErrorPayload>(lhs, rhs);
 }
 
 template <primitive_instance Lhs, primitive_instance Rhs,
-          typename ErrorPayload = policy::runtime_error_kind>
+          typename ErrorPayload = policy::error::kind>
 constexpr auto sub(Lhs const &lhs, Rhs const &rhs)
     -> primitive_dispatch_result_t<Subtraction, Lhs, Rhs, ErrorPayload> {
   return apply<Subtraction, Lhs, Rhs, ErrorPayload>(lhs, rhs);
 }
 
 template <primitive_instance Lhs, primitive_instance Rhs,
-          typename ErrorPayload = policy::runtime_error_kind>
+          typename ErrorPayload = policy::error::kind>
 constexpr auto mul(Lhs const &lhs, Rhs const &rhs)
     -> primitive_dispatch_result_t<Multiplication, Lhs, Rhs, ErrorPayload> {
   return apply<Multiplication, Lhs, Rhs, ErrorPayload>(lhs, rhs);
 }
 
 template <primitive_instance Lhs, primitive_instance Rhs,
-          typename ErrorPayload = policy::runtime_error_kind>
+          typename ErrorPayload = policy::error::kind>
 constexpr auto div(Lhs const &lhs, Rhs const &rhs)
     -> primitive_dispatch_result_t<Division, Lhs, Rhs, ErrorPayload> {
   return apply<Division, Lhs, Rhs, ErrorPayload>(lhs, rhs);
 }
 
 template <primitive_instance Lhs, primitive_instance Rhs,
-          typename ErrorPayload = policy::runtime_error_kind>
+          typename ErrorPayload = policy::error::kind>
 constexpr auto equal(Lhs const &lhs, Rhs const &rhs)
     -> primitive_dispatch_result_t<Equal, Lhs, Rhs, ErrorPayload> {
   return apply<Equal, Lhs, Rhs, ErrorPayload>(lhs, rhs);
 }
 
 template <primitive_instance Lhs, primitive_instance Rhs,
-          typename ErrorPayload = policy::runtime_error_kind>
+          typename ErrorPayload = policy::error::kind>
 constexpr auto not_equal(Lhs const &lhs, Rhs const &rhs)
     -> primitive_dispatch_result_t<NotEqual, Lhs, Rhs, ErrorPayload> {
   return apply<NotEqual, Lhs, Rhs, ErrorPayload>(lhs, rhs);

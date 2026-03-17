@@ -120,7 +120,7 @@ inline constexpr bool rejects_arithmetic_for_boolean_or_character_v =
 
 // Default protocol specializations.
 template <operations::operation OpTag, typename LhsRep, typename RhsRep>
-struct type_handler<strict_type, OpTag, LhsRep, RhsRep> {
+struct type::handler<strict_type, OpTag, LhsRep, RhsRep> {
   static constexpr bool enabled = true;
   static constexpr bool allowed =
       std::same_as<LhsRep, RhsRep> &&
@@ -135,7 +135,7 @@ struct type_handler<strict_type, OpTag, LhsRep, RhsRep> {
 };
 
 template <operations::operation OpTag, typename LhsRep, typename RhsRep>
-struct type_handler<category_compatible_type, OpTag, LhsRep, RhsRep> {
+struct type::handler<category_compatible_type, OpTag, LhsRep, RhsRep> {
   static constexpr bool enabled = true;
   static constexpr bool allowed =
       std::is_arithmetic_v<LhsRep> && std::is_arithmetic_v<RhsRep> &&
@@ -151,7 +151,7 @@ struct type_handler<category_compatible_type, OpTag, LhsRep, RhsRep> {
 };
 
 template <operations::operation OpTag, typename LhsRep, typename RhsRep>
-struct type_handler<transparent_type, OpTag, LhsRep, RhsRep> {
+struct type::handler<transparent_type, OpTag, LhsRep, RhsRep> {
   static constexpr bool enabled = true;
   static constexpr bool allowed =
       !details::rejects_arithmetic_for_boolean_or_character_v<OpTag, LhsRep,
@@ -162,10 +162,10 @@ struct type_handler<transparent_type, OpTag, LhsRep, RhsRep> {
 
 template <operations::operation OpTag, typename CommonRep,
           typename ErrorPayload>
-struct concurrency_handler<single_thread, OpTag, CommonRep, ErrorPayload> {
+struct concurrency::handler<single_thread, OpTag, CommonRep, ErrorPayload> {
   static constexpr bool enabled = true;
   static constexpr bool requires_external_sync = false;
-  using injection_type = concurrency_injection;
+  using injection_type = concurrency::injection;
   using result_type = std::expected<CommonRep, ErrorPayload>;
 
   static constexpr auto inject() noexcept -> injection_type {
@@ -175,10 +175,10 @@ struct concurrency_handler<single_thread, OpTag, CommonRep, ErrorPayload> {
 
 template <operations::operation OpTag, typename CommonRep,
           typename ErrorPayload>
-struct concurrency_handler<atomic, OpTag, CommonRep, ErrorPayload> {
+struct concurrency::handler<atomic, OpTag, CommonRep, ErrorPayload> {
   static constexpr bool enabled = true;
   static constexpr bool requires_external_sync = true;
-  using injection_type = concurrency_injection;
+  using injection_type = concurrency::injection;
   using result_type = std::expected<CommonRep, ErrorPayload>;
 
   static constexpr auto inject() noexcept -> injection_type {
@@ -191,14 +191,14 @@ struct concurrency_handler<atomic, OpTag, CommonRep, ErrorPayload> {
 
 template <operations::operation OpTag, typename CommonRep,
           typename ErrorPayload>
-struct value_handler<checked_value, OpTag, CommonRep, ErrorPayload> {
+struct value::handler<checked_value, OpTag, CommonRep, ErrorPayload> {
   static constexpr bool enabled = true;
   static constexpr bool may_adjust_value = false;
-  using decision_type = value_decision<CommonRep>;
+  using decision_type = value::decision<CommonRep>;
   using result_type = std::expected<CommonRep, ErrorPayload>;
 
   static constexpr auto finalize(decision_type decision,
-                                 concurrency_injection const &) noexcept
+                                 concurrency::injection const &) noexcept
       -> decision_type {
     return decision;
   }
@@ -206,14 +206,14 @@ struct value_handler<checked_value, OpTag, CommonRep, ErrorPayload> {
 
 template <operations::operation OpTag, typename CommonRep,
           typename ErrorPayload>
-struct value_handler<unchecked_value, OpTag, CommonRep, ErrorPayload> {
+struct value::handler<unchecked_value, OpTag, CommonRep, ErrorPayload> {
   static constexpr bool enabled = true;
   static constexpr bool may_adjust_value = false;
-  using decision_type = value_decision<CommonRep>;
+  using decision_type = value::decision<CommonRep>;
   using result_type = std::expected<CommonRep, ErrorPayload>;
 
   static constexpr auto finalize(decision_type decision,
-                                 concurrency_injection const &) noexcept
+                                 concurrency::injection const &) noexcept
       -> decision_type {
     return decision;
   }
@@ -221,14 +221,14 @@ struct value_handler<unchecked_value, OpTag, CommonRep, ErrorPayload> {
 
 template <operations::operation OpTag, typename CommonRep,
           typename ErrorPayload>
-struct value_handler<saturating_value, OpTag, CommonRep, ErrorPayload> {
+struct value::handler<saturating_value, OpTag, CommonRep, ErrorPayload> {
   static constexpr bool enabled = true;
   static constexpr bool may_adjust_value = true;
-  using decision_type = value_decision<CommonRep>;
+  using decision_type = value::decision<CommonRep>;
   using result_type = std::expected<CommonRep, ErrorPayload>;
 
   static constexpr auto finalize(decision_type decision,
-                                 concurrency_injection const &) noexcept
+                                 concurrency::injection const &) noexcept
       -> decision_type {
     return decision;
   }
@@ -236,8 +236,8 @@ struct value_handler<saturating_value, OpTag, CommonRep, ErrorPayload> {
 
 namespace details {
 template <typename ErrorPayload>
-constexpr auto to_error_payload(runtime_error_kind kind) -> ErrorPayload {
-  if constexpr (std::same_as<ErrorPayload, runtime_error_kind>) {
+constexpr auto to_error_payload(error::kind kind) -> ErrorPayload {
+  if constexpr (std::same_as<ErrorPayload, error::kind>) {
     return kind;
   } else {
     static_cast<void>(kind);
@@ -248,10 +248,10 @@ constexpr auto to_error_payload(runtime_error_kind kind) -> ErrorPayload {
 
 template <operations::operation OpTag, typename CommonRep,
           typename ErrorPayload>
-struct error_handler<throw_error, OpTag, CommonRep, ErrorPayload> {
+struct error::handler<throw_error, OpTag, CommonRep, ErrorPayload> {
   static constexpr bool enabled = true;
   static constexpr bool converts_to_expected = true;
-  using request_type = error_request<CommonRep>;
+  using request_type = error::request<CommonRep>;
   using result_type = std::expected<CommonRep, ErrorPayload>;
 
   static auto resolve(request_type const &request) -> result_type {
@@ -261,10 +261,10 @@ struct error_handler<throw_error, OpTag, CommonRep, ErrorPayload> {
 
 template <operations::operation OpTag, typename CommonRep,
           typename ErrorPayload>
-struct error_handler<expected_error, OpTag, CommonRep, ErrorPayload> {
+struct error::handler<expected_error, OpTag, CommonRep, ErrorPayload> {
   static constexpr bool enabled = true;
   static constexpr bool converts_to_expected = true;
-  using request_type = error_request<CommonRep>;
+  using request_type = error::request<CommonRep>;
   using result_type = std::expected<CommonRep, ErrorPayload>;
 
   static constexpr auto resolve(request_type const &request) -> result_type {
@@ -275,10 +275,10 @@ struct error_handler<expected_error, OpTag, CommonRep, ErrorPayload> {
 
 template <operations::operation OpTag, typename CommonRep,
           typename ErrorPayload>
-struct error_handler<terminate_error, OpTag, CommonRep, ErrorPayload> {
+struct error::handler<terminate_error, OpTag, CommonRep, ErrorPayload> {
   static constexpr bool enabled = true;
   static constexpr bool converts_to_expected = false;
-  using request_type = error_request<CommonRep>;
+  using request_type = error::request<CommonRep>;
   using result_type = std::expected<CommonRep, ErrorPayload>;
 
   [[noreturn]] static auto resolve(request_type const &) -> result_type {

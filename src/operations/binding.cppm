@@ -17,11 +17,11 @@ export namespace mcpplibs::primitives::operations::binding {
 namespace details {
 
 template <typename CommonRep>
-constexpr auto make_error(policy::runtime_error_kind kind, char const *reason,
+constexpr auto make_error(policy::error::kind kind, char const *reason,
                           std::optional<CommonRep> lhs = std::nullopt,
                           std::optional<CommonRep> rhs = std::nullopt)
-    -> policy::value_decision<CommonRep> {
-  policy::value_decision<CommonRep> out{};
+    -> policy::value::decision<CommonRep> {
+  policy::value::decision<CommonRep> out{};
   out.has_value = false;
   out.error.kind = kind;
   out.error.reason = reason;
@@ -31,19 +31,19 @@ constexpr auto make_error(policy::runtime_error_kind kind, char const *reason,
 }
 
 template <typename T>
-constexpr auto checked_add(T lhs, T rhs) -> policy::value_decision<T> {
+constexpr auto checked_add(T lhs, T rhs) -> policy::value::decision<T> {
   if constexpr (!std::is_integral_v<T> || std::is_same_v<T, bool>) {
-    policy::value_decision<T> out{};
+    policy::value::decision<T> out{};
     out.has_value = true;
     out.value = static_cast<T>(lhs + rhs);
     return out;
   } else if constexpr (std::is_unsigned_v<T>) {
     auto const maxv = std::numeric_limits<T>::max();
     if (lhs > maxv - rhs) {
-      return make_error<T>(policy::runtime_error_kind::overflow,
+      return make_error<T>(policy::error::kind::overflow,
                            "checked addition overflow", lhs, rhs);
     }
-    policy::value_decision<T> out{};
+    policy::value::decision<T> out{};
     out.has_value = true;
     out.value = static_cast<T>(lhs + rhs);
     return out;
@@ -51,14 +51,14 @@ constexpr auto checked_add(T lhs, T rhs) -> policy::value_decision<T> {
     auto const maxv = std::numeric_limits<T>::max();
     auto const minv = std::numeric_limits<T>::min();
     if ((rhs > 0) && (lhs > maxv - rhs)) {
-      return make_error<T>(policy::runtime_error_kind::overflow,
+      return make_error<T>(policy::error::kind::overflow,
                            "checked addition overflow", lhs, rhs);
     }
     if ((rhs < 0) && (lhs < minv - rhs)) {
-      return make_error<T>(policy::runtime_error_kind::underflow,
+      return make_error<T>(policy::error::kind::underflow,
                            "checked addition underflow", lhs, rhs);
     }
-    policy::value_decision<T> out{};
+    policy::value::decision<T> out{};
     out.has_value = true;
     out.value = static_cast<T>(lhs + rhs);
     return out;
@@ -66,18 +66,18 @@ constexpr auto checked_add(T lhs, T rhs) -> policy::value_decision<T> {
 }
 
 template <typename T>
-constexpr auto checked_sub(T lhs, T rhs) -> policy::value_decision<T> {
+constexpr auto checked_sub(T lhs, T rhs) -> policy::value::decision<T> {
   if constexpr (!std::is_integral_v<T> || std::is_same_v<T, bool>) {
-    policy::value_decision<T> out{};
+    policy::value::decision<T> out{};
     out.has_value = true;
     out.value = static_cast<T>(lhs - rhs);
     return out;
   } else if constexpr (std::is_unsigned_v<T>) {
     if (lhs < rhs) {
-      return make_error<T>(policy::runtime_error_kind::underflow,
+      return make_error<T>(policy::error::kind::underflow,
                            "checked subtraction underflow", lhs, rhs);
     }
-    policy::value_decision<T> out{};
+    policy::value::decision<T> out{};
     out.has_value = true;
     out.value = static_cast<T>(lhs - rhs);
     return out;
@@ -85,14 +85,14 @@ constexpr auto checked_sub(T lhs, T rhs) -> policy::value_decision<T> {
     auto const maxv = std::numeric_limits<T>::max();
     auto const minv = std::numeric_limits<T>::min();
     if ((rhs < 0) && (lhs > maxv + rhs)) {
-      return make_error<T>(policy::runtime_error_kind::overflow,
+      return make_error<T>(policy::error::kind::overflow,
                            "checked subtraction overflow", lhs, rhs);
     }
     if ((rhs > 0) && (lhs < minv + rhs)) {
-      return make_error<T>(policy::runtime_error_kind::underflow,
+      return make_error<T>(policy::error::kind::underflow,
                            "checked subtraction underflow", lhs, rhs);
     }
-    policy::value_decision<T> out{};
+    policy::value::decision<T> out{};
     out.has_value = true;
     out.value = static_cast<T>(lhs - rhs);
     return out;
@@ -100,15 +100,15 @@ constexpr auto checked_sub(T lhs, T rhs) -> policy::value_decision<T> {
 }
 
 template <typename T>
-constexpr auto checked_mul(T lhs, T rhs) -> policy::value_decision<T> {
+constexpr auto checked_mul(T lhs, T rhs) -> policy::value::decision<T> {
   if constexpr (!std::is_integral_v<T> || std::is_same_v<T, bool>) {
-    policy::value_decision<T> out{};
+    policy::value::decision<T> out{};
     out.has_value = true;
     out.value = static_cast<T>(lhs * rhs);
     return out;
   } else {
     if (lhs == T{} || rhs == T{}) {
-      policy::value_decision<T> out{};
+      policy::value::decision<T> out{};
       out.has_value = true;
       out.value = T{};
       return out;
@@ -117,10 +117,10 @@ constexpr auto checked_mul(T lhs, T rhs) -> policy::value_decision<T> {
     if constexpr (std::is_unsigned_v<T>) {
       auto const maxv = std::numeric_limits<T>::max();
       if (lhs > maxv / rhs) {
-        return make_error<T>(policy::runtime_error_kind::overflow,
+        return make_error<T>(policy::error::kind::overflow,
                              "checked multiplication overflow", lhs, rhs);
       }
-      policy::value_decision<T> out{};
+      policy::value::decision<T> out{};
       out.has_value = true;
       out.value = static_cast<T>(lhs * rhs);
       return out;
@@ -131,30 +131,30 @@ constexpr auto checked_mul(T lhs, T rhs) -> policy::value_decision<T> {
       if (lhs > 0) {
         if (rhs > 0) {
           if (lhs > maxv / rhs) {
-            return make_error<T>(policy::runtime_error_kind::overflow,
+            return make_error<T>(policy::error::kind::overflow,
                                  "checked multiplication overflow", lhs, rhs);
           }
         } else {
           if (rhs < minv / lhs) {
-            return make_error<T>(policy::runtime_error_kind::underflow,
+            return make_error<T>(policy::error::kind::underflow,
                                  "checked multiplication underflow", lhs, rhs);
           }
         }
       } else {
         if (rhs > 0) {
           if (lhs < minv / rhs) {
-            return make_error<T>(policy::runtime_error_kind::underflow,
+            return make_error<T>(policy::error::kind::underflow,
                                  "checked multiplication underflow", lhs, rhs);
           }
         } else {
           if (lhs != 0 && rhs < maxv / lhs) {
-            return make_error<T>(policy::runtime_error_kind::overflow,
+            return make_error<T>(policy::error::kind::overflow,
                                  "checked multiplication overflow", lhs, rhs);
           }
         }
       }
 
-      policy::value_decision<T> out{};
+      policy::value::decision<T> out{};
       out.has_value = true;
       out.value = static_cast<T>(lhs * rhs);
       return out;
@@ -163,63 +163,63 @@ constexpr auto checked_mul(T lhs, T rhs) -> policy::value_decision<T> {
 }
 
 template <typename T>
-constexpr auto checked_div(T lhs, T rhs) -> policy::value_decision<T> {
+constexpr auto checked_div(T lhs, T rhs) -> policy::value::decision<T> {
   if (rhs == T{}) {
-    return make_error<T>(policy::runtime_error_kind::divide_by_zero,
+    return make_error<T>(policy::error::kind::divide_by_zero,
                          "checked division by zero", lhs, rhs);
   }
 
   if constexpr (std::is_integral_v<T> && std::is_signed_v<T>) {
     auto const minv = std::numeric_limits<T>::min();
     if (lhs == minv && rhs == static_cast<T>(-1)) {
-      return make_error<T>(policy::runtime_error_kind::overflow,
+      return make_error<T>(policy::error::kind::overflow,
                            "checked division overflow", lhs, rhs);
     }
   }
 
   if constexpr (requires { lhs / rhs; }) {
-    policy::value_decision<T> out{};
+    policy::value::decision<T> out{};
     out.has_value = true;
     out.value = static_cast<T>(lhs / rhs);
     return out;
   }
 
   return make_error<T>(
-      policy::runtime_error_kind::unspecified,
+      policy::error::kind::unspecified,
       "checked division not supported for negotiated common type", lhs, rhs);
 }
 
 template <typename T>
-constexpr auto compare_equal(T lhs, T rhs) -> policy::value_decision<T> {
-  policy::value_decision<T> out{};
+constexpr auto compare_equal(T lhs, T rhs) -> policy::value::decision<T> {
+  policy::value::decision<T> out{};
   if constexpr (requires { lhs == rhs; }) {
     out.has_value = true;
     out.value = static_cast<T>(lhs == rhs);
     return out;
   }
 
-  return make_error<T>(policy::runtime_error_kind::unspecified,
+  return make_error<T>(policy::error::kind::unspecified,
                        "comparison equality not supported for negotiated "
                        "common type");
 }
 
 template <typename T>
-constexpr auto compare_not_equal(T lhs, T rhs) -> policy::value_decision<T> {
-  policy::value_decision<T> out{};
+constexpr auto compare_not_equal(T lhs, T rhs) -> policy::value::decision<T> {
+  policy::value::decision<T> out{};
   if constexpr (requires { lhs != rhs; }) {
     out.has_value = true;
     out.value = static_cast<T>(lhs != rhs);
     return out;
   }
 
-  return make_error<T>(policy::runtime_error_kind::unspecified,
+  return make_error<T>(policy::error::kind::unspecified,
                        "comparison inequality not supported for negotiated "
                        "common type");
 }
 
 template <typename T>
-constexpr auto unchecked_add(T lhs, T rhs) -> policy::value_decision<T> {
-  policy::value_decision<T> out{};
+constexpr auto unchecked_add(T lhs, T rhs) -> policy::value::decision<T> {
+  policy::value::decision<T> out{};
   out.has_value = true;
 
   if constexpr (requires { lhs + rhs; }) {
@@ -232,8 +232,8 @@ constexpr auto unchecked_add(T lhs, T rhs) -> policy::value_decision<T> {
 }
 
 template <typename T>
-constexpr auto unchecked_sub(T lhs, T rhs) -> policy::value_decision<T> {
-  policy::value_decision<T> out{};
+constexpr auto unchecked_sub(T lhs, T rhs) -> policy::value::decision<T> {
+  policy::value::decision<T> out{};
   out.has_value = true;
 
   if constexpr (requires { lhs - rhs; }) {
@@ -246,8 +246,8 @@ constexpr auto unchecked_sub(T lhs, T rhs) -> policy::value_decision<T> {
 }
 
 template <typename T>
-constexpr auto unchecked_mul(T lhs, T rhs) -> policy::value_decision<T> {
-  policy::value_decision<T> out{};
+constexpr auto unchecked_mul(T lhs, T rhs) -> policy::value::decision<T> {
+  policy::value::decision<T> out{};
   out.has_value = true;
 
   if constexpr (requires { lhs * rhs; }) {
@@ -260,8 +260,8 @@ constexpr auto unchecked_mul(T lhs, T rhs) -> policy::value_decision<T> {
 }
 
 template <typename T>
-constexpr auto unchecked_div(T lhs, T rhs) -> policy::value_decision<T> {
-  policy::value_decision<T> out{};
+constexpr auto unchecked_div(T lhs, T rhs) -> policy::value::decision<T> {
+  policy::value::decision<T> out{};
   out.has_value = true;
 
   // Intentionally no guards: unchecked policy delegates error/UB behavior
@@ -351,15 +351,14 @@ template <typename T> constexpr auto saturating_mul(T lhs, T rhs) -> T {
 
 template <typename CommonRep>
 constexpr auto make_unsupported(char const *reason)
-    -> policy::value_decision<CommonRep> {
-  return make_error<CommonRep>(policy::runtime_error_kind::unspecified, reason);
+    -> policy::value::decision<CommonRep> {
+  return make_error<CommonRep>(policy::error::kind::unspecified, reason);
 }
 
 template <typename CommonRep>
 constexpr auto make_div_zero(char const *reason)
-    -> policy::value_decision<CommonRep> {
-  return make_error<CommonRep>(policy::runtime_error_kind::divide_by_zero,
-                               reason);
+    -> policy::value::decision<CommonRep> {
+  return make_error<CommonRep>(policy::error::kind::divide_by_zero, reason);
 }
 
 } // namespace details
@@ -372,10 +371,10 @@ struct op_binding {
   static constexpr bool enabled = false;
 
   static constexpr auto apply(CommonRep, CommonRep)
-      -> policy::value_decision<CommonRep> {
-    policy::value_decision<CommonRep> out{};
+      -> policy::value::decision<CommonRep> {
+    policy::value::decision<CommonRep> out{};
     out.has_value = false;
-    out.error.kind = policy::runtime_error_kind::unspecified;
+    out.error.kind = policy::error::kind::unspecified;
     out.error.reason = "operation binding is not implemented";
     return out;
   }
@@ -386,7 +385,7 @@ struct op_binding<Addition, policy::checked_value, CommonRep> {
   static constexpr bool enabled = true;
 
   static constexpr auto apply(CommonRep lhs, CommonRep rhs)
-      -> policy::value_decision<CommonRep> {
+      -> policy::value::decision<CommonRep> {
     if constexpr (requires { details::checked_add(lhs, rhs); }) {
       return details::checked_add(lhs, rhs);
     }
@@ -401,7 +400,7 @@ struct op_binding<Subtraction, policy::checked_value, CommonRep> {
   static constexpr bool enabled = true;
 
   static constexpr auto apply(CommonRep lhs, CommonRep rhs)
-      -> policy::value_decision<CommonRep> {
+      -> policy::value::decision<CommonRep> {
     if constexpr (requires { details::checked_sub(lhs, rhs); }) {
       return details::checked_sub(lhs, rhs);
     }
@@ -416,7 +415,7 @@ struct op_binding<Multiplication, policy::checked_value, CommonRep> {
   static constexpr bool enabled = true;
 
   static constexpr auto apply(CommonRep lhs, CommonRep rhs)
-      -> policy::value_decision<CommonRep> {
+      -> policy::value::decision<CommonRep> {
     if constexpr (requires { details::checked_mul(lhs, rhs); }) {
       return details::checked_mul(lhs, rhs);
     }
@@ -431,7 +430,7 @@ struct op_binding<Division, policy::checked_value, CommonRep> {
   static constexpr bool enabled = true;
 
   static constexpr auto apply(CommonRep lhs, CommonRep rhs)
-      -> policy::value_decision<CommonRep> {
+      -> policy::value::decision<CommonRep> {
     if constexpr (requires { details::checked_div(lhs, rhs); }) {
       return details::checked_div(lhs, rhs);
     }
@@ -446,7 +445,7 @@ struct op_binding<Addition, policy::unchecked_value, CommonRep> {
   static constexpr bool enabled = true;
 
   static constexpr auto apply(CommonRep lhs, CommonRep rhs)
-      -> policy::value_decision<CommonRep> {
+      -> policy::value::decision<CommonRep> {
     return details::unchecked_add(lhs, rhs);
   }
 };
@@ -456,7 +455,7 @@ struct op_binding<Subtraction, policy::unchecked_value, CommonRep> {
   static constexpr bool enabled = true;
 
   static constexpr auto apply(CommonRep lhs, CommonRep rhs)
-      -> policy::value_decision<CommonRep> {
+      -> policy::value::decision<CommonRep> {
     return details::unchecked_sub(lhs, rhs);
   }
 };
@@ -466,7 +465,7 @@ struct op_binding<Multiplication, policy::unchecked_value, CommonRep> {
   static constexpr bool enabled = true;
 
   static constexpr auto apply(CommonRep lhs, CommonRep rhs)
-      -> policy::value_decision<CommonRep> {
+      -> policy::value::decision<CommonRep> {
     return details::unchecked_mul(lhs, rhs);
   }
 };
@@ -476,7 +475,7 @@ struct op_binding<Division, policy::unchecked_value, CommonRep> {
   static constexpr bool enabled = true;
 
   static constexpr auto apply(CommonRep lhs, CommonRep rhs)
-      -> policy::value_decision<CommonRep> {
+      -> policy::value::decision<CommonRep> {
     return details::unchecked_div(lhs, rhs);
   }
 };
@@ -486,8 +485,8 @@ struct op_binding<Addition, policy::saturating_value, CommonRep> {
   static constexpr bool enabled = true;
 
   static constexpr auto apply(CommonRep lhs, CommonRep rhs)
-      -> policy::value_decision<CommonRep> {
-    policy::value_decision<CommonRep> out{};
+      -> policy::value::decision<CommonRep> {
+    policy::value::decision<CommonRep> out{};
     if constexpr (requires { details::saturating_add(lhs, rhs); }) {
       out.has_value = true;
       out.value = details::saturating_add(lhs, rhs);
@@ -503,8 +502,8 @@ struct op_binding<Subtraction, policy::saturating_value, CommonRep> {
   static constexpr bool enabled = true;
 
   static constexpr auto apply(CommonRep lhs, CommonRep rhs)
-      -> policy::value_decision<CommonRep> {
-    policy::value_decision<CommonRep> out{};
+      -> policy::value::decision<CommonRep> {
+    policy::value::decision<CommonRep> out{};
     if constexpr (requires { details::saturating_sub(lhs, rhs); }) {
       out.has_value = true;
       out.value = details::saturating_sub(lhs, rhs);
@@ -520,8 +519,8 @@ struct op_binding<Multiplication, policy::saturating_value, CommonRep> {
   static constexpr bool enabled = true;
 
   static constexpr auto apply(CommonRep lhs, CommonRep rhs)
-      -> policy::value_decision<CommonRep> {
-    policy::value_decision<CommonRep> out{};
+      -> policy::value::decision<CommonRep> {
+    policy::value::decision<CommonRep> out{};
     if constexpr (requires { details::saturating_mul(lhs, rhs); }) {
       out.has_value = true;
       out.value = details::saturating_mul(lhs, rhs);
@@ -537,8 +536,8 @@ struct op_binding<Division, policy::saturating_value, CommonRep> {
   static constexpr bool enabled = true;
 
   static constexpr auto apply(CommonRep lhs, CommonRep rhs)
-      -> policy::value_decision<CommonRep> {
-    policy::value_decision<CommonRep> out{};
+      -> policy::value::decision<CommonRep> {
+    policy::value::decision<CommonRep> out{};
 
     if (rhs == CommonRep{}) {
       return details::make_div_zero<CommonRep>("saturating division by zero");
@@ -560,7 +559,7 @@ struct op_binding<Equal, policy::checked_value, CommonRep> {
   static constexpr bool enabled = true;
 
   static constexpr auto apply(CommonRep lhs, CommonRep rhs)
-      -> policy::value_decision<CommonRep> {
+      -> policy::value::decision<CommonRep> {
     return details::compare_equal(lhs, rhs);
   }
 };
@@ -570,7 +569,7 @@ struct op_binding<Equal, policy::unchecked_value, CommonRep> {
   static constexpr bool enabled = true;
 
   static constexpr auto apply(CommonRep lhs, CommonRep rhs)
-      -> policy::value_decision<CommonRep> {
+      -> policy::value::decision<CommonRep> {
     return details::compare_equal(lhs, rhs);
   }
 };
@@ -580,7 +579,7 @@ struct op_binding<Equal, policy::saturating_value, CommonRep> {
   static constexpr bool enabled = true;
 
   static constexpr auto apply(CommonRep lhs, CommonRep rhs)
-      -> policy::value_decision<CommonRep> {
+      -> policy::value::decision<CommonRep> {
     return details::compare_equal(lhs, rhs);
   }
 };
@@ -590,7 +589,7 @@ struct op_binding<NotEqual, policy::checked_value, CommonRep> {
   static constexpr bool enabled = true;
 
   static constexpr auto apply(CommonRep lhs, CommonRep rhs)
-      -> policy::value_decision<CommonRep> {
+      -> policy::value::decision<CommonRep> {
     return details::compare_not_equal(lhs, rhs);
   }
 };
@@ -600,7 +599,7 @@ struct op_binding<NotEqual, policy::unchecked_value, CommonRep> {
   static constexpr bool enabled = true;
 
   static constexpr auto apply(CommonRep lhs, CommonRep rhs)
-      -> policy::value_decision<CommonRep> {
+      -> policy::value::decision<CommonRep> {
     return details::compare_not_equal(lhs, rhs);
   }
 };
@@ -610,7 +609,7 @@ struct op_binding<NotEqual, policy::saturating_value, CommonRep> {
   static constexpr bool enabled = true;
 
   static constexpr auto apply(CommonRep lhs, CommonRep rhs)
-      -> policy::value_decision<CommonRep> {
+      -> policy::value::decision<CommonRep> {
     return details::compare_not_equal(lhs, rhs);
   }
 };
