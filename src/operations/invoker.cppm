@@ -32,6 +32,11 @@ constexpr auto apply_runtime_fence(bool enabled) noexcept -> void {
 template <typename ConcurrencyHandler, typename CommonRep>
 constexpr auto inject_concurrency() -> policy::concurrency::injection {
   static_cast<void>(sizeof(CommonRep));
+  static_assert(ConcurrencyHandler::enabled,
+                "Selected concurrency handler is not enabled");
+  static_assert(std::same_as<typename ConcurrencyHandler::injection_type,
+                             policy::concurrency::injection>,
+                "concurrency handler must use policy::concurrency::injection");
 
   return ConcurrencyHandler::inject();
 }
@@ -42,6 +47,11 @@ constexpr auto run_value(CommonRep lhs, CommonRep rhs,
                          policy::concurrency::injection const &injection)
     -> policy::value::decision<CommonRep> {
   static_cast<void>(sizeof(ErrorPayload));
+  static_assert(ValueHandler::enabled, "Selected value handler is not enabled");
+  static_assert(
+      std::same_as<typename ValueHandler::decision_type,
+                   policy::value::decision<CommonRep>>,
+      "value handler decision_type must match policy::value::decision");
 
   static_assert(
       binding::op_binding_available<OpTag, ValuePolicy, CommonRep>,

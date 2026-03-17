@@ -46,15 +46,26 @@ struct dispatcher_meta {
 
   static constexpr bool type_ready =
       policy::type::handler_available<type_policy, OpTag, lhs_rep, rhs_rep>;
+  static constexpr bool type_protocol_ready =
+      policy::type::handler_protocol<type_policy, OpTag, lhs_rep, rhs_rep>;
   static constexpr bool concurrency_ready =
       policy::concurrency::handler_available<concurrency_policy, OpTag,
                                              common_rep, ErrorPayload>;
+  static constexpr bool concurrency_protocol_ready =
+      policy::concurrency::handler_protocol<concurrency_policy, OpTag,
+                                            common_rep, ErrorPayload>;
   static constexpr bool value_ready =
       policy::value::handler_available<value_policy, OpTag, common_rep,
                                        ErrorPayload>;
+  static constexpr bool value_protocol_ready =
+      policy::value::handler_protocol<value_policy, OpTag, common_rep,
+                                      ErrorPayload>;
   static constexpr bool error_ready =
       policy::error::handler_available<error_policy, OpTag, common_rep,
                                        ErrorPayload>;
+  static constexpr bool error_protocol_ready =
+      policy::error::handler_protocol<error_policy, OpTag, common_rep,
+                                      ErrorPayload>;
 };
 
 template <operation OpTag, primitive_instance Lhs, primitive_instance Rhs,
@@ -82,6 +93,8 @@ constexpr auto dispatch(Lhs const &lhs, Rhs const &rhs)
   static_assert(
       meta::type_ready,
       "Missing type_handler specialization for this operation/policy");
+  static_assert(meta::type_protocol_ready,
+                "type::handler does not satisfy the policy protocol contract");
   static_assert(policy::type::handler<typename meta::type_policy, OpTag,
                                       typename meta::lhs_rep,
                                       typename meta::rhs_rep>::allowed,
@@ -92,11 +105,18 @@ constexpr auto dispatch(Lhs const &lhs, Rhs const &rhs)
       meta::concurrency_ready,
       "Missing concurrency_handler specialization for this operation/policy");
   static_assert(
+      meta::concurrency_protocol_ready,
+      "concurrency::handler does not satisfy the policy protocol contract");
+  static_assert(
       meta::value_ready,
       "Missing value_handler specialization for this operation/policy");
+  static_assert(meta::value_protocol_ready,
+                "value::handler does not satisfy the policy protocol contract");
   static_assert(
       meta::error_ready,
       "Missing error_handler specialization for this operation/policy");
+  static_assert(meta::error_protocol_ready,
+                "error::handler does not satisfy the policy protocol contract");
 
   // Runtime stage 1: concurrency context injection.
   auto const injection =
