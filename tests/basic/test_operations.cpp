@@ -1,5 +1,5 @@
 #include <gtest/gtest.h>
-
+#include <type_traits>
 #include <atomic>
 #include <cstdint>
 #include <thread>
