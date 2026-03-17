@@ -119,7 +119,7 @@ constexpr auto dispatch(Lhs const &lhs, Rhs const &rhs)
 
   // Runtime stage 1: concurrency context injection.
   auto const injection =
-      invoker::inject_concurrency<concurrency_handler_t, common_rep>();
+      runtime::inject_concurrency<concurrency_handler_t, common_rep>();
 
   // Runtime stage 2: value path.
   auto const lhs_rep_raw =
@@ -134,7 +134,7 @@ constexpr auto dispatch(Lhs const &lhs, Rhs const &rhs)
     policy::error::request<common_rep> request{};
     request.kind = policy::error::kind::domain_error;
     request.reason = "invalid underlying representation";
-    return invoker::resolve_error<typename meta::error_policy, OpTag,
+    return runtime::resolve_error<typename meta::error_policy, OpTag,
                                   common_rep, ErrorPayload>(request);
   }
 
@@ -151,7 +151,7 @@ constexpr auto dispatch(Lhs const &lhs, Rhs const &rhs)
           rhs_value_normalized));
 
   auto const decision =
-      invoker::run_value<OpTag, typename meta::value_policy, common_rep,
+      runtime::run_value<OpTag, typename meta::value_policy, common_rep,
                          value_handler_t, ErrorPayload>(lhs_common, rhs_common,
                                                         injection);
 
@@ -160,7 +160,7 @@ constexpr auto dispatch(Lhs const &lhs, Rhs const &rhs)
   }
 
   // Runtime stage 3: error policy.
-  return invoker::resolve_error<typename meta::error_policy, OpTag, common_rep,
+  return runtime::resolve_error<typename meta::error_policy, OpTag, common_rep,
                                 ErrorPayload>(decision.error);
 }
 
