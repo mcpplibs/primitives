@@ -60,8 +60,7 @@ target_include_directories(mcpplibs-primitives PUBLIC
 )
 
 # Examples
-add_executable(basic examples/basic.cpp)
-target_link_libraries(basic PRIVATE mcpplibs-primitives)
+add_subdirectory(examples EXCLUDE_FROM_ALL)
 
 # Testing
 option(BUILD_TESTING "Build the testing directories" ON)
