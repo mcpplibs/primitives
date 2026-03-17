@@ -19,8 +19,8 @@
 
 该库在 `primitive` 类型上重载了常见的 C++ 算术、位运算和一元运算符。算术行为受策略（policy）控制：
 
-- 值策略（`checked_value` / `saturating_value` / `unchecked_value`）决定溢出行为；
-- 错误策略（`throw_error` / `expected_error` / `terminate_error`）决定在 `checked_value` 且发生错误时的处理方式。
+- 值策略（`policy::value::checked` / `policy::value::saturating` / `policy::value::unchecked`）决定溢出行为；
+- 错误策略（`policy::error::throwing` / `policy::error::expected` / `policy::error::terminate`）决定在 `policy::value::checked` 且发生错误时的处理方式。
 
 示例：
 
@@ -32,9 +32,9 @@ using namespace mcpplibs::primitives::policy;
 primitive<int> a{1}, b{2};
 auto c = a + b; // primitive<int>
 
-primitive<int, expected_error> x{std::numeric_limits<int>::max()};
-primitive<int, expected_error> y{1};
-auto maybe = x + y; // std::expected<primitive<int, expected_error>, policy::error::kind>
+primitive<int, policy::error::expected> x{std::numeric_limits<int>::max()};
+primitive<int, policy::error::expected> y{1};
+auto maybe = x + y; // std::expected<primitive<int, policy::error::expected>, policy::error::kind>
 ```
 
 ## Policy 协议命名空间
@@ -45,6 +45,20 @@ auto maybe = x + y; // std::expected<primitive<int, expected_error>, policy::err
 - `policy::concurrency::handler` / `policy::concurrency::injection`
 - `policy::value::handler` / `policy::value::decision`
 - `policy::error::handler` / `policy::error::request` / `policy::error::kind`
+
+预设 policy 标签也按类别归档：
+
+- `policy::value::{checked, unchecked, saturating}`
+- `policy::type::{strict, compatible, transparent}`
+- `policy::error::{throwing, expected, terminate}`
+- `policy::concurrency::{none, atomic}`
+
+默认策略位于 `policy::defaults`：
+
+- `policy::defaults::value`
+- `policy::defaults::type`
+- `policy::defaults::error`
+- `policy::defaults::concurrency`
 
 
 ## 项目结构
