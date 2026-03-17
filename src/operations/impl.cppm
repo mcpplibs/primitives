@@ -14,6 +14,7 @@ template <> struct traits<Addition> {
 
   static constexpr bool enabled = true;
   static constexpr auto arity = dimension::binary;
+  static constexpr auto capability_mask = capability::arithmetic;
 };
 
 template <> struct traits<Subtraction> {
@@ -21,6 +22,7 @@ template <> struct traits<Subtraction> {
 
   static constexpr bool enabled = true;
   static constexpr auto arity = dimension::binary;
+  static constexpr auto capability_mask = capability::arithmetic;
 };
 
 template <> struct traits<Multiplication> {
@@ -28,6 +30,7 @@ template <> struct traits<Multiplication> {
 
   static constexpr bool enabled = true;
   static constexpr auto arity = dimension::binary;
+  static constexpr auto capability_mask = capability::arithmetic;
 };
 
 template <> struct traits<Division> {
@@ -35,6 +38,9 @@ template <> struct traits<Division> {
 
   static constexpr bool enabled = true;
   static constexpr auto arity = dimension::binary;
+  static constexpr auto capability_mask = capability::arithmetic;
+  static constexpr auto capability_mask = capability::comparison;
+  static constexpr auto capability_mask = capability::comparison;
 };
 
 } // namespace mcpplibs::primitives::operations
