@@ -1,6 +1,7 @@
 #include <gtest/gtest.h>
 
 #include <atomic>
+#include <cstdint>
 #include <thread>
 #include <vector>
 
@@ -34,23 +35,23 @@ TEST(OperationsTest, DivisionByZeroReturnsError) {
 }
 
 TEST(OperationsTest, SaturatingAdditionClampsUnsignedOverflow) {
-  using value_t = primitive<unsigned char, policy::saturating_value>;
+  using value_t = primitive<std::uint16_t, policy::saturating_value>;
 
-  auto const lhs = value_t{static_cast<unsigned char>(250)};
-  auto const rhs = value_t{static_cast<unsigned char>(20)};
+  auto const lhs = value_t{static_cast<std::uint16_t>(65530)};
+  auto const rhs = value_t{static_cast<std::uint16_t>(20)};
 
   auto const result = operations::add(lhs, rhs);
 
   ASSERT_TRUE(result.has_value());
-  EXPECT_EQ(result->value(), static_cast<unsigned char>(255));
+  EXPECT_EQ(result->value(), static_cast<std::uint16_t>(65535));
 }
 
 TEST(OperationsTest, CheckedAdditionReportsUnsignedOverflow) {
   using value_t =
-      primitive<unsigned char, policy::checked_value, policy::expected_error>;
+      primitive<std::uint16_t, policy::checked_value, policy::expected_error>;
 
-  auto const lhs = value_t{static_cast<unsigned char>(250)};
-  auto const rhs = value_t{static_cast<unsigned char>(20)};
+  auto const lhs = value_t{static_cast<std::uint16_t>(65530)};
+  auto const rhs = value_t{static_cast<std::uint16_t>(20)};
 
   auto const result = operations::add(lhs, rhs);
 
@@ -60,15 +61,15 @@ TEST(OperationsTest, CheckedAdditionReportsUnsignedOverflow) {
 
 TEST(OperationsTest, UncheckedAdditionWrapsUnsignedOverflow) {
   using value_t =
-      primitive<unsigned char, policy::unchecked_value, policy::expected_error>;
+      primitive<std::uint16_t, policy::unchecked_value, policy::expected_error>;
 
-  auto const lhs = value_t{static_cast<unsigned char>(250)};
-  auto const rhs = value_t{static_cast<unsigned char>(20)};
+  auto const lhs = value_t{static_cast<std::uint16_t>(65530)};
+  auto const rhs = value_t{static_cast<std::uint16_t>(20)};
 
   auto const result = operations::add(lhs, rhs);
 
   ASSERT_TRUE(result.has_value());
-  EXPECT_EQ(result->value(), static_cast<unsigned char>(14));
+  EXPECT_EQ(result->value(), static_cast<std::uint16_t>(14));
 }
 
 TEST(OperationsTest, UncheckedDivisionUsesRawArithmeticWhenValid) {
@@ -206,6 +207,23 @@ TEST(OperationsTest, CharUnderlyingRejectsArithmeticEvenWithTransparentType) {
   static_assert(std::is_same_v<typename char_meta::common_rep, char>);
 
   EXPECT_EQ(char_handler::diagnostic_id, 3u);
+}
+
+TEST(OperationsTest, SignedAndUnsignedCharRejectArithmeticAtCompileTime) {
+  using signed_handler =
+      policy::type_handler<policy::transparent_type, operations::Addition,
+                           signed char, signed char>;
+  using unsigned_handler =
+      policy::type_handler<policy::transparent_type, operations::Addition,
+                           unsigned char, unsigned char>;
+
+  static_assert(signed_handler::enabled);
+  static_assert(!signed_handler::allowed);
+  static_assert(unsigned_handler::enabled);
+  static_assert(!unsigned_handler::allowed);
+
+  EXPECT_EQ(signed_handler::diagnostic_id, 3u);
+  EXPECT_EQ(unsigned_handler::diagnostic_id, 3u);
 }
 
 TEST(OperationsTest, BoolUnderlyingAllowsComparisonOperations) {
