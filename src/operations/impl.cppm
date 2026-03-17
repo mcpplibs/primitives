@@ -8,6 +8,8 @@ struct Addition {};
 struct Subtraction {};
 struct Multiplication {};
 struct Division {};
+struct Equal {};
+struct NotEqual {};
 
 template <> struct traits<Addition> {
   using op_tag = Addition;
@@ -39,7 +41,21 @@ template <> struct traits<Division> {
   static constexpr bool enabled = true;
   static constexpr auto arity = dimension::binary;
   static constexpr auto capability_mask = capability::arithmetic;
+};
+
+template <> struct traits<Equal> {
+  using op_tag = Equal;
+
+  static constexpr bool enabled = true;
+  static constexpr auto arity = dimension::binary;
   static constexpr auto capability_mask = capability::comparison;
+};
+
+template <> struct traits<NotEqual> {
+  using op_tag = NotEqual;
+
+  static constexpr bool enabled = true;
+  static constexpr auto arity = dimension::binary;
   static constexpr auto capability_mask = capability::comparison;
 };
 
