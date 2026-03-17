@@ -74,9 +74,8 @@ using dispatch_result_t = std::expected<
     typename dispatcher_meta<OpTag, Lhs, Rhs, ErrorPayload>::common_rep,
     ErrorPayload>;
 
-// Closed-loop placeholder dispatcher: compile-time type negotiation + runtime
-// chain (concurrency -> value -> error). The value/error execution details are
-// intentionally hardcoded for now and will migrate to handler-driven calls.
+// Dispatcher pipeline: compile-time negotiation plus runtime chain
+// (concurrency -> value -> error) through selected policy handlers.
 template <operation OpTag, primitive_instance Lhs, primitive_instance Rhs,
           typename ErrorPayload = policy::error::kind>
 constexpr auto dispatch(Lhs const &lhs, Rhs const &rhs)
