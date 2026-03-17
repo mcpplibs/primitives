@@ -34,8 +34,18 @@ auto c = a + b; // primitive<int>
 
 primitive<int, expected_error> x{std::numeric_limits<int>::max()};
 primitive<int, expected_error> y{1};
-auto maybe = x + y; // std::expected<primitive<int, expected_error>, std::overflow_error>
+auto maybe = x + y; // std::expected<primitive<int, expected_error>, policy::error::kind>
 ```
+
+## Policy 协议命名空间
+
+自定义 policy 时，协议入口已按职责拆分到子命名空间：
+
+- `policy::type::handler` / `policy::type::handler_available`
+- `policy::concurrency::handler` / `policy::concurrency::injection`
+- `policy::value::handler` / `policy::value::decision`
+- `policy::error::handler` / `policy::error::request` / `policy::error::kind`
+
 
 ## 项目结构
 
