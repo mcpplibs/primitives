@@ -20,25 +20,116 @@ struct BadKind {
   int value;
 };
 
+struct BigIntLike {
+  long long value;
+
+  friend constexpr auto operator+(BigIntLike lhs, BigIntLike rhs) noexcept
+      -> BigIntLike {
+    return BigIntLike{lhs.value + rhs.value};
+  }
+
+  friend constexpr auto operator-(BigIntLike lhs, BigIntLike rhs) noexcept
+      -> BigIntLike {
+    return BigIntLike{lhs.value - rhs.value};
+  }
+
+  friend constexpr auto operator*(BigIntLike lhs, BigIntLike rhs) noexcept
+      -> BigIntLike {
+    return BigIntLike{lhs.value * rhs.value};
+  }
+
+  friend constexpr auto operator/(BigIntLike lhs, BigIntLike rhs) noexcept
+      -> BigIntLike {
+    return BigIntLike{lhs.value / rhs.value};
+  }
+
+  friend constexpr auto operator==(BigIntLike lhs, BigIntLike rhs) noexcept
+      -> bool {
+    return lhs.value == rhs.value;
+  }
+};
+
+struct BadCustomKind {
+  long long value;
+
+  friend constexpr auto operator+(BadCustomKind lhs, BadCustomKind rhs) noexcept
+      -> BadCustomKind {
+    return BadCustomKind{lhs.value + rhs.value};
+  }
+
+  friend constexpr auto operator-(BadCustomKind lhs, BadCustomKind rhs) noexcept
+      -> BadCustomKind {
+    return BadCustomKind{lhs.value - rhs.value};
+  }
+
+  friend constexpr auto operator*(BadCustomKind lhs, BadCustomKind rhs) noexcept
+      -> BadCustomKind {
+    return BadCustomKind{lhs.value * rhs.value};
+  }
+
+  friend constexpr auto operator/(BadCustomKind lhs, BadCustomKind rhs) noexcept
+      -> BadCustomKind {
+    return BadCustomKind{lhs.value / rhs.value};
+  }
+
+  friend constexpr auto operator==(BadCustomKind lhs,
+                                   BadCustomKind rhs) noexcept -> bool {
+    return lhs.value == rhs.value;
+  }
+};
+
+struct MissingDivisionLike {
+  long long value;
+
+  friend constexpr auto operator+(MissingDivisionLike lhs,
+                                  MissingDivisionLike rhs) noexcept
+      -> MissingDivisionLike {
+    return MissingDivisionLike{lhs.value + rhs.value};
+  }
+
+  friend constexpr auto operator-(MissingDivisionLike lhs,
+                                  MissingDivisionLike rhs) noexcept
+      -> MissingDivisionLike {
+    return MissingDivisionLike{lhs.value - rhs.value};
+  }
+
+  friend constexpr auto operator*(MissingDivisionLike lhs,
+                                  MissingDivisionLike rhs) noexcept
+      -> MissingDivisionLike {
+    return MissingDivisionLike{lhs.value * rhs.value};
+  }
+
+  friend constexpr auto operator==(MissingDivisionLike lhs,
+                                   MissingDivisionLike rhs) noexcept -> bool {
+    return lhs.value == rhs.value;
+  }
+};
+
+struct NonNegativeInt {
+  int value;
+};
+
 } // namespace
 
-template <>
-struct mcpplibs::primitives::underlying::traits<UserInteger> {
+template <> struct mcpplibs::primitives::underlying::traits<UserInteger> {
   using value_type = UserInteger;
   using rep_type = int;
 
   static constexpr bool enabled = true;
   static constexpr auto kind = category::integer;
 
-  static constexpr rep_type to_rep(value_type value) noexcept { return value.value; }
+  static constexpr rep_type to_rep(value_type value) noexcept {
+    return value.value;
+  }
 
-  static constexpr value_type from_rep(rep_type value) noexcept { return UserInteger{value}; }
+  static constexpr value_type from_rep(rep_type value) noexcept {
+    return UserInteger{value};
+  }
 
   static constexpr bool is_valid_rep(rep_type) noexcept { return true; }
 };
 
-template <>
-struct mcpplibs::primitives::underlying::traits<BadRep> {
+template <> struct mcpplibs::primitives::underlying::traits<BadRep> {
   using value_type = BadRep;
   using rep_type = BadRep;
 
@@ -47,24 +138,98 @@ struct mcpplibs::primitives::underlying::traits<BadRep> {
 
   static constexpr rep_type to_rep(value_type value) noexcept { return value; }
 
-  static constexpr value_type from_rep(rep_type value) noexcept { return value; }
+  static constexpr value_type from_rep(rep_type value) noexcept {
+    return value;
+  }
 
   static constexpr bool is_valid_rep(rep_type) noexcept { return true; }
 };
 
-template <>
-struct mcpplibs::primitives::underlying::traits<BadKind> {
+template <> struct mcpplibs::primitives::underlying::traits<BadKind> {
   using value_type = BadKind;
   using rep_type = int;
 
   static constexpr bool enabled = true;
   static constexpr auto kind = category::floating;
 
-  static constexpr rep_type to_rep(value_type value) noexcept { return value.value; }
+  static constexpr rep_type to_rep(value_type value) noexcept {
+    return value.value;
+  }
 
-  static constexpr value_type from_rep(rep_type value) noexcept { return BadKind{value}; }
+  static constexpr value_type from_rep(rep_type value) noexcept {
+    return BadKind{value};
+  }
 
   static constexpr bool is_valid_rep(rep_type) noexcept { return true; }
+};
+
+template <> struct mcpplibs::primitives::underlying::traits<BigIntLike> {
+  using value_type = BigIntLike;
+  using rep_type = BigIntLike;
+
+  static constexpr bool enabled = true;
+  static constexpr auto kind = category::integer;
+
+  static constexpr rep_type to_rep(value_type value) noexcept { return value; }
+
+  static constexpr value_type from_rep(rep_type value) noexcept {
+    return value;
+  }
+
+  static constexpr bool is_valid_rep(rep_type) noexcept { return true; }
+};
+
+template <> struct mcpplibs::primitives::underlying::traits<BadCustomKind> {
+  using value_type = BadCustomKind;
+  using rep_type = BadCustomKind;
+
+  static constexpr bool enabled = true;
+  static constexpr auto kind = category::boolean;
+
+  static constexpr rep_type to_rep(value_type value) noexcept { return value; }
+
+  static constexpr value_type from_rep(rep_type value) noexcept {
+    return value;
+  }
+
+  static constexpr bool is_valid_rep(rep_type) noexcept { return true; }
+};
+
+template <>
+struct mcpplibs::primitives::underlying::traits<MissingDivisionLike> {
+  using value_type = MissingDivisionLike;
+  using rep_type = MissingDivisionLike;
+
+  static constexpr bool enabled = true;
+  static constexpr auto kind = category::integer;
+
+  static constexpr rep_type to_rep(value_type value) noexcept { return value; }
+
+  static constexpr value_type from_rep(rep_type value) noexcept {
+    return value;
+  }
+
+  static constexpr bool is_valid_rep(rep_type) noexcept { return true; }
+};
+
+template <> struct mcpplibs::primitives::underlying::traits<NonNegativeInt> {
+  using value_type = NonNegativeInt;
+  using rep_type = int;
+
+  static constexpr bool enabled = true;
+  static constexpr auto kind = category::integer;
+
+  static constexpr rep_type to_rep(value_type value) noexcept {
+    return value.value;
+  }
+
+  static constexpr value_type from_rep(rep_type value) noexcept {
+    return NonNegativeInt{value};
+  }
+
+  static constexpr bool is_valid_rep(rep_type value) noexcept {
+    return value >= 0;
+  }
 };
 
 TEST(PrimitiveTraitsTest, StandardTypeConcepts) {
@@ -86,7 +251,7 @@ TEST(PrimitiveTraitsTest, StandardTypeConcepts) {
 
   EXPECT_TRUE((mcpplibs::primitives::std_underlying_type<int>));
   EXPECT_TRUE((mcpplibs::primitives::std_underlying_type<double>));
-  EXPECT_FALSE((mcpplibs::primitives::std_underlying_type<void*>));
+  EXPECT_FALSE((mcpplibs::primitives::std_underlying_type<void *>));
 }
 
 TEST(PrimitiveTraitsTest, UnderlyingTraitsDefaultsAndCustomRegistration) {
@@ -95,18 +260,83 @@ TEST(PrimitiveTraitsTest, UnderlyingTraitsDefaultsAndCustomRegistration) {
             mcpplibs::primitives::underlying::category::integer);
 
   EXPECT_TRUE((mcpplibs::primitives::underlying_type<UserInteger>));
-  EXPECT_EQ(mcpplibs::primitives::underlying::traits<UserInteger>::to_rep(UserInteger{7}), 7);
+  EXPECT_EQ(mcpplibs::primitives::underlying::traits<UserInteger>::to_rep(
+                UserInteger{7}),
+            7);
 
   EXPECT_FALSE((mcpplibs::primitives::underlying_type<NotRegistered>));
-  EXPECT_FALSE((mcpplibs::primitives::underlying::traits<NotRegistered>::enabled));
+  EXPECT_FALSE(
+      (mcpplibs::primitives::underlying::traits<NotRegistered>::enabled));
 }
 
-TEST(PrimitiveTraitsTest, UnderlyingTypeRequiresValidRepTypeAndCategoryConsistency) {
+TEST(PrimitiveTraitsTest,
+     UnderlyingTypeRequiresValidRepTypeAndCategoryConsistency) {
   EXPECT_TRUE((mcpplibs::primitives::underlying::traits<BadRep>::enabled));
   EXPECT_FALSE((mcpplibs::primitives::underlying_type<BadRep>));
 
   EXPECT_TRUE((mcpplibs::primitives::underlying::traits<BadKind>::enabled));
   EXPECT_FALSE((mcpplibs::primitives::underlying_type<BadKind>));
+}
+
+TEST(PrimitiveTraitsTest, UnderlyingTypeAllowsCustomNumericLikeRepType) {
+  EXPECT_TRUE((mcpplibs::primitives::underlying::traits<BigIntLike>::enabled));
+  EXPECT_TRUE((mcpplibs::primitives::underlying_type<BigIntLike>));
+}
+
+TEST(PrimitiveTraitsTest, CustomNumericLikeRepTypeRejectsInvalidCategory) {
+  EXPECT_TRUE(
+      (mcpplibs::primitives::underlying::traits<BadCustomKind>::enabled));
+  EXPECT_FALSE((mcpplibs::primitives::underlying_type<BadCustomKind>));
+}
+
+TEST(PrimitiveTraitsTest, CustomUnderlyingParticipatesInPrimitiveOperations) {
+  using value_t = mcpplibs::primitives::primitive<
+      BigIntLike, mcpplibs::primitives::policy::checked_value,
+      mcpplibs::primitives::policy::expected_error>;
+
+  auto const lhs = value_t{BigIntLike{40}};
+  auto const rhs = value_t{BigIntLike{2}};
+
+  auto const result = mcpplibs::primitives::operations::add(lhs, rhs);
+
+  ASSERT_TRUE(result.has_value());
+  EXPECT_EQ(result->value().value, 42);
+}
+
+TEST(PrimitiveTraitsTest, CustomWrappedUnderlyingUsesRepBridgeForArithmetic) {
+  using value_t = mcpplibs::primitives::primitive<
+      UserInteger, mcpplibs::primitives::policy::checked_value,
+      mcpplibs::primitives::policy::expected_error>;
+
+  auto const lhs = value_t{UserInteger{40}};
+  auto const rhs = value_t{UserInteger{2}};
+
+  auto const result = mcpplibs::primitives::operations::add(lhs, rhs);
+
+  ASSERT_TRUE(result.has_value());
+  EXPECT_EQ(result->value(), 42);
+}
+
+TEST(PrimitiveTraitsTest, InvalidUnderlyingRepIsRejectedByDispatcher) {
+  using value_t = mcpplibs::primitives::primitive<
+      NonNegativeInt, mcpplibs::primitives::policy::checked_value,
+      mcpplibs::primitives::policy::expected_error>;
+
+  auto const lhs = value_t{NonNegativeInt{-1}};
+  auto const rhs = value_t{NonNegativeInt{2}};
+
+  auto const result = mcpplibs::primitives::operations::add(lhs, rhs);
+
+  ASSERT_FALSE(result.has_value());
+  EXPECT_EQ(result.error(),
+            mcpplibs::primitives::policy::runtime_error_kind::domain_error);
+}
+
+TEST(PrimitiveTraitsTest,
+     CustomNumericLikeRepTypeRequiresDivisionOperatorForEligibility) {
+  EXPECT_TRUE(
+      (mcpplibs::primitives::underlying::traits<MissingDivisionLike>::enabled));
+  EXPECT_FALSE((mcpplibs::primitives::underlying_type<MissingDivisionLike>));
 }
 
 int main(int argc, char **argv) {
