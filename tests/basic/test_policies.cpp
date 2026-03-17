@@ -8,8 +8,7 @@ namespace {
 struct NullCapabilityProbe {};
 } // namespace
 
-template <>
-struct operations::traits<NullCapabilityProbe> {
+template <> struct operations::traits<NullCapabilityProbe> {
   using op_tag = NullCapabilityProbe;
 
   static constexpr bool enabled = true;
@@ -61,11 +60,11 @@ TEST(PolicyTraitsTest, BuiltinPoliciesHaveCategories) {
 
 TEST(PolicyConcurrencyTest, AtomicInjectsFences) {
   using atomic_handler =
-      policy::concurrency_handler<policy::atomic, operations::Addition, int,
-                                  policy::runtime_error_kind>;
+      policy::concurrency::handler<policy::atomic, operations::Addition, int,
+                                   policy::error::kind>;
   using single_handler =
-      policy::concurrency_handler<policy::single_thread, operations::Addition,
-                                  int, policy::runtime_error_kind>;
+      policy::concurrency::handler<policy::single_thread, operations::Addition,
+                                   int, policy::error::kind>;
 
   auto const atomic_injection = atomic_handler::inject();
   auto const single_injection = single_handler::inject();

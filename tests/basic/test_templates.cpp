@@ -329,7 +329,7 @@ TEST(PrimitiveTraitsTest, InvalidUnderlyingRepIsRejectedByDispatcher) {
 
   ASSERT_FALSE(result.has_value());
   EXPECT_EQ(result.error(),
-            mcpplibs::primitives::policy::runtime_error_kind::domain_error);
+            mcpplibs::primitives::policy::error::kind::domain_error);
 }
 
 TEST(PrimitiveTraitsTest,

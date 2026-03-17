@@ -31,7 +31,7 @@ TEST(OperationsTest, DivisionByZeroReturnsError) {
   auto const result = operations::div(lhs, rhs);
 
   ASSERT_FALSE(result.has_value());
-  EXPECT_EQ(result.error(), policy::runtime_error_kind::divide_by_zero);
+  EXPECT_EQ(result.error(), policy::error::kind::divide_by_zero);
 }
 
 TEST(OperationsTest, SaturatingAdditionClampsUnsignedOverflow) {
@@ -56,7 +56,7 @@ TEST(OperationsTest, CheckedAdditionReportsUnsignedOverflow) {
   auto const result = operations::add(lhs, rhs);
 
   ASSERT_FALSE(result.has_value());
-  EXPECT_EQ(result.error(), policy::runtime_error_kind::overflow);
+  EXPECT_EQ(result.error(), policy::error::kind::overflow);
 }
 
 TEST(OperationsTest, UncheckedAdditionWrapsUnsignedOverflow) {
@@ -151,11 +151,10 @@ TEST(OperationsTest, StrictTypeRejectsMixedTypesAtCompileTime) {
                           policy::expected_error>;
 
   using strict_handler =
-      policy::type_handler<policy::strict_type, operations::Addition, int,
-                           long long>;
-  using strict_meta =
-      operations::dispatcher_meta<operations::Addition, lhs_t, rhs_t,
-                                  policy::runtime_error_kind>;
+      policy::type::handler<policy::strict_type, operations::Addition, int,
+                            long long>;
+  using strict_meta = operations::dispatcher_meta<operations::Addition, lhs_t,
+                                                  rhs_t, policy::error::kind>;
 
   static_assert(strict_handler::enabled);
   static_assert(!strict_handler::allowed);
@@ -180,11 +179,10 @@ TEST(OperationsTest, StrictTypeAllowsSameTypeAtRuntime) {
 TEST(OperationsTest, BoolUnderlyingRejectsArithmeticOperationsAtCompileTime) {
   using value_t = primitive<bool, policy::checked_value, policy::strict_type,
                             policy::expected_error>;
-  using bool_handler = policy::type_handler<policy::strict_type,
-                                            operations::Addition, bool, bool>;
-  using bool_meta =
-      operations::dispatcher_meta<operations::Addition, value_t, value_t,
-                                  policy::runtime_error_kind>;
+  using bool_handler = policy::type::handler<policy::strict_type,
+                                             operations::Addition, bool, bool>;
+  using bool_meta = operations::dispatcher_meta<operations::Addition, value_t,
+                                                value_t, policy::error::kind>;
 
   static_assert(bool_handler::enabled);
   static_assert(!bool_handler::allowed);
@@ -196,11 +194,10 @@ TEST(OperationsTest, BoolUnderlyingRejectsArithmeticOperationsAtCompileTime) {
 TEST(OperationsTest, CharUnderlyingRejectsArithmeticEvenWithTransparentType) {
   using value_t = primitive<char, policy::checked_value,
                             policy::transparent_type, policy::expected_error>;
-  using char_handler = policy::type_handler<policy::transparent_type,
-                                            operations::Addition, char, char>;
-  using char_meta =
-      operations::dispatcher_meta<operations::Addition, value_t, value_t,
-                                  policy::runtime_error_kind>;
+  using char_handler = policy::type::handler<policy::transparent_type,
+                                             operations::Addition, char, char>;
+  using char_meta = operations::dispatcher_meta<operations::Addition, value_t,
+                                                value_t, policy::error::kind>;
 
   static_assert(char_handler::enabled);
   static_assert(!char_handler::allowed);
@@ -211,11 +208,11 @@ TEST(OperationsTest, CharUnderlyingRejectsArithmeticEvenWithTransparentType) {
 
 TEST(OperationsTest, SignedAndUnsignedCharRejectArithmeticAtCompileTime) {
   using signed_handler =
-      policy::type_handler<policy::transparent_type, operations::Addition,
-                           signed char, signed char>;
+      policy::type::handler<policy::transparent_type, operations::Addition,
+                            signed char, signed char>;
   using unsigned_handler =
-      policy::type_handler<policy::transparent_type, operations::Addition,
-                           unsigned char, unsigned char>;
+      policy::type::handler<policy::transparent_type, operations::Addition,
+                            unsigned char, unsigned char>;
 
   static_assert(signed_handler::enabled);
   static_assert(!signed_handler::allowed);
