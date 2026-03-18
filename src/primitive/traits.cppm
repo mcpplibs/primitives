@@ -5,8 +5,9 @@ module;
 export module mcpplibs.primitives.primitive.traits;
 
 import mcpplibs.primitives.primitive.impl;
-import mcpplibs.primitives.policy;
-import mcpplibs.primitives.underlying;
+import mcpplibs.primitives.policy.traits;
+import mcpplibs.primitives.policy.impl;
+import mcpplibs.primitives.underlying.traits;
 
 // Internal implementation details - not exported.
 namespace mcpplibs::primitives::traits::details {

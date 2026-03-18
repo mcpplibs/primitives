@@ -1,3 +1,16 @@
+/*
+ * Example: ex01_default_arithmetic
+ *
+ * Purpose:
+ * Demonstrate the default primitive aliases and operator pipeline for
+ * arithmetic operations without custom policy overrides.
+ *
+ * Expected results:
+ * - All four operations (+, -, *, /) succeed through dispatcher.
+ * - The printed values match: sum=42, diff=38, prod=80, quot=20.
+ * - Program exits with code 0; otherwise prints an error and exits non-zero.
+ */
+
 #include <cstdint>
 #include <iostream>
 

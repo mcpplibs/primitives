@@ -1,10 +1,11 @@
 module;
-#include <string>
 #include <concepts>
 #include <exception>
 #include <expected>
 #include <stdexcept>
+#include <string>
 #include <type_traits>
+
 
 export module mcpplibs.primitives.policy.impl;
 
@@ -149,6 +150,7 @@ struct type::handler<type::compatible, OpTag, LhsRep, RhsRep> {
   static constexpr bool enabled = true;
   static constexpr bool allowed =
       std::is_arithmetic_v<LhsRep> && std::is_arithmetic_v<RhsRep> &&
+      has_common_rep<LhsRep, RhsRep> &&
       !details::rejects_arithmetic_for_boolean_or_character_v<OpTag, LhsRep,
                                                               RhsRep>;
   static constexpr unsigned diagnostic_id =
@@ -157,17 +159,19 @@ struct type::handler<type::compatible, OpTag, LhsRep, RhsRep> {
           ? 3u
           : (allowed ? 0u : 2u);
   using common_rep =
-      std::conditional_t<allowed, std::common_type_t<LhsRep, RhsRep>, void>;
+      std::conditional_t<allowed, common_rep_t<LhsRep, RhsRep>, void>;
 };
 
 template <operations::operation OpTag, typename LhsRep, typename RhsRep>
 struct type::handler<type::transparent, OpTag, LhsRep, RhsRep> {
   static constexpr bool enabled = true;
   static constexpr bool allowed =
+      has_common_rep<LhsRep, RhsRep> &&
       !details::rejects_arithmetic_for_boolean_or_character_v<OpTag, LhsRep,
                                                               RhsRep>;
   static constexpr unsigned diagnostic_id = allowed ? 0u : 3u;
-  using common_rep = std::common_type_t<LhsRep, RhsRep>;
+  using common_rep =
+      std::conditional_t<allowed, common_rep_t<LhsRep, RhsRep>, void>;
 };
 
 template <operations::operation OpTag, typename CommonRep,

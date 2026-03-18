@@ -1,3 +1,15 @@
+/*
+ * Example: ex04_error_policy
+ *
+ * Purpose:
+ * Compare error handling styles (expected vs throwing) under divide-by-zero.
+ *
+ * Expected results:
+ * - expected policy returns error::kind::divide_by_zero.
+ * - throwing policy throws std::runtime_error.
+ * - Program validates both paths and exits with code 0.
+ */
+
 #include <iostream>
 #include <stdexcept>
 

@@ -109,6 +109,47 @@ struct NonNegativeInt {
   int value;
 };
 
+struct ExplicitCommonLhs {
+  int value;
+};
+
+struct ExplicitCommonRhs {
+  int value;
+};
+
+struct ExplicitCommonRep {
+  long long value;
+
+  friend constexpr auto operator+(ExplicitCommonRep lhs,
+                                  ExplicitCommonRep rhs) noexcept
+      -> ExplicitCommonRep {
+    return ExplicitCommonRep{lhs.value + rhs.value};
+  }
+
+  friend constexpr auto operator-(ExplicitCommonRep lhs,
+                                  ExplicitCommonRep rhs) noexcept
+      -> ExplicitCommonRep {
+    return ExplicitCommonRep{lhs.value - rhs.value};
+  }
+
+  friend constexpr auto operator*(ExplicitCommonRep lhs,
+                                  ExplicitCommonRep rhs) noexcept
+      -> ExplicitCommonRep {
+    return ExplicitCommonRep{lhs.value * rhs.value};
+  }
+
+  friend constexpr auto operator/(ExplicitCommonRep lhs,
+                                  ExplicitCommonRep rhs) noexcept
+      -> ExplicitCommonRep {
+    return ExplicitCommonRep{lhs.value / rhs.value};
+  }
+
+  friend constexpr auto operator==(ExplicitCommonRep lhs,
+                                   ExplicitCommonRep rhs) noexcept -> bool {
+    return lhs.value == rhs.value;
+  }
+};
+
 } // namespace
 
 template <> struct mcpplibs::primitives::underlying::traits<UserInteger> {
@@ -232,6 +273,52 @@ template <> struct mcpplibs::primitives::underlying::traits<NonNegativeInt> {
   }
 };
 
+template <> struct mcpplibs::primitives::underlying::traits<ExplicitCommonLhs> {
+  using value_type = ExplicitCommonLhs;
+  using rep_type = ExplicitCommonLhs;
+
+  static constexpr bool enabled = true;
+  static constexpr auto kind = category::integer;
+
+  static constexpr rep_type to_rep(value_type value) noexcept { return value; }
+
+  static constexpr value_type from_rep(rep_type value) noexcept {
+    return value;
+  }
+
+  static constexpr bool is_valid_rep(rep_type) noexcept { return true; }
+};
+
+template <> struct mcpplibs::primitives::underlying::traits<ExplicitCommonRhs> {
+  using value_type = ExplicitCommonRhs;
+  using rep_type = ExplicitCommonRhs;
+
+  static constexpr bool enabled = true;
+  static constexpr auto kind = category::integer;
+
+  static constexpr rep_type to_rep(value_type value) noexcept { return value; }
+
+  static constexpr value_type from_rep(rep_type value) noexcept {
+    return value;
+  }
+
+  static constexpr bool is_valid_rep(rep_type) noexcept { return true; }
+};
+
+template <>
+struct mcpplibs::primitives::underlying::common_rep_traits<ExplicitCommonLhs,
+                                                           ExplicitCommonRhs> {
+  using type = ExplicitCommonRep;
+  static constexpr bool enabled = true;
+};
+
+template <>
+struct mcpplibs::primitives::underlying::common_rep_traits<ExplicitCommonRhs,
+                                                           ExplicitCommonLhs> {
+  using type = ExplicitCommonRep;
+  static constexpr bool enabled = true;
+};
+
 TEST(PrimitiveTraitsTest, StandardTypeConcepts) {
   EXPECT_TRUE((mcpplibs::primitives::std_integer<int>));
   EXPECT_TRUE((mcpplibs::primitives::std_integer<long long>));
@@ -337,6 +424,33 @@ TEST(PrimitiveTraitsTest,
   EXPECT_TRUE(
       (mcpplibs::primitives::underlying::traits<MissingDivisionLike>::enabled));
   EXPECT_FALSE((mcpplibs::primitives::underlying_type<MissingDivisionLike>));
+}
+
+TEST(PrimitiveTraitsTest, UnderlyingCommonRepDefaultsToStdCommonType) {
+  static_assert(mcpplibs::primitives::has_common_rep<int, long long>);
+  static_assert(std::same_as<mcpplibs::primitives::common_rep_t<int, long long>,
+                             long long>);
+  SUCCEED();
+}
+
+TEST(PrimitiveTraitsTest, UnderlyingCommonRepCanBeCustomizedViaTraits) {
+  static_assert(mcpplibs::primitives::has_common_rep<ExplicitCommonLhs,
+                                                     ExplicitCommonRhs>);
+  static_assert(
+      std::same_as<mcpplibs::primitives::common_rep_t<ExplicitCommonLhs,
+                                                      ExplicitCommonRhs>,
+                   ExplicitCommonRep>);
+
+  using handler_t = mcpplibs::primitives::policy::type::handler<
+      mcpplibs::primitives::policy::type::transparent,
+      mcpplibs::primitives::operations::Addition, ExplicitCommonLhs,
+      ExplicitCommonRhs>;
+
+  static_assert(handler_t::enabled);
+  static_assert(handler_t::allowed);
+  static_assert(
+      std::same_as<typename handler_t::common_rep, ExplicitCommonRep>);
+  SUCCEED();
 }
 
 int main(int argc, char **argv) {
