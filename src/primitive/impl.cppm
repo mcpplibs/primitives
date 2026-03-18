@@ -4,8 +4,8 @@ module;
 
 export module mcpplibs.primitives.primitive.impl;
 
-import mcpplibs.primitives.policy;
-import mcpplibs.primitives.underlying;
+import mcpplibs.primitives.underlying.traits;
+import mcpplibs.primitives.policy.traits;
 
 export namespace mcpplibs::primitives {
 
