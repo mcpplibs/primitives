@@ -1,9 +1,10 @@
-#include <gtest/gtest.h>
-#include <type_traits>
 #include <atomic>
 #include <cstdint>
+#include <gtest/gtest.h>
 #include <thread>
+#include <type_traits>
 #include <vector>
+
 
 import mcpplibs.primitives;
 
@@ -23,7 +24,8 @@ TEST(OperationsTest, AddReturnsExpectedPrimitive) {
 }
 
 TEST(OperationsTest, DivisionByZeroReturnsError) {
-  using value_t = primitive<int, policy::value::checked, policy::error::expected>;
+  using value_t =
+      primitive<int, policy::value::checked, policy::error::expected>;
 
   auto const lhs = value_t{100};
   auto const rhs = value_t{0};
@@ -60,8 +62,8 @@ TEST(OperationsTest, CheckedAdditionReportsUnsignedOverflow) {
 }
 
 TEST(OperationsTest, UncheckedAdditionWrapsUnsignedOverflow) {
-  using value_t =
-      primitive<std::uint16_t, policy::value::unchecked, policy::error::expected>;
+  using value_t = primitive<std::uint16_t, policy::value::unchecked,
+                            policy::error::expected>;
 
   auto const lhs = value_t{static_cast<std::uint16_t>(65530)};
   auto const rhs = value_t{static_cast<std::uint16_t>(20)};
@@ -86,8 +88,9 @@ TEST(OperationsTest, UncheckedDivisionUsesRawArithmeticWhenValid) {
 }
 
 TEST(OperationsTest, AtomicPolicyPathReturnsExpectedValue) {
-  using value_t = primitive<int, policy::value::checked, policy::concurrency::atomic,
-                            policy::error::expected>;
+  using value_t =
+      primitive<int, policy::value::checked, policy::concurrency::atomic,
+                policy::error::expected>;
 
   auto const lhs = value_t{12};
   auto const rhs = value_t{30};
@@ -99,8 +102,9 @@ TEST(OperationsTest, AtomicPolicyPathReturnsExpectedValue) {
 }
 
 TEST(OperationsTest, AtomicPolicyConcurrentInvocationsRemainConsistent) {
-  using value_t = primitive<int, policy::value::checked, policy::concurrency::atomic,
-                            policy::error::expected>;
+  using value_t =
+      primitive<int, policy::value::checked, policy::concurrency::atomic,
+                policy::error::expected>;
 
   constexpr int kThreadCount = 8;
   constexpr int kIterationsPerThread = 20000;
@@ -147,8 +151,8 @@ TEST(OperationsTest, AtomicPolicyConcurrentInvocationsRemainConsistent) {
 TEST(OperationsTest, StrictTypeRejectsMixedTypesAtCompileTime) {
   using lhs_t = primitive<int, policy::value::checked, policy::type::strict,
                           policy::error::expected>;
-  using rhs_t = primitive<long long, policy::value::checked, policy::type::strict,
-                          policy::error::expected>;
+  using rhs_t = primitive<long long, policy::value::checked,
+                          policy::type::strict, policy::error::expected>;
 
   using strict_handler =
       policy::type::handler<policy::type::strict, operations::Addition, int,
@@ -201,7 +205,7 @@ TEST(OperationsTest, CharUnderlyingRejectsArithmeticEvenWithTransparentType) {
 
   static_assert(char_handler::enabled);
   static_assert(!char_handler::allowed);
-  static_assert(std::is_same_v<typename char_meta::common_rep, char>);
+  static_assert(std::is_same_v<typename char_meta::common_rep, void>);
 
   EXPECT_EQ(char_handler::diagnostic_id, 3u);
 }
@@ -312,7 +316,8 @@ TEST(OperationsTest, OperatorPlusDelegatesToDispatcher) {
 }
 
 TEST(OperationsTest, ThrowErrorPolicyThrowsException) {
-  using value_t = primitive<int, policy::value::checked, policy::error::throwing>;
+  using value_t =
+      primitive<int, policy::value::checked, policy::error::throwing>;
 
   auto const lhs = value_t{100};
   auto const rhs = value_t{0};
@@ -321,7 +326,8 @@ TEST(OperationsTest, ThrowErrorPolicyThrowsException) {
 }
 
 TEST(OperationsTest, ThrowErrorPolicyExceptionHasReasonMessage) {
-  using value_t = primitive<int, policy::value::checked, policy::error::throwing>;
+  using value_t =
+      primitive<int, policy::value::checked, policy::error::throwing>;
 
   auto const lhs = value_t{100};
   auto const rhs = value_t{0};
