@@ -32,6 +32,31 @@ struct NonNegativeInt {
 struct TaggedLhs {
   int value;
 
+  friend constexpr auto operator+(TaggedLhs lhs, TaggedLhs rhs) noexcept
+      -> TaggedLhs {
+    return TaggedLhs{lhs.value + rhs.value};
+  }
+
+  friend constexpr auto operator-(TaggedLhs lhs, TaggedLhs rhs) noexcept
+      -> TaggedLhs {
+    return TaggedLhs{lhs.value - rhs.value};
+  }
+
+  friend constexpr auto operator*(TaggedLhs lhs, TaggedLhs rhs) noexcept
+      -> TaggedLhs {
+    return TaggedLhs{lhs.value * rhs.value};
+  }
+
+  friend constexpr auto operator/(TaggedLhs lhs, TaggedLhs rhs) noexcept
+      -> TaggedLhs {
+    return TaggedLhs{lhs.value / rhs.value};
+  }
+
+  friend constexpr auto operator==(TaggedLhs lhs, TaggedLhs rhs) noexcept
+      -> bool {
+    return lhs.value == rhs.value;
+  }
+
   constexpr explicit operator long long() const noexcept {
     return static_cast<long long>(value);
   }
@@ -40,6 +65,31 @@ struct TaggedLhs {
 struct TaggedRhs {
   int value;
 
+  friend constexpr auto operator+(TaggedRhs lhs, TaggedRhs rhs) noexcept
+      -> TaggedRhs {
+    return TaggedRhs{lhs.value + rhs.value};
+  }
+
+  friend constexpr auto operator-(TaggedRhs lhs, TaggedRhs rhs) noexcept
+      -> TaggedRhs {
+    return TaggedRhs{lhs.value - rhs.value};
+  }
+
+  friend constexpr auto operator*(TaggedRhs lhs, TaggedRhs rhs) noexcept
+      -> TaggedRhs {
+    return TaggedRhs{lhs.value * rhs.value};
+  }
+
+  friend constexpr auto operator/(TaggedRhs lhs, TaggedRhs rhs) noexcept
+      -> TaggedRhs {
+    return TaggedRhs{lhs.value / rhs.value};
+  }
+
+  friend constexpr auto operator==(TaggedRhs lhs, TaggedRhs rhs) noexcept
+      -> bool {
+    return lhs.value == rhs.value;
+  }
+
   constexpr explicit operator long long() const noexcept {
     return static_cast<long long>(value);
   }
@@ -47,6 +97,11 @@ struct TaggedRhs {
 
 struct TaggedCommonRep {
   long long value;
+
+  constexpr TaggedCommonRep() noexcept = default;
+  constexpr explicit TaggedCommonRep(long long v) noexcept : value(v) {}
+  constexpr explicit TaggedCommonRep(TaggedLhs v) noexcept : value(v.value) {}
+  constexpr explicit TaggedCommonRep(TaggedRhs v) noexcept : value(v.value) {}
 
   friend constexpr auto operator+(TaggedCommonRep lhs,
                                   TaggedCommonRep rhs) noexcept
@@ -141,6 +196,24 @@ template <> struct mcpplibs::primitives::underlying::traits<TaggedLhs> {
 template <> struct mcpplibs::primitives::underlying::traits<TaggedRhs> {
   using value_type = TaggedRhs;
   using rep_type = TaggedRhs;
+
+  static constexpr bool enabled = true;
+  static constexpr auto kind = category::integer;
+
+  static constexpr auto to_rep(value_type value) noexcept -> rep_type {
+    return value;
+  }
+
+  static constexpr auto from_rep(rep_type value) noexcept -> value_type {
+    return value;
+  }
+
+  static constexpr auto is_valid_rep(rep_type) noexcept -> bool { return true; }
+};
+
+template <> struct mcpplibs::primitives::underlying::traits<TaggedCommonRep> {
+  using value_type = TaggedCommonRep;
+  using rep_type = TaggedCommonRep;
 
   static constexpr bool enabled = true;
   static constexpr auto kind = category::integer;
