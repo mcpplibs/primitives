@@ -60,6 +60,7 @@ template <typename T> struct traits {
 
 template <typename LhsRep, typename RhsRep, typename = void>
 struct common_rep_traits {
+  using type = void;
   static constexpr bool enabled = false;
 };
 
