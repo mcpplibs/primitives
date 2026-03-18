@@ -58,6 +58,21 @@ template <typename T> struct traits {
   }
 };
 
+template <typename LhsRep, typename RhsRep, typename = void>
+struct common_rep_traits {
+  static constexpr bool enabled = false;
+};
+
+template <typename LhsRep, typename RhsRep>
+struct common_rep_traits<
+    LhsRep, RhsRep,
+    std::void_t<std::common_type_t<std::remove_cv_t<LhsRep>,
+                                   std::remove_cv_t<RhsRep>>>> {
+  using type =
+      std::common_type_t<std::remove_cv_t<LhsRep>, std::remove_cv_t<RhsRep>>;
+  static constexpr bool enabled = true;
+};
+
 } // namespace underlying
 } // namespace mcpplibs::primitives
 
@@ -134,6 +149,15 @@ concept has_consistent_category =
       (traits<std::remove_cv_t<T>>::kind == category::integer ||
        traits<std::remove_cv_t<T>>::kind == category::floating)));
 
+template <typename LhsRep, typename RhsRep>
+concept has_common_rep =
+    common_rep_traits<std::remove_cv_t<LhsRep>,
+                                  std::remove_cv_t<RhsRep>>::enabled &&
+    requires {
+      typename common_rep_traits<std::remove_cv_t<LhsRep>,
+                                             std::remove_cv_t<RhsRep>>::type;
+    };
+
 } // namespace mcpplibs::primitives::underlying::details
 
 export namespace mcpplibs::primitives {
@@ -168,4 +192,12 @@ concept floating_underlying_type =
 template <typename T>
 concept numeric_underlying_type =
     integer_underlying_type<T> || floating_underlying_type<T>;
+
+template <typename LhsRep, typename RhsRep>
+concept has_common_rep = underlying::details::has_common_rep<LhsRep, RhsRep>;
+
+template <typename LhsRep, typename RhsRep>
+using common_rep_t =
+    underlying::common_rep_traits<std::remove_cv_t<LhsRep>,
+                                           std::remove_cv_t<RhsRep>>::type;
 } // namespace mcpplibs::primitives
