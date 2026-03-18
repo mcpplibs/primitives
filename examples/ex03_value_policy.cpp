@@ -1,3 +1,17 @@
+/*
+ * Example: ex03_value_policy
+ *
+ * Purpose:
+ * Show how checked, unchecked, and saturating value policies behave under
+ * the same overflow input.
+ *
+ * Expected results:
+ * - checked: reports overflow as an error.
+ * - unchecked: wraps according to native arithmetic semantics.
+ * - saturating: clamps to the representable upper bound.
+ * - Program prints observed values and exits with code 0.
+ */
+
 #include <cstdint>
 #include <iostream>
 

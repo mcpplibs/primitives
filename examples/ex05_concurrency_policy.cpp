@@ -1,3 +1,16 @@
+/*
+ * Example: ex05_concurrency_policy
+ *
+ * Purpose:
+ * Demonstrate the atomic concurrency policy path under multi-threaded
+ * repeated dispatch.
+ *
+ * Expected results:
+ * - Concurrent add operations consistently produce value 42.
+ * - mismatch_count remains zero after all worker threads join.
+ * - Program prints a success message and exits with code 0.
+ */
+
 #include <atomic>
 #include <iostream>
 #include <thread>

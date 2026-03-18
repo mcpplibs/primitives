@@ -1,3 +1,17 @@
+/*
+ * Example: ex02_type_policy
+ *
+ * Purpose:
+ * Compare type negotiation behavior between strict and compatible policies.
+ *
+ * Expected results:
+ * - strict policy rejects mixed reps (int + long long) at compile-time
+ *   negotiation, yielding common_rep=void.
+ * - compatible policy accepts mixed arithmetic reps and negotiates
+ *   common_rep=long long.
+ * - Program prints a success message and exits with code 0.
+ */
+
 #include <iostream>
 #include <type_traits>
 

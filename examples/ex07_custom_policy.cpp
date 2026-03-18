@@ -1,3 +1,17 @@
+/*
+ * Example: ex07_custom_policy
+ *
+ * Purpose:
+ * Show end-to-end customization of all policy dimensions (type, value,
+ * error, concurrency) and custom operation binding integration.
+ *
+ * Expected results:
+ * - Custom policy traits are recognized and selected by dispatcher.
+ * - Custom value finalize step adjusts addition result by +1.
+ * - Input 20 and 21 produces final value 42.
+ * - Program prints a success message and exits with code 0.
+ */
+
 #include <expected>
 #include <iostream>
 #include <type_traits>

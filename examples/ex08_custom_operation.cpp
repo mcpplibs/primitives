@@ -1,3 +1,16 @@
+/*
+ * Example: ex08_custom_operation
+ *
+ * Purpose:
+ * Demonstrate how to register new operation tags, declare operation traits,
+ * and provide runtime op_binding specializations.
+ *
+ * Expected results:
+ * - Custom operations Average, GreaterThan, and BitAnd dispatch successfully.
+ * - For inputs 10 and 6, outputs are avg=8, gt=1, bitand=2.
+ * - Program prints computed values and exits with code 0.
+ */
+
 #include <iostream>
 
 import mcpplibs.primitives;
