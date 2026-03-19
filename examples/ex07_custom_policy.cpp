@@ -12,9 +12,11 @@
  * - Program prints a success message and exits with code 0.
  */
 
+#include <atomic>
 #include <expected>
 #include <iostream>
 #include <type_traits>
+
 
 import mcpplibs.primitives;
 import mcpplibs.primitives.operations.invoker;
@@ -79,6 +81,8 @@ struct mcpplibs::primitives::policy::concurrency::handler<
     injection_type out{};
     out.fence_before = true;
     out.fence_after = false;
+    out.order_before = std::memory_order_acquire;
+    out.order_after = std::memory_order_relaxed;
     return out;
   }
 };
