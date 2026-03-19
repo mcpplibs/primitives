@@ -1,5 +1,6 @@
 module;
 
+#include <atomic>
 #include <concepts>
 #include <expected>
 #include <optional>
@@ -84,6 +85,8 @@ namespace concurrency {
 struct injection {
   bool fence_before = false;
   bool fence_after = false;
+  std::memory_order order_before = std::memory_order_seq_cst;
+  std::memory_order order_after = std::memory_order_seq_cst;
 };
 
 template <typename Policy, typename OpTag, typename CommonRep,
@@ -94,6 +97,17 @@ struct handler {
   using result_type = std::expected<CommonRep, ErrorPayload>;
 
   static constexpr auto inject() noexcept -> injection_type { return {}; }
+
+  static constexpr auto load(CommonRep const &) noexcept -> CommonRep {
+    return CommonRep{};
+  }
+
+  static constexpr auto store(CommonRep &, CommonRep) noexcept -> void {}
+
+  static constexpr auto compare_exchange(CommonRep &, CommonRep &,
+                                         CommonRep) noexcept -> bool {
+    return false;
+  }
 };
 
 template <typename Policy, typename OpTag, typename CommonRep,
@@ -124,6 +138,36 @@ template <typename Policy, typename OpTag, typename CommonRep,
 concept handler_available = requires {
   requires handler<Policy, OpTag, CommonRep, ErrorPayload>::enabled;
   requires handler_protocol<Policy, OpTag, CommonRep, ErrorPayload>;
+};
+
+template <typename Policy, typename CommonRep,
+          typename ErrorPayload = error::kind>
+concept handler_access_protocol = requires {
+  requires concurrency_policy<Policy>;
+  {
+    handler<Policy, void, CommonRep, ErrorPayload>::enabled
+  } -> std::convertible_to<bool>;
+  requires handler<Policy, void, CommonRep, ErrorPayload>::enabled;
+  {
+    handler<Policy, void, CommonRep, ErrorPayload>::load(
+        std::declval<CommonRep const &>())
+  } noexcept -> std::same_as<CommonRep>;
+  {
+    handler<Policy, void, CommonRep, ErrorPayload>::store(
+        std::declval<CommonRep &>(), std::declval<CommonRep>())
+  } noexcept -> std::same_as<void>;
+  {
+    handler<Policy, void, CommonRep, ErrorPayload>::compare_exchange(
+        std::declval<CommonRep &>(), std::declval<CommonRep &>(),
+        std::declval<CommonRep>())
+  } noexcept -> std::same_as<bool>;
+};
+
+template <typename Policy, typename CommonRep,
+          typename ErrorPayload = error::kind>
+concept handler_access_available = requires {
+  requires handler<Policy, void, CommonRep, ErrorPayload>::enabled;
+  requires handler_access_protocol<Policy, CommonRep, ErrorPayload>;
 };
 
 } // namespace concurrency
