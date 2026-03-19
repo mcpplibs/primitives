@@ -365,13 +365,14 @@ constexpr auto make_div_zero(char const *reason)
   return make_error<CommonRep>(policy::error::kind::divide_by_zero, reason);
 }
 
-constexpr auto apply_runtime_fence(bool enabled) noexcept -> void {
+constexpr auto apply_runtime_fence(bool enabled,
+                                   std::memory_order order) noexcept -> void {
   if (!enabled) {
     return;
   }
 
   if (!std::is_constant_evaluated()) {
-    std::atomic_thread_fence(std::memory_order_seq_cst);
+    std::atomic_thread_fence(order);
   }
 }
 
@@ -660,12 +661,12 @@ constexpr auto run_value(CommonRep lhs, CommonRep rhs,
       op_binding_available<OpTag, ValuePolicy, CommonRep>,
       "Missing operation binding specialization for this OpTag/common type");
 
-  details::apply_runtime_fence(injection.fence_before);
+  details::apply_runtime_fence(injection.fence_before, injection.order_before);
 
   auto decision = op_binding<OpTag, ValuePolicy, CommonRep>::apply(lhs, rhs);
   auto finalized = ValueHandler::finalize(std::move(decision), injection);
 
-  details::apply_runtime_fence(injection.fence_after);
+  details::apply_runtime_fence(injection.fence_after, injection.order_after);
   return finalized;
 }
 
