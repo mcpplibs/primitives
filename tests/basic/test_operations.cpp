@@ -5,7 +5,6 @@
 #include <type_traits>
 #include <vector>
 
-
 import mcpplibs.primitives;
 
 using namespace mcpplibs::primitives;
@@ -87,9 +86,9 @@ TEST(OperationsTest, UncheckedDivisionUsesRawArithmeticWhenValid) {
   EXPECT_EQ(result->value(), 25);
 }
 
-TEST(OperationsTest, AtomicPolicyPathReturnsExpectedValue) {
+TEST(OperationsTest, FencedPolicyPathReturnsExpectedValue) {
   using value_t =
-      primitive<int, policy::value::checked, policy::concurrency::atomic,
+      primitive<int, policy::value::checked, policy::concurrency::fenced,
                 policy::error::expected>;
 
   auto const lhs = value_t{12};
@@ -101,9 +100,9 @@ TEST(OperationsTest, AtomicPolicyPathReturnsExpectedValue) {
   EXPECT_EQ(result->value(), 42);
 }
 
-TEST(OperationsTest, AtomicPolicyConcurrentInvocationsRemainConsistent) {
+TEST(OperationsTest, FencedPolicyConcurrentInvocationsRemainConsistent) {
   using value_t =
-      primitive<int, policy::value::checked, policy::concurrency::atomic,
+      primitive<int, policy::value::checked, policy::concurrency::fenced,
                 policy::error::expected>;
 
   constexpr int kThreadCount = 8;
@@ -146,6 +145,55 @@ TEST(OperationsTest, AtomicPolicyConcurrentInvocationsRemainConsistent) {
 
   EXPECT_EQ(error_count.load(std::memory_order_relaxed), 0);
   EXPECT_EQ(mismatch_count.load(std::memory_order_relaxed), 0);
+}
+
+TEST(OperationsTest, PrimitiveFencedLoadStoreAndCasWork) {
+  using value_t =
+      primitive<int, policy::value::checked, policy::concurrency::fenced,
+                policy::error::expected>;
+
+  auto value = value_t{1};
+  EXPECT_EQ(value.load(), 1);
+
+  value.store(4);
+  EXPECT_EQ(value.load(), 4);
+
+  auto expected = 4;
+  EXPECT_TRUE(value.compare_exchange(expected, 7));
+  EXPECT_EQ(value.load(), 7);
+
+  expected = 9;
+  EXPECT_FALSE(value.compare_exchange(expected, 11));
+  EXPECT_EQ(expected, 7);
+}
+
+TEST(OperationsTest, PrimitiveFencedCasSupportsConcurrentIncrements) {
+  using value_t =
+      primitive<int, policy::value::checked, policy::concurrency::fenced,
+                policy::error::expected>;
+
+  constexpr int kThreadCount = 6;
+  constexpr int kIterationsPerThread = 5000;
+
+  auto counter = value_t{0};
+  std::vector<std::thread> workers;
+  workers.reserve(kThreadCount);
+
+  for (int i = 0; i < kThreadCount; ++i) {
+    workers.emplace_back([&]() {
+      for (int n = 0; n < kIterationsPerThread; ++n) {
+        auto expected = counter.load();
+        while (!counter.compare_exchange(expected, expected + 1)) {
+        }
+      }
+    });
+  }
+
+  for (auto &worker : workers) {
+    worker.join();
+  }
+
+  EXPECT_EQ(counter.load(), kThreadCount * kIterationsPerThread);
 }
 
 TEST(OperationsTest, StrictTypeRejectsMixedTypesAtCompileTime) {
