@@ -6,17 +6,96 @@ export module mcpplibs.primitives.primitive.impl;
 
 import mcpplibs.primitives.underlying.traits;
 import mcpplibs.primitives.policy.traits;
+import mcpplibs.primitives.policy.impl;
+import mcpplibs.primitives.policy.handler;
 
 export namespace mcpplibs::primitives {
+
+namespace details {
+
+template <policy::policy_type... Policies> struct count_concurrency_policies;
+
+template <> struct count_concurrency_policies<> {
+  static constexpr std::size_t value = 0;
+};
+
+template <policy::policy_type First, policy::policy_type... Rest>
+struct count_concurrency_policies<First, Rest...> {
+  static constexpr bool is_match =
+      policy::traits<First>::kind == policy::category::concurrency;
+  static constexpr std::size_t value =
+      count_concurrency_policies<Rest...>::value + (is_match ? 1u : 0u);
+};
+
+template <policy::policy_type... Policies> struct resolve_concurrency_policy;
+
+template <> struct resolve_concurrency_policy<> {
+  using type = policy::defaults::concurrency;
+};
+
+template <policy::policy_type First, policy::policy_type... Rest>
+struct resolve_concurrency_policy<First, Rest...> {
+  using type = std::conditional_t<
+      policy::traits<First>::kind == policy::category::concurrency, First,
+      typename resolve_concurrency_policy<Rest...>::type>;
+};
+
+template <policy::policy_type... Policies>
+using resolve_concurrency_policy_t =
+    typename resolve_concurrency_policy<Policies...>::type;
+
+} // namespace details
 
 template <underlying_type T, policy::policy_type... Policies> class primitive {
 public:
   using value_type = T;
   using policies = std::tuple<Policies...>;
+  using concurrency_policy = details::resolve_concurrency_policy_t<Policies...>;
+
+  static_assert(details::count_concurrency_policies<Policies...>::value <= 1,
+                "Multiple concurrency policies are not allowed");
+
   constexpr explicit primitive(value_type v) noexcept : value_(v) {}
   constexpr value_type &value() noexcept { return value_; }
   [[nodiscard]] constexpr value_type const &value() const noexcept { return value_; }
   constexpr explicit operator value_type() const noexcept { return value_; }
+
+  [[nodiscard]] auto load() const noexcept -> value_type {
+    using access_handler_t =
+        policy::concurrency::handler<concurrency_policy, void, value_type,
+                                     policy::error::kind>;
+    static_assert(
+        policy::concurrency::handler_access_available<concurrency_policy,
+                                                      value_type>,
+        "Selected concurrency policy does not provide primitive "
+        "load/store/CAS support");
+    return access_handler_t::load(value_);
+  }
+
+  auto store(value_type desired) noexcept -> void {
+    using access_handler_t =
+        policy::concurrency::handler<concurrency_policy, void, value_type,
+                                     policy::error::kind>;
+    static_assert(
+        policy::concurrency::handler_access_available<concurrency_policy,
+                                                      value_type>,
+        "Selected concurrency policy does not provide primitive "
+        "load/store/CAS support");
+    access_handler_t::store(value_, desired);
+  }
+
+  auto compare_exchange(value_type &expected, value_type desired) noexcept
+      -> bool {
+    using access_handler_t =
+        policy::concurrency::handler<concurrency_policy, void, value_type,
+                                     policy::error::kind>;
+    static_assert(
+        policy::concurrency::handler_access_available<concurrency_policy,
+                                                      value_type>,
+        "Selected concurrency policy does not provide primitive "
+        "load/store/CAS support");
+    return access_handler_t::compare_exchange(value_, expected, desired);
+  }
 
 private:
   value_type value_;
