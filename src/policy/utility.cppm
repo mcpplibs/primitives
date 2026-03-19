@@ -64,7 +64,7 @@ template <> struct priority_error<void> {
 };
 
 template <> struct priority_concurrency<void> {
-  using type = std::tuple<concurrency::atomic, concurrency::none>;
+  using type = std::tuple<concurrency::fenced, concurrency::none>;
 };
 
 template <typename... Ps> struct common_policies {
