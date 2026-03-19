@@ -51,7 +51,29 @@ auto maybe = x + y; // std::expected<primitive<int, policy::error::expected>, po
 - `policy::value::{checked, unchecked, saturating}`
 - `policy::type::{strict, compatible, transparent}`
 - `policy::error::{throwing, expected, terminate}`
-- `policy::concurrency::{none, atomic}`
+- `policy::concurrency::{none, fenced, fenced_relaxed, fenced_acq_rel, fenced_seq_cst}`
+
+并发策略说明：
+
+- `fenced*` 系列是操作级并发语义，通过策略注入内存序 fence；
+- `primitive` 存储仍保持统一、零开销布局，不引入额外存储层抽象；
+- `primitive::load/store/compare_exchange` 由并发策略的协议实现提供，若策略未实现该协议会在编译期报错。
+
+示例（并发访问 API）：
+
+```cpp
+using shared_t = primitive<int, policy::value::checked,
+                                                     policy::concurrency::fenced_acq_rel,
+                                                     policy::error::expected>;
+
+shared_t v{1};
+v.store(2);
+auto expected = 2;
+if (v.compare_exchange(expected, 3)) {
+    auto now = v.load();
+    (void)now;
+}
+```
 
 默认策略位于 `policy::defaults`：
 
