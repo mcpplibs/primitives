@@ -2,11 +2,12 @@
  * Example: ex05_concurrency_policy
  *
  * Purpose:
- * Demonstrate the atomic concurrency policy path under multi-threaded
+ * Demonstrate the fenced concurrency policy path under multi-threaded
  * repeated dispatch.
  *
  * Expected results:
  * - Concurrent add operations consistently produce value 42.
+ * - Primitive load/store/CAS APIs work under fenced policy.
  * - mismatch_count remains zero after all worker threads join.
  * - Program prints a success message and exits with code 0.
  */
@@ -21,13 +22,22 @@ import mcpplibs.primitives;
 using namespace mcpplibs::primitives;
 
 int main() {
-  // Point 5: Use atomic concurrency policy and verify concurrent consistency.
-  using atomic_t =
-      primitive<int, policy::value::checked, policy::concurrency::atomic,
+  // Point 5: Use fenced concurrency policy and verify concurrent consistency.
+  using fenced_t =
+      primitive<int, policy::value::checked, policy::concurrency::fenced,
                 policy::error::expected>;
 
-  auto const lhs = atomic_t{12};
-  auto const rhs = atomic_t{30};
+  auto const lhs = fenced_t{12};
+  auto const rhs = fenced_t{30};
+
+  auto concurrent_value = fenced_t{1};
+  concurrent_value.store(2);
+  auto expected = 2;
+  if (!concurrent_value.compare_exchange(expected, 3) ||
+      concurrent_value.load() != 3) {
+    std::cerr << "fenced load/store/CAS mismatch\n";
+    return 1;
+  }
 
   std::atomic<int> mismatch_count{0};
   std::vector<std::thread> workers;
@@ -51,7 +61,7 @@ int main() {
 
   // A non-zero mismatch count indicates unexpected behavior under concurrency.
   if (mismatch_count.load(std::memory_order_relaxed) != 0) {
-    std::cerr << "atomic policy path mismatch\n";
+    std::cerr << "fenced policy path mismatch\n";
     return 1;
   }
 
