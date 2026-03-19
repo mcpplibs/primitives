@@ -148,6 +148,14 @@ inline constexpr bool rejects_arithmetic_for_boolean_or_character_v =
     is_arithmetic_operation_v<OpTag> &&
     (is_boolean_or_character_v<LhsRep> || is_boolean_or_character_v<RhsRep>);
 
+template <typename T>
+auto atomic_ref_load(T const &value, std::memory_order order) noexcept -> T {
+  // libc++ rejects std::atomic_ref<const T>; load through a non-mutating view.
+  auto &mutable_value = const_cast<T &>(value);
+  std::atomic_ref<T> ref(mutable_value);
+  return ref.load(order);
+}
+
 } // namespace details
 
 // Default protocol specializations.
@@ -292,8 +300,7 @@ struct concurrency::handler<concurrency::fenced, void, CommonRep,
   using result_type = std::expected<CommonRep, ErrorPayload>;
 
   static auto load(CommonRep const &value) noexcept -> CommonRep {
-    std::atomic_ref<CommonRep const> ref(value);
-    return ref.load(std::memory_order_seq_cst);
+    return details::atomic_ref_load(value, std::memory_order_seq_cst);
   }
 
   static auto store(CommonRep &value, CommonRep desired) noexcept -> void {
@@ -318,8 +325,7 @@ struct concurrency::handler<concurrency::fenced_relaxed, void, CommonRep,
   using result_type = std::expected<CommonRep, ErrorPayload>;
 
   static auto load(CommonRep const &value) noexcept -> CommonRep {
-    std::atomic_ref<CommonRep const> ref(value);
-    return ref.load(std::memory_order_relaxed);
+    return details::atomic_ref_load(value, std::memory_order_relaxed);
   }
 
   static auto store(CommonRep &value, CommonRep desired) noexcept -> void {
@@ -344,8 +350,7 @@ struct concurrency::handler<concurrency::fenced_acq_rel, void, CommonRep,
   using result_type = std::expected<CommonRep, ErrorPayload>;
 
   static auto load(CommonRep const &value) noexcept -> CommonRep {
-    std::atomic_ref<CommonRep const> ref(value);
-    return ref.load(std::memory_order_acquire);
+    return details::atomic_ref_load(value, std::memory_order_acquire);
   }
 
   static auto store(CommonRep &value, CommonRep desired) noexcept -> void {
