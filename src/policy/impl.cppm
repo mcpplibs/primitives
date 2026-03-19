@@ -1,11 +1,11 @@
 module;
+#include <atomic>
 #include <concepts>
 #include <exception>
 #include <expected>
 #include <stdexcept>
 #include <string>
 #include <type_traits>
-
 
 export module mcpplibs.primitives.policy.impl;
 
@@ -37,7 +37,10 @@ struct terminate {};
 
 namespace concurrency {
 struct none {};
-struct atomic {};
+struct fenced {};
+struct fenced_relaxed {};
+struct fenced_acq_rel {};
+struct fenced_seq_cst {};
 } // namespace concurrency
 
 template <> struct traits<value::checked> {
@@ -100,8 +103,26 @@ template <> struct traits<concurrency::none> {
   static constexpr auto kind = category::concurrency;
 };
 
-template <> struct traits<concurrency::atomic> {
-  using policy_type = concurrency::atomic;
+template <> struct traits<concurrency::fenced> {
+  using policy_type = concurrency::fenced;
+  static constexpr bool enabled = true;
+  static constexpr auto kind = category::concurrency;
+};
+
+template <> struct traits<concurrency::fenced_relaxed> {
+  using policy_type = concurrency::fenced_relaxed;
+  static constexpr bool enabled = true;
+  static constexpr auto kind = category::concurrency;
+};
+
+template <> struct traits<concurrency::fenced_acq_rel> {
+  using policy_type = concurrency::fenced_acq_rel;
+  static constexpr bool enabled = true;
+  static constexpr auto kind = category::concurrency;
+};
+
+template <> struct traits<concurrency::fenced_seq_cst> {
+  using policy_type = concurrency::fenced_seq_cst;
   static constexpr bool enabled = true;
   static constexpr auto kind = category::concurrency;
 };
@@ -189,7 +210,7 @@ struct concurrency::handler<concurrency::none, OpTag, CommonRep, ErrorPayload> {
 
 template <operations::operation OpTag, typename CommonRep,
           typename ErrorPayload>
-struct concurrency::handler<concurrency::atomic, OpTag, CommonRep,
+struct concurrency::handler<concurrency::fenced, OpTag, CommonRep,
                             ErrorPayload> {
   static constexpr bool enabled = true;
   static constexpr bool requires_external_sync = true;
@@ -200,7 +221,169 @@ struct concurrency::handler<concurrency::atomic, OpTag, CommonRep,
     injection_type out{};
     out.fence_before = true;
     out.fence_after = true;
+    out.order_before = std::memory_order_seq_cst;
+    out.order_after = std::memory_order_seq_cst;
     return out;
+  }
+};
+
+template <operations::operation OpTag, typename CommonRep,
+          typename ErrorPayload>
+struct concurrency::handler<concurrency::fenced_relaxed, OpTag, CommonRep,
+                            ErrorPayload> {
+  static constexpr bool enabled = true;
+  static constexpr bool requires_external_sync = true;
+  using injection_type = concurrency::injection;
+  using result_type = std::expected<CommonRep, ErrorPayload>;
+
+  static constexpr auto inject() noexcept -> injection_type {
+    injection_type out{};
+    out.fence_before = true;
+    out.fence_after = true;
+    out.order_before = std::memory_order_relaxed;
+    out.order_after = std::memory_order_relaxed;
+    return out;
+  }
+};
+
+template <operations::operation OpTag, typename CommonRep,
+          typename ErrorPayload>
+struct concurrency::handler<concurrency::fenced_acq_rel, OpTag, CommonRep,
+                            ErrorPayload> {
+  static constexpr bool enabled = true;
+  static constexpr bool requires_external_sync = true;
+  using injection_type = concurrency::injection;
+  using result_type = std::expected<CommonRep, ErrorPayload>;
+
+  static constexpr auto inject() noexcept -> injection_type {
+    injection_type out{};
+    out.fence_before = true;
+    out.fence_after = true;
+    out.order_before = std::memory_order_acquire;
+    out.order_after = std::memory_order_release;
+    return out;
+  }
+};
+
+template <operations::operation OpTag, typename CommonRep,
+          typename ErrorPayload>
+struct concurrency::handler<concurrency::fenced_seq_cst, OpTag, CommonRep,
+                            ErrorPayload> {
+  static constexpr bool enabled = true;
+  static constexpr bool requires_external_sync = true;
+  using injection_type = concurrency::injection;
+  using result_type = std::expected<CommonRep, ErrorPayload>;
+
+  static constexpr auto inject() noexcept -> injection_type {
+    injection_type out{};
+    out.fence_before = true;
+    out.fence_after = true;
+    out.order_before = std::memory_order_seq_cst;
+    out.order_after = std::memory_order_seq_cst;
+    return out;
+  }
+};
+
+template <typename CommonRep, typename ErrorPayload>
+struct concurrency::handler<concurrency::fenced, void, CommonRep,
+                            ErrorPayload> {
+  static constexpr bool enabled = std::is_trivially_copyable_v<CommonRep>;
+  using injection_type = concurrency::injection;
+  using result_type = std::expected<CommonRep, ErrorPayload>;
+
+  static auto load(CommonRep const &value) noexcept -> CommonRep {
+    std::atomic_ref<CommonRep const> ref(value);
+    return ref.load(std::memory_order_seq_cst);
+  }
+
+  static auto store(CommonRep &value, CommonRep desired) noexcept -> void {
+    std::atomic_ref<CommonRep> ref(value);
+    ref.store(desired, std::memory_order_seq_cst);
+  }
+
+  static auto compare_exchange(CommonRep &value, CommonRep &expected,
+                               CommonRep desired) noexcept -> bool {
+    std::atomic_ref<CommonRep> ref(value);
+    return ref.compare_exchange_strong(expected, desired,
+                                       std::memory_order_seq_cst,
+                                       std::memory_order_seq_cst);
+  }
+};
+
+template <typename CommonRep, typename ErrorPayload>
+struct concurrency::handler<concurrency::fenced_relaxed, void, CommonRep,
+                            ErrorPayload> {
+  static constexpr bool enabled = std::is_trivially_copyable_v<CommonRep>;
+  using injection_type = concurrency::injection;
+  using result_type = std::expected<CommonRep, ErrorPayload>;
+
+  static auto load(CommonRep const &value) noexcept -> CommonRep {
+    std::atomic_ref<CommonRep const> ref(value);
+    return ref.load(std::memory_order_relaxed);
+  }
+
+  static auto store(CommonRep &value, CommonRep desired) noexcept -> void {
+    std::atomic_ref<CommonRep> ref(value);
+    ref.store(desired, std::memory_order_relaxed);
+  }
+
+  static auto compare_exchange(CommonRep &value, CommonRep &expected,
+                               CommonRep desired) noexcept -> bool {
+    std::atomic_ref<CommonRep> ref(value);
+    return ref.compare_exchange_strong(expected, desired,
+                                       std::memory_order_relaxed,
+                                       std::memory_order_relaxed);
+  }
+};
+
+template <typename CommonRep, typename ErrorPayload>
+struct concurrency::handler<concurrency::fenced_acq_rel, void, CommonRep,
+                            ErrorPayload> {
+  static constexpr bool enabled = std::is_trivially_copyable_v<CommonRep>;
+  using injection_type = concurrency::injection;
+  using result_type = std::expected<CommonRep, ErrorPayload>;
+
+  static auto load(CommonRep const &value) noexcept -> CommonRep {
+    std::atomic_ref<CommonRep const> ref(value);
+    return ref.load(std::memory_order_acquire);
+  }
+
+  static auto store(CommonRep &value, CommonRep desired) noexcept -> void {
+    std::atomic_ref<CommonRep> ref(value);
+    ref.store(desired, std::memory_order_release);
+  }
+
+  static auto compare_exchange(CommonRep &value, CommonRep &expected,
+                               CommonRep desired) noexcept -> bool {
+    std::atomic_ref<CommonRep> ref(value);
+    return ref.compare_exchange_strong(expected, desired,
+                                       std::memory_order_acq_rel,
+                                       std::memory_order_acquire);
+  }
+};
+
+template <typename CommonRep, typename ErrorPayload>
+struct concurrency::handler<concurrency::fenced_seq_cst, void, CommonRep,
+                            ErrorPayload> {
+  static constexpr bool enabled = std::is_trivially_copyable_v<CommonRep>;
+  using injection_type = concurrency::injection;
+  using result_type = std::expected<CommonRep, ErrorPayload>;
+
+  static auto load(CommonRep const &value) noexcept -> CommonRep {
+    return concurrency::handler<concurrency::fenced, void, CommonRep,
+                                ErrorPayload>::load(value);
+  }
+
+  static auto store(CommonRep &value, CommonRep desired) noexcept -> void {
+    concurrency::handler<concurrency::fenced, void, CommonRep,
+                         ErrorPayload>::store(value, desired);
+  }
+
+  static auto compare_exchange(CommonRep &value, CommonRep &expected,
+                               CommonRep desired) noexcept -> bool {
+    return concurrency::handler<concurrency::fenced, void, CommonRep,
+                                ErrorPayload>::compare_exchange(value, expected,
+                                                                desired);
   }
 };
 
