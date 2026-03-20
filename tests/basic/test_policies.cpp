@@ -7,6 +7,15 @@ using namespace mcpplibs::primitives;
 
 namespace {
 struct NullCapabilityProbe {};
+
+struct NonTriviallyCopyableRep {
+  int value{0};
+  ~NonTriviallyCopyableRep() {}
+};
+
+struct LowAlignmentRep {
+  unsigned char bytes[sizeof(std::uint64_t)]{};
+};
 } // namespace
 
 template <> struct operations::traits<NullCapabilityProbe> {
@@ -125,6 +134,38 @@ TEST(PolicyConcurrencyTest, PrimitiveAccessHandlerProtocolByPolicy) {
   EXPECT_FALSE(
       (policy::concurrency::handler_access_available<policy::concurrency::none,
                                                      int>));
+}
+
+TEST(PolicyConcurrencyTest, PrimitiveAccessRejectsNonTriviallyCopyableRep) {
+  EXPECT_FALSE((
+      policy::concurrency::handler_access_available<policy::concurrency::fenced,
+                                                    NonTriviallyCopyableRep>));
+  EXPECT_FALSE((policy::concurrency::handler_access_available<
+                policy::concurrency::fenced_relaxed, NonTriviallyCopyableRep>));
+  EXPECT_FALSE((policy::concurrency::handler_access_available<
+                policy::concurrency::fenced_acq_rel, NonTriviallyCopyableRep>));
+  EXPECT_FALSE((policy::concurrency::handler_access_available<
+                policy::concurrency::fenced_seq_cst, NonTriviallyCopyableRep>));
+}
+
+TEST(PolicyConcurrencyTest, PrimitiveAccessRespectsAtomicRefAlignmentGate) {
+  constexpr bool requires_stronger_alignment =
+      std::atomic_ref<LowAlignmentRep>::required_alignment >
+      alignof(LowAlignmentRep);
+
+  if constexpr (requires_stronger_alignment) {
+    EXPECT_FALSE((policy::concurrency::handler_access_available<
+                  policy::concurrency::fenced, LowAlignmentRep>));
+    EXPECT_FALSE((policy::concurrency::handler_access_available<
+                  policy::concurrency::fenced_relaxed, LowAlignmentRep>));
+    EXPECT_FALSE((policy::concurrency::handler_access_available<
+                  policy::concurrency::fenced_acq_rel, LowAlignmentRep>));
+    EXPECT_FALSE((policy::concurrency::handler_access_available<
+                  policy::concurrency::fenced_seq_cst, LowAlignmentRep>));
+  } else {
+    GTEST_SKIP() << "platform atomic_ref required_alignment does not exceed "
+                    "alignof(LowAlignmentRep)";
+  }
 }
 
 TEST(PolicyProtocolTest, BuiltinHandlersSatisfyProtocolConcepts) {
