@@ -136,6 +136,28 @@ using concurrency = concurrency::none;
 
 namespace details {
 
+template <typename T, bool = std::is_trivially_copyable_v<T>>
+struct atomic_ref_alignment_compatible : std::false_type {};
+
+template <typename T>
+struct atomic_ref_alignment_compatible<T, true>
+    : std::bool_constant<(alignof(T) >=
+                          std::atomic_ref<T>::required_alignment)> {};
+
+template <typename T>
+inline constexpr bool atomic_ref_compatible_v =
+    atomic_ref_alignment_compatible<T>::value;
+
+template <typename T> constexpr void assert_atomic_ref_compatible() {
+  static_assert(std::is_trivially_copyable_v<T>,
+                "concurrency::handler atomic access requires trivially "
+                "copyable CommonRep");
+  static_assert(
+      atomic_ref_alignment_compatible<T>::value,
+      "concurrency::handler atomic access requires alignof(CommonRep) to "
+      "satisfy std::atomic_ref<CommonRep>::required_alignment");
+}
+
 template <typename OpTag>
 inline constexpr bool is_arithmetic_operation_v =
     operations::op_has_capability_v<OpTag, operations::capability::arithmetic>;
@@ -150,6 +172,7 @@ inline constexpr bool rejects_arithmetic_for_boolean_or_character_v =
 
 template <typename T>
 auto atomic_ref_load(T const &value, std::memory_order order) noexcept -> T {
+  assert_atomic_ref_compatible<T>();
   // libc++ rejects std::atomic_ref<const T>; load through a non-mutating view.
   auto &mutable_value = const_cast<T &>(value);
   std::atomic_ref<T> ref(mutable_value);
@@ -295,7 +318,7 @@ struct concurrency::handler<concurrency::fenced_seq_cst, OpTag, CommonRep,
 template <typename CommonRep, typename ErrorPayload>
 struct concurrency::handler<concurrency::fenced, void, CommonRep,
                             ErrorPayload> {
-  static constexpr bool enabled = std::is_trivially_copyable_v<CommonRep>;
+  static constexpr bool enabled = details::atomic_ref_compatible_v<CommonRep>;
   using injection_type = concurrency::injection;
   using result_type = std::expected<CommonRep, ErrorPayload>;
 
@@ -304,12 +327,14 @@ struct concurrency::handler<concurrency::fenced, void, CommonRep,
   }
 
   static auto store(CommonRep &value, CommonRep desired) noexcept -> void {
+    details::assert_atomic_ref_compatible<CommonRep>();
     std::atomic_ref<CommonRep> ref(value);
     ref.store(desired, std::memory_order_seq_cst);
   }
 
   static auto compare_exchange(CommonRep &value, CommonRep &expected,
                                CommonRep desired) noexcept -> bool {
+    details::assert_atomic_ref_compatible<CommonRep>();
     std::atomic_ref<CommonRep> ref(value);
     return ref.compare_exchange_strong(expected, desired,
                                        std::memory_order_seq_cst,
@@ -320,7 +345,7 @@ struct concurrency::handler<concurrency::fenced, void, CommonRep,
 template <typename CommonRep, typename ErrorPayload>
 struct concurrency::handler<concurrency::fenced_relaxed, void, CommonRep,
                             ErrorPayload> {
-  static constexpr bool enabled = std::is_trivially_copyable_v<CommonRep>;
+  static constexpr bool enabled = details::atomic_ref_compatible_v<CommonRep>;
   using injection_type = concurrency::injection;
   using result_type = std::expected<CommonRep, ErrorPayload>;
 
@@ -329,12 +354,14 @@ struct concurrency::handler<concurrency::fenced_relaxed, void, CommonRep,
   }
 
   static auto store(CommonRep &value, CommonRep desired) noexcept -> void {
+    details::assert_atomic_ref_compatible<CommonRep>();
     std::atomic_ref<CommonRep> ref(value);
     ref.store(desired, std::memory_order_relaxed);
   }
 
   static auto compare_exchange(CommonRep &value, CommonRep &expected,
                                CommonRep desired) noexcept -> bool {
+    details::assert_atomic_ref_compatible<CommonRep>();
     std::atomic_ref<CommonRep> ref(value);
     return ref.compare_exchange_strong(expected, desired,
                                        std::memory_order_relaxed,
@@ -345,7 +372,7 @@ struct concurrency::handler<concurrency::fenced_relaxed, void, CommonRep,
 template <typename CommonRep, typename ErrorPayload>
 struct concurrency::handler<concurrency::fenced_acq_rel, void, CommonRep,
                             ErrorPayload> {
-  static constexpr bool enabled = std::is_trivially_copyable_v<CommonRep>;
+  static constexpr bool enabled = details::atomic_ref_compatible_v<CommonRep>;
   using injection_type = concurrency::injection;
   using result_type = std::expected<CommonRep, ErrorPayload>;
 
@@ -354,12 +381,14 @@ struct concurrency::handler<concurrency::fenced_acq_rel, void, CommonRep,
   }
 
   static auto store(CommonRep &value, CommonRep desired) noexcept -> void {
+    details::assert_atomic_ref_compatible<CommonRep>();
     std::atomic_ref<CommonRep> ref(value);
     ref.store(desired, std::memory_order_release);
   }
 
   static auto compare_exchange(CommonRep &value, CommonRep &expected,
                                CommonRep desired) noexcept -> bool {
+    details::assert_atomic_ref_compatible<CommonRep>();
     std::atomic_ref<CommonRep> ref(value);
     return ref.compare_exchange_strong(expected, desired,
                                        std::memory_order_acq_rel,
@@ -370,7 +399,7 @@ struct concurrency::handler<concurrency::fenced_acq_rel, void, CommonRep,
 template <typename CommonRep, typename ErrorPayload>
 struct concurrency::handler<concurrency::fenced_seq_cst, void, CommonRep,
                             ErrorPayload> {
-  static constexpr bool enabled = std::is_trivially_copyable_v<CommonRep>;
+  static constexpr bool enabled = details::atomic_ref_compatible_v<CommonRep>;
   using injection_type = concurrency::injection;
   using result_type = std::expected<CommonRep, ErrorPayload>;
 
