@@ -1,8 +1,11 @@
 module;
 #include <atomic>
+#include <cstdint>
 #include <concepts>
 #include <exception>
 #include <expected>
+#include <limits>
+#include <optional>
 #include <stdexcept>
 #include <string>
 #include <type_traits>
@@ -530,6 +533,45 @@ constexpr auto to_error_payload(error::kind kind) -> ErrorPayload {
   } else {
     static_cast<void>(kind);
     return ErrorPayload{};
+  }
+}
+
+template <typename DestRep, typename SrcRep>
+constexpr auto narrow_integral_error(SrcRep value)
+    -> std::optional<error::kind> {
+  using dest_type = std::remove_cv_t<DestRep>;
+  using src_type = std::remove_cv_t<SrcRep>;
+
+  if constexpr (std::is_signed_v<src_type>) {
+    auto const signed_value = static_cast<std::intmax_t>(value);
+    if constexpr (std::is_signed_v<dest_type>) {
+      if (signed_value <
+          static_cast<std::intmax_t>(std::numeric_limits<dest_type>::min())) {
+        return error::kind::underflow;
+      }
+      if (signed_value >
+          static_cast<std::intmax_t>(std::numeric_limits<dest_type>::max())) {
+        return error::kind::overflow;
+      }
+      return std::nullopt;
+    } else {
+      if (signed_value < 0) {
+        return error::kind::underflow;
+      }
+
+      if (static_cast<std::uintmax_t>(signed_value) >
+          static_cast<std::uintmax_t>(std::numeric_limits<dest_type>::max())) {
+        return error::kind::overflow;
+      }
+      return std::nullopt;
+    }
+  } else {
+    auto const unsigned_value = static_cast<std::uintmax_t>(value);
+    if (unsigned_value >
+        static_cast<std::uintmax_t>(std::numeric_limits<dest_type>::max())) {
+      return error::kind::overflow;
+    }
+    return std::nullopt;
   }
 }
 } // namespace details

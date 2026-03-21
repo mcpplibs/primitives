@@ -13,6 +13,7 @@ import mcpplibs.primitives.operations.impl;
 import mcpplibs.primitives.primitive.impl;
 import mcpplibs.primitives.primitive.traits;
 import mcpplibs.primitives.policy.handler;
+import mcpplibs.primitives.policy.impl;
 import mcpplibs.primitives.underlying.traits;
 
 export namespace mcpplibs::primitives::operations {
@@ -32,7 +33,7 @@ struct three_way_ordering<
 };
 
 template <typename CommonRep>
-using three_way_ordering_t = typename three_way_ordering<CommonRep>::type;
+using three_way_ordering_t = three_way_ordering<CommonRep>::type;
 
 template <typename Ordering, typename CommonRep>
 constexpr auto decode_three_way_code(CommonRep const &code) -> Ordering {
@@ -56,14 +57,14 @@ constexpr auto decode_three_way_code(CommonRep const &code) -> Ordering {
 
   return Ordering::equivalent;
 }
+
 } // namespace details
 
 template <operation OpTag, primitive_instance Lhs, primitive_instance Rhs,
           typename ErrorPayload = policy::error::kind>
-using primitive_dispatch_result_t = std::expected<
-    typename mcpplibs::primitives::meta::make_primitive_t<
+using primitive_dispatch_result_t = std::expected<meta::make_primitive_t<
         typename dispatcher_meta<OpTag, Lhs, Rhs, ErrorPayload>::common_rep,
-        typename mcpplibs::primitives::meta::traits<Lhs>::policies>,
+        typename meta::traits<Lhs>::policies>,
     ErrorPayload>;
 
 template <primitive_instance Lhs, primitive_instance Rhs,
@@ -79,7 +80,7 @@ template <operation OpTag, primitive_instance Lhs, primitive_instance Rhs,
 constexpr auto apply(Lhs const &lhs, Rhs const &rhs)
     -> primitive_dispatch_result_t<OpTag, Lhs, Rhs, ErrorPayload> {
   using result_primitive =
-      typename primitive_dispatch_result_t<OpTag, Lhs, Rhs,
+      primitive_dispatch_result_t<OpTag, Lhs, Rhs,
                                            ErrorPayload>::value_type;
 
   auto const raw = dispatch<OpTag, Lhs, Rhs, ErrorPayload>(lhs, rhs);
@@ -137,10 +138,10 @@ template <primitive_instance Lhs, primitive_instance Rhs,
 constexpr auto three_way_compare(Lhs const &lhs, Rhs const &rhs)
     -> three_way_dispatch_result_t<Lhs, Rhs, ErrorPayload> {
   using common_rep =
-      typename dispatcher_meta<ThreeWayCompare, Lhs, Rhs,
+      dispatcher_meta<ThreeWayCompare, Lhs, Rhs,
                                ErrorPayload>::common_rep;
   using ordering =
-      typename three_way_dispatch_result_t<Lhs, Rhs, ErrorPayload>::value_type;
+      three_way_dispatch_result_t<Lhs, Rhs, ErrorPayload>::value_type;
 
   auto const raw = dispatch<ThreeWayCompare, Lhs, Rhs, ErrorPayload>(lhs, rhs);
   if (!raw.has_value()) {
@@ -154,16 +155,31 @@ template <operation OpTag, primitive_instance Lhs, primitive_instance Rhs,
           typename ErrorPayload = policy::error::kind>
 constexpr auto apply_assign(Lhs &lhs, Rhs const &rhs)
     -> primitive_dispatch_result_t<OpTag, Lhs, Rhs, ErrorPayload> {
-  using lhs_value_type =
-      typename mcpplibs::primitives::meta::traits<Lhs>::value_type;
-  using lhs_rep = typename underlying::traits<lhs_value_type>::rep_type;
+  using lhs_traits = meta::traits<Lhs>;
+  using lhs_value_type = lhs_traits::value_type;
+  using lhs_value_policy = lhs_traits::value_policy;
+  using lhs_rep = underlying::traits<lhs_value_type>::rep_type;
+  using out_primitive = primitive_dispatch_result_t<OpTag, Lhs, Rhs,
+                                           ErrorPayload>::value_type;
+  using common_rep = meta::traits<out_primitive>::value_type;
 
   auto out = apply<OpTag, Lhs, Rhs, ErrorPayload>(lhs, rhs);
   if (!out.has_value()) {
     return std::unexpected(out.error());
   }
 
-  auto const assigned_rep = static_cast<lhs_rep>(out->load());
+  auto const assigned_common = out->load();
+  if constexpr (std::same_as<lhs_value_policy, policy::value::checked> &&
+                std::integral<lhs_rep> && std::integral<common_rep>) {
+    if (auto const kind =
+            policy::details::narrow_integral_error<lhs_rep>(assigned_common);
+        kind.has_value()) {
+      return std::unexpected(
+          policy::details::to_error_payload<ErrorPayload>(*kind));
+    }
+  }
+
+  auto const assigned_rep = static_cast<lhs_rep>(assigned_common);
   lhs.store(underlying::traits<lhs_value_type>::from_rep(assigned_rep));
   return out;
 }
