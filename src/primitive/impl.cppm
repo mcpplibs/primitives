@@ -58,6 +58,26 @@ public:
                 "Multiple concurrency policies are not allowed");
 
   constexpr explicit primitive(value_type v) noexcept : value_(v) {}
+  primitive(primitive const &other) noexcept : value_(other.load()) {}
+  auto operator=(primitive const &other) noexcept -> primitive & {
+    if (this == &other) {
+      return *this;
+    }
+
+    store(other.load());
+    return *this;
+  }
+
+  primitive(primitive &&other) noexcept : value_(other.load()) {}
+  auto operator=(primitive &&other) noexcept -> primitive & {
+    if (this == &other) {
+      return *this;
+    }
+
+    store(other.load());
+    return *this;
+  }
+
   constexpr value_type &value() noexcept { return value_; }
   [[nodiscard]] constexpr value_type const &value() const noexcept {
     return value_;
@@ -65,43 +85,34 @@ public:
   constexpr explicit operator value_type() const noexcept { return value_; }
 
   [[nodiscard]] auto load() const noexcept -> value_type {
-    using access_handler_t =
-        policy::concurrency::handler<concurrency_policy, void, value_type,
-                                     policy::error::kind>;
-    static_assert(
-        policy::concurrency::handler_access_available<concurrency_policy,
-                                                      value_type>,
-        "Selected concurrency policy does not provide primitive "
-        "load/store/CAS support");
+    require_access_handler_();
     return access_handler_t::load(value_);
   }
 
   auto store(value_type desired) noexcept -> void {
-    using access_handler_t =
-        policy::concurrency::handler<concurrency_policy, void, value_type,
-                                     policy::error::kind>;
-    static_assert(
-        policy::concurrency::handler_access_available<concurrency_policy,
-                                                      value_type>,
-        "Selected concurrency policy does not provide primitive "
-        "load/store/CAS support");
+    require_access_handler_();
     access_handler_t::store(value_, desired);
   }
 
   auto compare_exchange(value_type &expected, value_type desired) noexcept
       -> bool {
-    using access_handler_t =
-        policy::concurrency::handler<concurrency_policy, void, value_type,
-                                     policy::error::kind>;
+    require_access_handler_();
+    return access_handler_t::compare_exchange(value_, expected, desired);
+  }
+
+private:
+  using access_handler_t =
+      policy::concurrency::handler<concurrency_policy, void, value_type,
+                                   policy::error::kind>;
+
+  static constexpr auto require_access_handler_() noexcept -> void {
     static_assert(
         policy::concurrency::handler_access_available<concurrency_policy,
                                                       value_type>,
         "Selected concurrency policy does not provide primitive "
         "load/store/CAS support");
-    return access_handler_t::compare_exchange(value_, expected, desired);
   }
 
-private:
   value_type value_;
 };
 
