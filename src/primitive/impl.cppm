@@ -75,6 +75,12 @@ public:
     }
   }
 
+  template <underlying_type U>
+    requires(!std::same_as<U, value_type>)
+  explicit constexpr primitive(primitive<U, Policies...> const &other) noexcept
+      requires(cross_underlying_constructible_v<U>)
+      : value_(convert_cross_underlying_<U>(other.load())) {}
+
   constexpr auto operator=(primitive const &other) noexcept -> primitive & {
     if (this == &other) {
       return *this;
@@ -88,6 +94,15 @@ public:
     return *this;
   }
 
+  template <underlying_type U>
+    requires(!std::same_as<U, value_type>)
+  constexpr auto
+  operator=(primitive<U, Policies...> const &other) noexcept -> primitive &
+      requires(cross_underlying_constructible_v<U>) {
+    store(convert_cross_underlying_<U>(other.load()));
+    return *this;
+  }
+
   constexpr primitive(primitive &&other) noexcept {
     if consteval {
       value_ = other.value_;
@@ -95,6 +110,12 @@ public:
       value_ = other.load();
     }
   }
+
+  template <underlying_type U>
+    requires(!std::same_as<U, value_type>)
+  explicit constexpr primitive(primitive<U, Policies...> &&other) noexcept
+      requires(cross_underlying_constructible_v<U>)
+      : value_(convert_cross_underlying_<U>(other.load())) {}
 
   constexpr auto operator=(primitive &&other) noexcept -> primitive & {
     if (this == &other) {
@@ -106,6 +127,15 @@ public:
     } else {
       store(other.load());
     }
+    return *this;
+  }
+
+  template <underlying_type U>
+    requires(!std::same_as<U, value_type>)
+  constexpr auto operator=(primitive<U, Policies...> &&other) noexcept
+      -> primitive &
+      requires(cross_underlying_constructible_v<U>) {
+    store(convert_cross_underlying_<U>(other.load()));
     return *this;
   }
 
