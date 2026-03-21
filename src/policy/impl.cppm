@@ -239,6 +239,33 @@ struct concurrency::handler<concurrency::none, OpTag, CommonRep, ErrorPayload> {
   }
 };
 
+template <typename CommonRep, typename ErrorPayload>
+struct concurrency::handler<concurrency::none, void, CommonRep, ErrorPayload> {
+  static constexpr bool enabled = true;
+  using injection_type = concurrency::injection;
+  using result_type = std::expected<CommonRep, ErrorPayload>;
+
+  static constexpr auto load(CommonRep const &value) noexcept -> CommonRep {
+    return value;
+  }
+
+  static constexpr auto store(CommonRep &value, CommonRep desired) noexcept
+      -> void {
+    value = desired;
+  }
+
+  static constexpr auto compare_exchange(CommonRep &value, CommonRep &expected,
+                                         CommonRep desired) noexcept -> bool {
+    if (value != expected) {
+      expected = value;
+      return false;
+    }
+
+    value = desired;
+    return true;
+  }
+};
+
 template <operations::operation OpTag, typename CommonRep,
           typename ErrorPayload>
 struct concurrency::handler<concurrency::fenced, OpTag, CommonRep,
