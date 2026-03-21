@@ -75,7 +75,7 @@ jobs:
 
       - name: Build with xmake
         run: |
-          xmake f -m release --toolchain=llvm -vv -y
+          xmake f -m release -vv -y
           xmake -j$(sysctl -n hw.ncpu)
 
   build-windows:
