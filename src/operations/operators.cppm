@@ -10,6 +10,7 @@ import mcpplibs.primitives.operations.impl;
 import mcpplibs.primitives.primitive.impl;
 import mcpplibs.primitives.primitive.traits;
 import mcpplibs.primitives.policy.handler;
+import mcpplibs.primitives.underlying.traits;
 
 export namespace mcpplibs::primitives::operations {
 
@@ -79,6 +80,52 @@ constexpr auto not_equal(Lhs const &lhs, Rhs const &rhs)
   return apply<NotEqual, Lhs, Rhs, ErrorPayload>(lhs, rhs);
 }
 
+template <operation OpTag, primitive_instance Lhs, primitive_instance Rhs,
+          typename ErrorPayload = policy::error::kind>
+constexpr auto apply_assign(Lhs &lhs, Rhs const &rhs)
+    -> primitive_dispatch_result_t<OpTag, Lhs, Rhs, ErrorPayload> {
+  using lhs_value_type =
+      typename mcpplibs::primitives::traits::primitive_traits<Lhs>::value_type;
+  using lhs_rep = typename underlying::traits<lhs_value_type>::rep_type;
+
+  auto out = apply<OpTag, Lhs, Rhs, ErrorPayload>(lhs, rhs);
+  if (!out.has_value()) {
+    return std::unexpected(out.error());
+  }
+
+  auto const assigned_rep = static_cast<lhs_rep>(out->load());
+  lhs.store(underlying::traits<lhs_value_type>::from_rep(assigned_rep));
+  return out;
+}
+
+template <primitive_instance Lhs, primitive_instance Rhs,
+          typename ErrorPayload = policy::error::kind>
+constexpr auto add_assign(Lhs &lhs, Rhs const &rhs)
+    -> primitive_dispatch_result_t<Addition, Lhs, Rhs, ErrorPayload> {
+  return apply_assign<Addition, Lhs, Rhs, ErrorPayload>(lhs, rhs);
+}
+
+template <primitive_instance Lhs, primitive_instance Rhs,
+          typename ErrorPayload = policy::error::kind>
+constexpr auto sub_assign(Lhs &lhs, Rhs const &rhs)
+    -> primitive_dispatch_result_t<Subtraction, Lhs, Rhs, ErrorPayload> {
+  return apply_assign<Subtraction, Lhs, Rhs, ErrorPayload>(lhs, rhs);
+}
+
+template <primitive_instance Lhs, primitive_instance Rhs,
+          typename ErrorPayload = policy::error::kind>
+constexpr auto mul_assign(Lhs &lhs, Rhs const &rhs)
+    -> primitive_dispatch_result_t<Multiplication, Lhs, Rhs, ErrorPayload> {
+  return apply_assign<Multiplication, Lhs, Rhs, ErrorPayload>(lhs, rhs);
+}
+
+template <primitive_instance Lhs, primitive_instance Rhs,
+          typename ErrorPayload = policy::error::kind>
+constexpr auto div_assign(Lhs &lhs, Rhs const &rhs)
+    -> primitive_dispatch_result_t<Division, Lhs, Rhs, ErrorPayload> {
+  return apply_assign<Division, Lhs, Rhs, ErrorPayload>(lhs, rhs);
+}
+
 } // namespace mcpplibs::primitives::operations
 
 export namespace mcpplibs::primitives::operators {
@@ -125,6 +172,36 @@ template <operations::primitive_instance Lhs,
 constexpr auto operator!=(Lhs const &lhs, Rhs const &rhs)
     -> operations::primitive_dispatch_result_t<operations::NotEqual, Lhs, Rhs> {
   return operations::not_equal(lhs, rhs);
+}
+
+template <operations::primitive_instance Lhs,
+          operations::primitive_instance Rhs>
+constexpr auto operator+=(Lhs &lhs, Rhs const &rhs)
+    -> operations::primitive_dispatch_result_t<operations::Addition, Lhs, Rhs> {
+  return operations::add_assign(lhs, rhs);
+}
+
+template <operations::primitive_instance Lhs,
+          operations::primitive_instance Rhs>
+constexpr auto operator-=(Lhs &lhs, Rhs const &rhs)
+    -> operations::primitive_dispatch_result_t<operations::Subtraction, Lhs,
+                                               Rhs> {
+  return operations::sub_assign(lhs, rhs);
+}
+
+template <operations::primitive_instance Lhs,
+          operations::primitive_instance Rhs>
+constexpr auto operator*=(Lhs &lhs, Rhs const &rhs)
+    -> operations::primitive_dispatch_result_t<operations::Multiplication, Lhs,
+                                               Rhs> {
+  return operations::mul_assign(lhs, rhs);
+}
+
+template <operations::primitive_instance Lhs,
+          operations::primitive_instance Rhs>
+constexpr auto operator/=(Lhs &lhs, Rhs const &rhs)
+    -> operations::primitive_dispatch_result_t<operations::Division, Lhs, Rhs> {
+  return operations::div_assign(lhs, rhs);
 }
 
 } // namespace mcpplibs::primitives::operators
