@@ -7,6 +7,7 @@ export module mcpplibs.primitives.primitive.impl;
 import mcpplibs.primitives.underlying.traits;
 import mcpplibs.primitives.policy.traits;
 import mcpplibs.primitives.policy.handler;
+import mcpplibs.primitives.policy.impl;
 import mcpplibs.primitives.policy.utility;
 
 export namespace mcpplibs::primitives {
@@ -16,7 +17,55 @@ public:
   using value_type = T;
   using policies = std::tuple<Policies...>;
 
-  constexpr explicit primitive(value_type v) noexcept : value_(v) {}
+private:
+  using type_policy_t =
+      policy::resolve_policy_t<policy::category::type, Policies...>;
+  using value_rep_type = underlying::traits<value_type>::rep_type;
+
+  template <underlying_type U>
+  static constexpr bool cross_underlying_constructible_v = [] {
+    using source_value_type = std::remove_cv_t<U>;
+    using source_rep_type =
+      underlying::traits<source_value_type>::rep_type;
+
+    if constexpr (std::same_as<type_policy_t, policy::type::strict>) {
+      return false;
+    } else if constexpr (std::same_as<type_policy_t, policy::type::compatible>) {
+      return underlying::traits<source_value_type>::kind ==
+                 underlying::traits<value_type>::kind &&
+             has_common_rep<source_rep_type, value_rep_type> &&
+             !std::same_as<common_rep_t<source_rep_type, value_rep_type>, void>;
+    } else if constexpr (std::same_as<type_policy_t,
+                                      policy::type::transparent>) {
+      return has_common_rep<source_rep_type, value_rep_type> &&
+             !std::same_as<common_rep_t<source_rep_type, value_rep_type>, void>;
+    } else {
+      return false;
+    }
+  }();
+
+  template <underlying_type U>
+  static constexpr auto convert_cross_underlying_(U u) noexcept -> value_type {
+    using source_value_type = std::remove_cv_t<U>;
+    using source_rep_type =
+      underlying::traits<source_value_type>::rep_type;
+
+    auto const source_rep = underlying::traits<source_value_type>::to_rep(u);
+    auto const target_rep = static_cast<value_rep_type>(
+        static_cast<source_rep_type>(source_rep));
+    return underlying::traits<value_type>::from_rep(target_rep);
+  }
+
+public:
+  template <underlying_type U>
+    requires std::same_as<U, value_type>
+  constexpr explicit primitive(U u) noexcept : value_(u) {}
+
+  template <underlying_type U>
+    requires(!std::same_as<U, value_type> &&
+             cross_underlying_constructible_v<U>)
+  constexpr explicit primitive(U u) noexcept
+      : value_(convert_cross_underlying_<U>(u)) {}
 
   constexpr primitive(primitive const &other) noexcept {
     if consteval {
