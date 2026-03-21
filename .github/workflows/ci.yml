@@ -62,22 +62,21 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Install Xlings
-        env:
-          XLINGS_NON_INTERACTIVE: 1
-        run: |
-          curl -fsSL https://raw.githubusercontent.com/d2learn/xlings/refs/heads/main/tools/other/quick_install.sh | bash -s -- $XLINGS_VERSION
-          echo "PATH=$HOME/.xlings/subos/current/bin:$PATH" >> "$GITHUB_ENV"
+      - name: Setup xmake
+        uses: xmake-io/github-action-setup-xmake@v1
+        with:
+          xmake-version: latest
+          package-cache: true
 
-      - name: Install Project Dependencies via Xlings
+      - name: Verify toolchain
         run: |
-          xlings install
+          xmake --version
           clang --version
 
       - name: Build with xmake
         run: |
           xmake f -m release --toolchain=llvm -vv -y
-          xmake -j$(nproc)
+          xmake -j$(sysctl -n hw.ncpu)
 
   build-windows:
     runs-on: windows-latest
