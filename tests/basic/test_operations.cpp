@@ -480,6 +480,47 @@ TEST(OperationsTest, OperatorPlusDelegatesToDispatcher) {
   EXPECT_EQ(result->value(), 15);
 }
 
+TEST(OperationsTest, CompoundAssignmentOperatorsMutateLhsOnSuccess) {
+  using namespace mcpplibs::primitives::operators;
+  using value_t = primitive<int, policy::value::checked, policy::error::expected>;
+
+  auto value = value_t{20};
+
+  auto add_result = (value += value_t{22});
+  ASSERT_TRUE(add_result.has_value());
+  EXPECT_EQ(value.load(), 42);
+  EXPECT_EQ(add_result->value(), 42);
+
+  auto sub_result = (value -= value_t{2});
+  ASSERT_TRUE(sub_result.has_value());
+  EXPECT_EQ(value.load(), 40);
+  EXPECT_EQ(sub_result->value(), 40);
+
+  auto mul_result = (value *= value_t{3});
+  ASSERT_TRUE(mul_result.has_value());
+  EXPECT_EQ(value.load(), 120);
+  EXPECT_EQ(mul_result->value(), 120);
+
+  auto div_result = (value /= value_t{4});
+  ASSERT_TRUE(div_result.has_value());
+  EXPECT_EQ(value.load(), 30);
+  EXPECT_EQ(div_result->value(), 30);
+}
+
+TEST(OperationsTest, CompoundAssignmentKeepsLhsWhenOperationFails) {
+  using namespace mcpplibs::primitives::operators;
+  using value_t =
+      primitive<int, policy::value::checked, policy::error::expected>;
+
+  auto value = value_t{100};
+
+  auto result = (value /= value_t{0});
+
+  ASSERT_FALSE(result.has_value());
+  EXPECT_EQ(result.error(), policy::error::kind::divide_by_zero);
+  EXPECT_EQ(value.load(), 100);
+}
+
 TEST(OperationsTest, ThrowErrorPolicyThrowsException) {
   using value_t =
       primitive<int, policy::value::checked, policy::error::throwing>;
