@@ -12,6 +12,12 @@ import mcpplibs.primitives;
 
 using namespace mcpplibs::primitives;
 
+template <typename Primitive, typename U>
+concept constructible_from_underlying =
+    underlying_type<U> && requires(U u) {
+  Primitive{u};
+};
+
 TEST(OperationsTest, AddReturnsExpectedPrimitive) {
   using lhs_t = primitive<int, policy::value::checked>;
   using rhs_t = primitive<int, policy::value::checked>;
@@ -345,6 +351,37 @@ TEST(OperationsTest, StrictTypeAllowsSameTypeAtRuntime) {
 
   ASSERT_TRUE(result.has_value());
   EXPECT_EQ(result->value(), 42);
+}
+
+TEST(OperationsTest, StrictTypePrimitiveConstructorRejectsCrossUnderlyingType) {
+  using strict_t = primitive<int, policy::type::strict, policy::error::expected>;
+
+  static_assert(constructible_from_underlying<strict_t, int>);
+  static_assert(!constructible_from_underlying<strict_t, short>);
+
+  auto const value = strict_t{42};
+  EXPECT_EQ(value.load(), 42);
+}
+
+TEST(OperationsTest, CompatibleTypePrimitiveConstructorAllowsSameCategory) {
+  using compatible_t =
+      primitive<int, policy::type::compatible, policy::error::expected>;
+
+  static_assert(constructible_from_underlying<compatible_t, short>);
+  static_assert(!constructible_from_underlying<compatible_t, double>);
+
+  auto const value = compatible_t{static_cast<short>(42)};
+  EXPECT_EQ(value.load(), 42);
+}
+
+TEST(OperationsTest, TransparentTypePrimitiveConstructorAllowsCrossCategory) {
+  using transparent_t =
+      primitive<int, policy::type::transparent, policy::error::expected>;
+
+  static_assert(constructible_from_underlying<transparent_t, double>);
+
+  auto const value = transparent_t{42.75};
+  EXPECT_EQ(value.load(), 42);
 }
 
 TEST(OperationsTest, DispatcherMetaTracksResolvedPolicyGroupConsistency) {
