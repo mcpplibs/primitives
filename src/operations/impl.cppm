@@ -10,6 +10,7 @@ struct Multiplication {};
 struct Division {};
 struct Equal {};
 struct NotEqual {};
+struct ThreeWayCompare {};
 
 template <> struct traits<Addition> {
   using op_tag = Addition;
@@ -53,6 +54,14 @@ template <> struct traits<Equal> {
 
 template <> struct traits<NotEqual> {
   using op_tag = NotEqual;
+
+  static constexpr bool enabled = true;
+  static constexpr auto arity = dimension::binary;
+  static constexpr auto capability_mask = capability::comparison;
+};
+
+template <> struct traits<ThreeWayCompare> {
+  using op_tag = ThreeWayCompare;
 
   static constexpr bool enabled = true;
   static constexpr auto arity = dimension::binary;
