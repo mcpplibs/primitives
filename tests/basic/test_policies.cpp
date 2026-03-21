@@ -149,6 +149,9 @@ TEST(PolicyConcurrencyTest, PrimitiveAccessRejectsNonTriviallyCopyableRep) {
 }
 
 TEST(PolicyConcurrencyTest, PrimitiveAccessRespectsAtomicRefAlignmentGate) {
+  EXPECT_FALSE((policy::concurrency::handler_access_available<
+                policy::concurrency::none, LowAlignmentRep>));
+
   constexpr bool requires_stronger_alignment =
       std::atomic_ref<LowAlignmentRep>::required_alignment >
       alignof(LowAlignmentRep);
