@@ -1,6 +1,8 @@
 #include <atomic>
+#include <compare>
 #include <cstdint>
 #include <gtest/gtest.h>
+#include <limits>
 #include <thread>
 #include <type_traits>
 #include <utility>
@@ -478,6 +480,55 @@ TEST(OperationsTest, OperatorPlusDelegatesToDispatcher) {
 
   ASSERT_TRUE(result.has_value());
   EXPECT_EQ(result->value(), 15);
+}
+
+TEST(OperationsTest, ThreeWayCompareReturnsStrongOrderingForIntegers) {
+  using namespace mcpplibs::primitives::operators;
+  using value_t =
+      primitive<int, policy::value::checked, policy::error::expected>;
+
+  auto const less = (value_t{3} <=> value_t{7});
+  auto const equal = (value_t{5} <=> value_t{5});
+  auto const greater = (value_t{9} <=> value_t{1});
+
+  static_assert(
+      std::is_same_v<typename decltype(less)::value_type, std::strong_ordering>);
+
+  ASSERT_TRUE(less.has_value());
+  ASSERT_TRUE(equal.has_value());
+  ASSERT_TRUE(greater.has_value());
+  EXPECT_EQ(*less, std::strong_ordering::less);
+  EXPECT_EQ(*equal, std::strong_ordering::equal);
+  EXPECT_EQ(*greater, std::strong_ordering::greater);
+}
+
+TEST(OperationsTest, ThreeWayCompareReturnsPartialOrderingForFloatingPoint) {
+  using namespace mcpplibs::primitives::operators;
+  using value_t =
+      primitive<double, policy::value::checked, policy::error::expected>;
+
+  auto const less = (value_t{1.0} <=> value_t{2.0});
+  auto const nan = std::numeric_limits<double>::quiet_NaN();
+  auto const unordered = (value_t{nan} <=> value_t{1.0});
+
+  static_assert(std::is_same_v<typename decltype(less)::value_type,
+                               std::partial_ordering>);
+
+  ASSERT_TRUE(less.has_value());
+  ASSERT_TRUE(unordered.has_value());
+  EXPECT_EQ(*less, std::partial_ordering::less);
+  EXPECT_EQ(*unordered, std::partial_ordering::unordered);
+}
+
+TEST(OperationsTest, ThreeWayCompareOnBoolReturnsError) {
+  using namespace mcpplibs::primitives::operators;
+  using value_t =
+      primitive<bool, policy::value::checked, policy::error::expected>;
+
+  auto const result = (value_t{false} <=> value_t{true});
+
+  ASSERT_FALSE(result.has_value());
+  EXPECT_EQ(result.error(), policy::error::kind::unspecified);
 }
 
 TEST(OperationsTest, CompoundAssignmentOperatorsMutateLhsOnSuccess) {
