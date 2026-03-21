@@ -184,6 +184,18 @@ inline constexpr bool rejects_arithmetic_for_boolean_or_character_v =
     is_arithmetic_operation_v<OpTag> &&
     (is_boolean_or_character_v<LhsRep> || is_boolean_or_character_v<RhsRep>);
 
+template <typename LhsRep, typename RhsRep>
+inline constexpr bool has_non_void_common_rep_v =
+    has_common_rep<LhsRep, RhsRep> &&
+    !std::same_as<common_rep_t<LhsRep, RhsRep>, void>;
+
+template <typename LhsRep, typename RhsRep>
+inline constexpr bool has_same_underlying_category_v =
+    underlying::traits<std::remove_cv_t<LhsRep>>::enabled &&
+    underlying::traits<std::remove_cv_t<RhsRep>>::enabled &&
+    (underlying::traits<std::remove_cv_t<LhsRep>>::kind ==
+     underlying::traits<std::remove_cv_t<RhsRep>>::kind);
+
 template <typename T>
 auto atomic_ref_load(T const &value, std::memory_order order) noexcept -> T {
   assert_atomic_ref_compatible<T>();
@@ -216,7 +228,8 @@ struct type::handler<type::compatible, OpTag, LhsRep, RhsRep> {
   static constexpr bool enabled = true;
   static constexpr bool allowed =
       std::is_arithmetic_v<LhsRep> && std::is_arithmetic_v<RhsRep> &&
-      has_common_rep<LhsRep, RhsRep> &&
+      details::has_same_underlying_category_v<LhsRep, RhsRep> &&
+      details::has_non_void_common_rep_v<LhsRep, RhsRep> &&
       !details::rejects_arithmetic_for_boolean_or_character_v<OpTag, LhsRep,
                                                               RhsRep>;
   static constexpr unsigned diagnostic_id =
@@ -232,7 +245,7 @@ template <operations::operation OpTag, typename LhsRep, typename RhsRep>
 struct type::handler<type::transparent, OpTag, LhsRep, RhsRep> {
   static constexpr bool enabled = true;
   static constexpr bool allowed =
-      has_common_rep<LhsRep, RhsRep> &&
+      details::has_non_void_common_rep_v<LhsRep, RhsRep> &&
       !details::rejects_arithmetic_for_boolean_or_character_v<OpTag, LhsRep,
                                                               RhsRep>;
   static constexpr unsigned diagnostic_id = allowed ? 0u : 3u;
