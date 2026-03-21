@@ -122,6 +122,9 @@ TEST(PolicyConcurrencyTest, FencedVariantsUseExpectedMemoryOrders) {
 }
 
 TEST(PolicyConcurrencyTest, PrimitiveAccessHandlerProtocolByPolicy) {
+  EXPECT_TRUE(
+      (policy::concurrency::handler_access_available<policy::concurrency::none,
+                                                     int>));
   EXPECT_TRUE((
       policy::concurrency::handler_access_available<policy::concurrency::fenced,
                                                     int>));
@@ -131,9 +134,6 @@ TEST(PolicyConcurrencyTest, PrimitiveAccessHandlerProtocolByPolicy) {
                policy::concurrency::fenced_acq_rel, int>));
   EXPECT_TRUE((policy::concurrency::handler_access_available<
                policy::concurrency::fenced_seq_cst, int>));
-  EXPECT_FALSE(
-      (policy::concurrency::handler_access_available<policy::concurrency::none,
-                                                     int>));
 }
 
 TEST(PolicyConcurrencyTest, PrimitiveAccessRejectsNonTriviallyCopyableRep) {
@@ -149,6 +149,9 @@ TEST(PolicyConcurrencyTest, PrimitiveAccessRejectsNonTriviallyCopyableRep) {
 }
 
 TEST(PolicyConcurrencyTest, PrimitiveAccessRespectsAtomicRefAlignmentGate) {
+  EXPECT_FALSE((policy::concurrency::handler_access_available<
+                policy::concurrency::none, LowAlignmentRep>));
+
   constexpr bool requires_stronger_alignment =
       std::atomic_ref<LowAlignmentRep>::required_alignment >
       alignof(LowAlignmentRep);

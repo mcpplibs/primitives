@@ -158,6 +158,20 @@ template <typename T> constexpr void assert_atomic_ref_compatible() {
       "satisfy std::atomic_ref<CommonRep>::required_alignment");
 }
 
+template <typename T>
+concept has_underlying_rep_not_equal =
+    underlying_type<T> &&
+    requires(T const &lhs, T const &rhs) {
+      {
+        underlying::traits<std::remove_cv_t<T>>::to_rep(lhs) !=
+        underlying::traits<std::remove_cv_t<T>>::to_rep(rhs)
+      } -> std::convertible_to<bool>;
+    };
+
+template <typename T>
+inline constexpr bool none_compare_exchange_available_v =
+    has_underlying_rep_not_equal<T>;
+
 template <typename OpTag>
 inline constexpr bool is_arithmetic_operation_v =
     operations::op_has_capability_v<OpTag, operations::capability::arithmetic>;
@@ -236,6 +250,35 @@ struct concurrency::handler<concurrency::none, OpTag, CommonRep, ErrorPayload> {
 
   static constexpr auto inject() noexcept -> injection_type {
     return injection_type{};
+  }
+};
+
+template <typename CommonRep, typename ErrorPayload>
+struct concurrency::handler<concurrency::none, void, CommonRep, ErrorPayload> {
+  static constexpr bool enabled = true;
+  using injection_type = concurrency::injection;
+  using result_type = std::expected<CommonRep, ErrorPayload>;
+
+  static constexpr auto load(CommonRep const &value) noexcept -> CommonRep {
+    return value;
+  }
+
+  static constexpr auto store(CommonRep &value, CommonRep desired) noexcept
+      -> void {
+    value = desired;
+  }
+
+  static constexpr auto compare_exchange(CommonRep &value, CommonRep &expected,
+                                         CommonRep desired) noexcept -> bool
+      requires(details::none_compare_exchange_available_v<CommonRep>) {
+    using traits_type = underlying::traits<std::remove_cv_t<CommonRep>>;
+    if (traits_type::to_rep(value) != traits_type::to_rep(expected)) {
+      expected = value;
+      return false;
+    }
+
+    value = desired;
+    return true;
   }
 };
 

@@ -87,6 +87,34 @@ struct mcpplibs::primitives::policy::concurrency::handler<
   }
 };
 
+template <typename CommonRep, typename ErrorPayload>
+struct mcpplibs::primitives::policy::concurrency::handler<
+    demo::custom_concurrency, void, CommonRep, ErrorPayload> {
+  static constexpr bool enabled = true;
+  using injection_type = mcpplibs::primitives::policy::concurrency::injection;
+  using result_type = std::expected<CommonRep, ErrorPayload>;
+
+  static constexpr auto load(CommonRep const &value) noexcept -> CommonRep {
+    return value;
+  }
+
+  static constexpr auto store(CommonRep &value, CommonRep desired) noexcept
+      -> void {
+    value = desired;
+  }
+
+  static constexpr auto compare_exchange(CommonRep &value, CommonRep &expected,
+                                         CommonRep desired) noexcept -> bool {
+    if (value != expected) {
+      expected = value;
+      return false;
+    }
+
+    value = desired;
+    return true;
+  }
+};
+
 // Point 7 / Step 3C: Implement custom value handler.
 // Complex point: finalize() post-processes decision and adjusts output.
 template <operations::operation OpTag, typename CommonRep,

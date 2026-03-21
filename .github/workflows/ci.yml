@@ -57,27 +57,31 @@ jobs:
 
   build-macos:
     runs-on: macos-15
-    timeout-minutes: 20
+    timeout-minutes: 25
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Install Xlings
-        env:
-          XLINGS_NON_INTERACTIVE: 1
-        run: |
-          curl -fsSL https://raw.githubusercontent.com/d2learn/xlings/refs/heads/main/tools/other/quick_install.sh | bash -s -- $XLINGS_VERSION
-          echo "PATH=$HOME/.xlings/subos/current/bin:$PATH" >> "$GITHUB_ENV"
+      - name: Setup xmake
+        uses: xmake-io/github-action-setup-xmake@v1
+        with:
+          xmake-version: latest
+          package-cache: true
 
-      - name: Install Project Dependencies via Xlings
+      - name: Install LLVM 20
+        run: brew install llvm@20
+
+      - name: Verify toolchain
         run: |
-          xlings install
+          xmake --version
+          /opt/homebrew/opt/llvm@20/bin/clang++ --version
           clang --version
 
       - name: Build with xmake
         run: |
-          xmake f -m release --toolchain=llvm -vv -y
-          xmake -j$(nproc)
+          export PATH=/opt/homebrew/opt/llvm@20/bin:$PATH
+          xmake f -p macosx -m release --toolchain=llvm --sdk=/opt/homebrew/opt/llvm@20 -y -vv
+          xmake -y -vv -j$(sysctl -n hw.ncpu)
 
   build-windows:
     runs-on: windows-latest

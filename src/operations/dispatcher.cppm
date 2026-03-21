@@ -123,9 +123,9 @@ constexpr auto dispatch(Lhs const &lhs, Rhs const &rhs)
 
   // Runtime stage 2: value path.
   auto const lhs_rep_raw =
-      underlying::traits<typename meta::lhs_value_type>::to_rep(lhs.value());
+      underlying::traits<typename meta::lhs_value_type>::to_rep(lhs.load());
   auto const rhs_rep_raw =
-      underlying::traits<typename meta::rhs_value_type>::to_rep(rhs.value());
+      underlying::traits<typename meta::rhs_value_type>::to_rep(rhs.load());
 
   if (!underlying::traits<typename meta::lhs_value_type>::is_valid_rep(
           lhs_rep_raw) ||
