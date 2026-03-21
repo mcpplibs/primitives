@@ -572,6 +572,41 @@ TEST(OperationsTest, CompoundAssignmentKeepsLhsWhenOperationFails) {
   EXPECT_EQ(value.load(), 100);
 }
 
+TEST(OperationsTest, CompoundAssignmentSupportsMixedTypesWithCompatibleTypePolicy) {
+  using namespace mcpplibs::primitives::operators;
+
+  using lhs_t = primitive<short, policy::value::checked, policy::error::expected,
+                          policy::type::compatible>;
+  using rhs_t = primitive<int, policy::value::checked, policy::error::expected,
+                          policy::type::compatible>;
+
+  auto value = lhs_t{10};
+
+  auto add_result = (value += rhs_t{32});
+
+  ASSERT_TRUE(add_result.has_value());
+  EXPECT_EQ(value.load(), 42);
+  EXPECT_EQ(add_result->value(), 42);
+}
+
+TEST(OperationsTest,
+     CompoundAssignmentKeepsLhsOnMixedTypeOverflowWithCompatibleTypePolicy) {
+  using namespace mcpplibs::primitives::operators;
+
+  using lhs_t = primitive<std::int16_t, policy::value::checked,
+                          policy::error::expected, policy::type::compatible>;
+  using rhs_t = primitive<int, policy::value::checked, policy::error::expected,
+                          policy::type::compatible>;
+
+  auto value = lhs_t{static_cast<std::int16_t>(32000)};
+
+  auto add_result = (value += rhs_t{1000});
+
+  ASSERT_FALSE(add_result.has_value());
+  EXPECT_EQ(add_result.error(), policy::error::kind::overflow);
+  EXPECT_EQ(value.load(), static_cast<std::int16_t>(32000));
+}
+
 TEST(OperationsTest, ThrowErrorPolicyThrowsException) {
   using value_t =
       primitive<int, policy::value::checked, policy::error::throwing>;
