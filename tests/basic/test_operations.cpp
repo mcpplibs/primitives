@@ -384,6 +384,45 @@ TEST(OperationsTest, TransparentTypePrimitiveConstructorAllowsCrossCategory) {
   EXPECT_EQ(value.load(), 42);
 }
 
+TEST(OperationsTest, PrimitiveSpecialMembersSupportCrossUnderlyingWithCompatibleType) {
+  using dst_t =
+      primitive<int, policy::type::compatible, policy::error::expected>;
+  using src_t =
+      primitive<short, policy::type::compatible, policy::error::expected>;
+
+  static_assert(std::is_constructible_v<dst_t, src_t const &>);
+  static_assert(std::is_constructible_v<dst_t, src_t &&>);
+  static_assert(std::is_assignable_v<dst_t &, src_t const &>);
+  static_assert(std::is_assignable_v<dst_t &, src_t &&>);
+
+  auto const source = src_t{40};
+  auto copy_constructed = dst_t{source};
+  EXPECT_EQ(copy_constructed.load(), 40);
+
+  auto move_constructed = dst_t{src_t{41}};
+  EXPECT_EQ(move_constructed.load(), 41);
+
+  auto copy_assigned = dst_t{0};
+  copy_assigned = source;
+  EXPECT_EQ(copy_assigned.load(), 40);
+
+  auto move_assigned = dst_t{0};
+  auto move_source = src_t{42};
+  move_assigned = std::move(move_source);
+  EXPECT_EQ(move_assigned.load(), 42);
+}
+
+TEST(OperationsTest,
+     PrimitiveSpecialMembersRejectCrossUnderlyingWithStrictType) {
+  using dst_t = primitive<int, policy::type::strict, policy::error::expected>;
+  using src_t = primitive<short, policy::type::strict, policy::error::expected>;
+
+  static_assert(!std::is_constructible_v<dst_t, src_t const &>);
+  static_assert(!std::is_constructible_v<dst_t, src_t &&>);
+  static_assert(!std::is_assignable_v<dst_t &, src_t const &>);
+  static_assert(!std::is_assignable_v<dst_t &, src_t &&>);
+}
+
 TEST(OperationsTest, DispatcherMetaTracksResolvedPolicyGroupConsistency) {
   using aligned_lhs_t = primitive<int, policy::value::checked,
                                   policy::error::expected>;
