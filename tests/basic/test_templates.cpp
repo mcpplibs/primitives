@@ -150,6 +150,64 @@ struct ExplicitCommonRep {
   }
 };
 
+struct VoidCommonLhs {
+  int value;
+
+  friend constexpr auto operator+(VoidCommonLhs lhs, VoidCommonLhs rhs) noexcept
+      -> VoidCommonLhs {
+    return VoidCommonLhs{lhs.value + rhs.value};
+  }
+
+  friend constexpr auto operator-(VoidCommonLhs lhs, VoidCommonLhs rhs) noexcept
+      -> VoidCommonLhs {
+    return VoidCommonLhs{lhs.value - rhs.value};
+  }
+
+  friend constexpr auto operator*(VoidCommonLhs lhs, VoidCommonLhs rhs) noexcept
+      -> VoidCommonLhs {
+    return VoidCommonLhs{lhs.value * rhs.value};
+  }
+
+  friend constexpr auto operator/(VoidCommonLhs lhs, VoidCommonLhs rhs) noexcept
+      -> VoidCommonLhs {
+    return VoidCommonLhs{lhs.value / rhs.value};
+  }
+
+  friend constexpr auto operator==(VoidCommonLhs lhs,
+                                   VoidCommonLhs rhs) noexcept -> bool {
+    return lhs.value == rhs.value;
+  }
+};
+
+struct VoidCommonRhs {
+  int value;
+
+  friend constexpr auto operator+(VoidCommonRhs lhs, VoidCommonRhs rhs) noexcept
+      -> VoidCommonRhs {
+    return VoidCommonRhs{lhs.value + rhs.value};
+  }
+
+  friend constexpr auto operator-(VoidCommonRhs lhs, VoidCommonRhs rhs) noexcept
+      -> VoidCommonRhs {
+    return VoidCommonRhs{lhs.value - rhs.value};
+  }
+
+  friend constexpr auto operator*(VoidCommonRhs lhs, VoidCommonRhs rhs) noexcept
+      -> VoidCommonRhs {
+    return VoidCommonRhs{lhs.value * rhs.value};
+  }
+
+  friend constexpr auto operator/(VoidCommonRhs lhs, VoidCommonRhs rhs) noexcept
+      -> VoidCommonRhs {
+    return VoidCommonRhs{lhs.value / rhs.value};
+  }
+
+  friend constexpr auto operator==(VoidCommonRhs lhs,
+                                   VoidCommonRhs rhs) noexcept -> bool {
+    return lhs.value == rhs.value;
+  }
+};
+
 } // namespace
 
 template <> struct mcpplibs::primitives::underlying::traits<UserInteger> {
@@ -319,6 +377,52 @@ struct mcpplibs::primitives::underlying::common_rep_traits<ExplicitCommonRhs,
   static constexpr bool enabled = true;
 };
 
+template <> struct mcpplibs::primitives::underlying::traits<VoidCommonLhs> {
+  using value_type = VoidCommonLhs;
+  using rep_type = VoidCommonLhs;
+
+  static constexpr bool enabled = true;
+  static constexpr auto kind = category::integer;
+
+  static constexpr rep_type to_rep(value_type value) noexcept { return value; }
+
+  static constexpr value_type from_rep(rep_type value) noexcept {
+    return value;
+  }
+
+  static constexpr bool is_valid_rep(rep_type) noexcept { return true; }
+};
+
+template <> struct mcpplibs::primitives::underlying::traits<VoidCommonRhs> {
+  using value_type = VoidCommonRhs;
+  using rep_type = VoidCommonRhs;
+
+  static constexpr bool enabled = true;
+  static constexpr auto kind = category::integer;
+
+  static constexpr rep_type to_rep(value_type value) noexcept { return value; }
+
+  static constexpr value_type from_rep(rep_type value) noexcept {
+    return value;
+  }
+
+  static constexpr bool is_valid_rep(rep_type) noexcept { return true; }
+};
+
+template <>
+struct mcpplibs::primitives::underlying::common_rep_traits<VoidCommonLhs,
+                                                           VoidCommonRhs> {
+  using type = void;
+  static constexpr bool enabled = true;
+};
+
+template <>
+struct mcpplibs::primitives::underlying::common_rep_traits<VoidCommonRhs,
+                                                           VoidCommonLhs> {
+  using type = void;
+  static constexpr bool enabled = true;
+};
+
 TEST(PrimitiveTraitsTest, StandardTypeConcepts) {
   EXPECT_TRUE((mcpplibs::primitives::std_integer<int>));
   EXPECT_TRUE((mcpplibs::primitives::std_integer<long long>));
@@ -451,6 +555,25 @@ TEST(PrimitiveTraitsTest, UnderlyingCommonRepCanBeCustomizedViaTraits) {
   static_assert(
       std::same_as<typename handler_t::common_rep, ExplicitCommonRep>);
   SUCCEED();
+}
+
+TEST(PrimitiveTraitsTest, TypePoliciesRequireNonVoidCommonRep) {
+  using compatible_handler_t = mcpplibs::primitives::policy::type::handler<
+      mcpplibs::primitives::policy::type::compatible,
+      mcpplibs::primitives::operations::Addition, VoidCommonLhs, VoidCommonRhs>;
+  using transparent_handler_t = mcpplibs::primitives::policy::type::handler<
+      mcpplibs::primitives::policy::type::transparent,
+      mcpplibs::primitives::operations::Addition, VoidCommonLhs, VoidCommonRhs>;
+
+  static_assert(compatible_handler_t::enabled);
+  static_assert(transparent_handler_t::enabled);
+  static_assert(!compatible_handler_t::allowed);
+  static_assert(!transparent_handler_t::allowed);
+  static_assert(std::same_as<typename compatible_handler_t::common_rep, void>);
+  static_assert(std::same_as<typename transparent_handler_t::common_rep, void>);
+
+  EXPECT_EQ(compatible_handler_t::diagnostic_id, 2u);
+  EXPECT_EQ(transparent_handler_t::diagnostic_id, 3u);
 }
 
 int main(int argc, char **argv) {

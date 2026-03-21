@@ -347,6 +347,58 @@ TEST(OperationsTest, StrictTypeAllowsSameTypeAtRuntime) {
   EXPECT_EQ(result->value(), 42);
 }
 
+TEST(OperationsTest, DispatcherMetaTracksResolvedPolicyGroupConsistency) {
+  using aligned_lhs_t = primitive<int, policy::value::checked,
+                                  policy::error::expected>;
+  using aligned_rhs_t = primitive<int, policy::error::expected>;
+  using aligned_meta = operations::dispatcher_meta<operations::Addition,
+                                                   aligned_lhs_t, aligned_rhs_t,
+                                                   policy::error::kind>;
+
+  using mismatch_lhs_t = primitive<int, policy::value::checked,
+                                   policy::error::expected>;
+  using mismatch_rhs_t = primitive<int, policy::value::unchecked,
+                                   policy::error::expected>;
+  using mismatch_meta =
+      operations::dispatcher_meta<operations::Addition, mismatch_lhs_t,
+                                  mismatch_rhs_t, policy::error::kind>;
+
+  static_assert(aligned_meta::policy_group_consistent);
+  static_assert(!mismatch_meta::policy_group_consistent);
+
+  EXPECT_TRUE(aligned_meta::policy_group_consistent);
+  EXPECT_FALSE(mismatch_meta::policy_group_consistent);
+}
+
+TEST(OperationsTest, CompatibleTypeRequiresSameUnderlyingCategory) {
+  using same_category_handler =
+      policy::type::handler<policy::type::compatible, operations::Addition, int,
+                            long long>;
+  using cross_category_handler =
+      policy::type::handler<policy::type::compatible, operations::Addition, int,
+                            double>;
+
+  static_assert(same_category_handler::enabled);
+  static_assert(same_category_handler::allowed);
+  static_assert(cross_category_handler::enabled);
+  static_assert(!cross_category_handler::allowed);
+
+  EXPECT_EQ(cross_category_handler::diagnostic_id, 2u);
+}
+
+TEST(OperationsTest, TransparentTypeIgnoresCategoryWhenCommonRepIsValid) {
+  using transparent_handler =
+      policy::type::handler<policy::type::transparent, operations::Addition,
+                            int, double>;
+
+  static_assert(transparent_handler::enabled);
+  static_assert(transparent_handler::allowed);
+  static_assert(
+      std::is_same_v<typename transparent_handler::common_rep, double>);
+
+  EXPECT_EQ(transparent_handler::diagnostic_id, 0u);
+}
+
 TEST(OperationsTest, BoolUnderlyingRejectsArithmeticOperationsAtCompileTime) {
   using value_t = primitive<bool, policy::value::checked, policy::type::strict,
                             policy::error::expected>;
