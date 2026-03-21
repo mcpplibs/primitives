@@ -61,9 +61,9 @@ constexpr auto decode_three_way_code(CommonRep const &code) -> Ordering {
 template <operation OpTag, primitive_instance Lhs, primitive_instance Rhs,
           typename ErrorPayload = policy::error::kind>
 using primitive_dispatch_result_t = std::expected<
-    typename mcpplibs::primitives::traits::make_primitive_t<
+    typename mcpplibs::primitives::meta::make_primitive_t<
         typename dispatcher_meta<OpTag, Lhs, Rhs, ErrorPayload>::common_rep,
-        typename mcpplibs::primitives::traits::primitive_traits<Lhs>::policies>,
+        typename mcpplibs::primitives::meta::traits<Lhs>::policies>,
     ErrorPayload>;
 
 template <primitive_instance Lhs, primitive_instance Rhs,
@@ -155,7 +155,7 @@ template <operation OpTag, primitive_instance Lhs, primitive_instance Rhs,
 constexpr auto apply_assign(Lhs &lhs, Rhs const &rhs)
     -> primitive_dispatch_result_t<OpTag, Lhs, Rhs, ErrorPayload> {
   using lhs_value_type =
-      typename mcpplibs::primitives::traits::primitive_traits<Lhs>::value_type;
+      typename mcpplibs::primitives::meta::traits<Lhs>::value_type;
   using lhs_rep = typename underlying::traits<lhs_value_type>::rep_type;
 
   auto out = apply<OpTag, Lhs, Rhs, ErrorPayload>(lhs, rhs);

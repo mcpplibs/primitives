@@ -17,7 +17,7 @@ export namespace mcpplibs::primitives::operations {
 
 template <typename T>
 concept primitive_instance = requires {
-  typename primitives::traits::primitive_traits<
+  typename primitives::meta::traits<
       std::remove_cvref_t<T>>::value_type;
 };
 
@@ -27,8 +27,8 @@ struct dispatcher_meta {
   using lhs_primitive = std::remove_cvref_t<Lhs>;
   using rhs_primitive = std::remove_cvref_t<Rhs>;
 
-  using lhs_traits = primitives::traits::primitive_traits<lhs_primitive>;
-  using rhs_traits = primitives::traits::primitive_traits<rhs_primitive>;
+  using lhs_traits = primitives::meta::traits<lhs_primitive>;
+  using rhs_traits = primitives::meta::traits<rhs_primitive>;
 
   using lhs_value_type = lhs_traits::value_type;
   using rhs_value_type = rhs_traits::value_type;

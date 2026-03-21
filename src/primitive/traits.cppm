@@ -10,7 +10,7 @@ import mcpplibs.primitives.policy.utility;
 import mcpplibs.primitives.underlying.traits;
 
 // Public API exported from this module.
-export namespace mcpplibs::primitives::traits {
+export namespace mcpplibs::primitives::meta {
 using policy_category = policy::category;
 
 template <typename T, typename PoliciesTuple> struct make_primitive;
@@ -27,10 +27,10 @@ using default_policies =
     std::tuple<policy::defaults::value, policy::defaults::type,
                policy::defaults::error, policy::defaults::concurrency>;
 
-template <typename T> struct primitive_traits;
+template <typename T> struct traits;
 
 template <underlying_type T, policy::policy_type... Policies>
-struct primitive_traits<primitive<T, Policies...>> {
+struct traits<primitive<T, Policies...>> {
   using value_type = T;
   using policies = std::tuple<Policies...>;
   using value_policy =
@@ -43,4 +43,4 @@ struct primitive_traits<primitive<T, Policies...>> {
       policy::resolve_policy_t<policy_category::concurrency, Policies...>;
 };
 
-} // namespace mcpplibs::primitives::traits
+} // namespace mcpplibs::primitives::meta
