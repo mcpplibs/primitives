@@ -3,6 +3,7 @@
 #include <gtest/gtest.h>
 #include <thread>
 #include <type_traits>
+#include <utility>
 #include <vector>
 
 import mcpplibs.primitives;
@@ -194,6 +195,122 @@ TEST(OperationsTest, PrimitiveFencedCasSupportsConcurrentIncrements) {
   }
 
   EXPECT_EQ(counter.load(), kThreadCount * kIterationsPerThread);
+}
+
+TEST(OperationsTest,
+     BinaryOperationsWithLoadStoreRemainStableUnderHighConcurrency) {
+  using value_t =
+      primitive<int, policy::value::checked, policy::concurrency::fenced,
+                policy::error::expected>;
+
+  constexpr int kWriterThreads = 6;
+  constexpr int kReaderThreads = 8;
+  constexpr int kIterationsPerThread = 25000;
+  constexpr int kMaxOperand = 100000;
+
+  auto lhs = value_t{0};
+  auto rhs = value_t{0};
+  auto sink = value_t{0};
+
+  std::atomic<int> add_error_count{0};
+  std::atomic<int> sub_error_count{0};
+  std::atomic<int> range_violation_count{0};
+  std::atomic<bool> start{false};
+
+  std::vector<std::thread> workers;
+  workers.reserve(kWriterThreads + kReaderThreads);
+
+  for (int writer = 0; writer < kWriterThreads; ++writer) {
+    workers.emplace_back([&, writer]() {
+      while (!start.load(std::memory_order_acquire)) {
+      }
+
+      for (int n = 0; n < kIterationsPerThread; ++n) {
+        auto const v1 = (writer + n) % (kMaxOperand + 1);
+        auto const v2 = (writer * 3 + n * 7) % (kMaxOperand + 1);
+        lhs.store(v1);
+        rhs.store(v2);
+      }
+    });
+  }
+
+  for (int reader = 0; reader < kReaderThreads; ++reader) {
+    workers.emplace_back([&, reader]() {
+      while (!start.load(std::memory_order_acquire)) {
+      }
+
+      for (int n = 0; n < kIterationsPerThread; ++n) {
+        if (((reader + n) & 1) == 0) {
+          auto const out = operations::add(lhs, rhs);
+          if (!out.has_value()) {
+            add_error_count.fetch_add(1, std::memory_order_relaxed);
+            continue;
+          }
+
+          auto const v = out->load();
+          if (v < 0 || v > (kMaxOperand * 2)) {
+            range_violation_count.fetch_add(1, std::memory_order_relaxed);
+          }
+          sink.store(v);
+          auto const snapshot = sink.load();
+          if (snapshot < -kMaxOperand || snapshot > (kMaxOperand * 2)) {
+            range_violation_count.fetch_add(1, std::memory_order_relaxed);
+          }
+          continue;
+        }
+
+        auto const out = operations::sub(lhs, rhs);
+        if (!out.has_value()) {
+          sub_error_count.fetch_add(1, std::memory_order_relaxed);
+          continue;
+        }
+
+        auto const v = out->load();
+        if (v < -kMaxOperand || v > kMaxOperand) {
+          range_violation_count.fetch_add(1, std::memory_order_relaxed);
+        }
+        sink.store(v);
+        auto const snapshot = sink.load();
+        if (snapshot < -kMaxOperand || snapshot > (kMaxOperand * 2)) {
+          range_violation_count.fetch_add(1, std::memory_order_relaxed);
+        }
+      }
+    });
+  }
+
+  start.store(true, std::memory_order_release);
+
+  for (auto &worker : workers) {
+    worker.join();
+  }
+
+  EXPECT_EQ(add_error_count.load(std::memory_order_relaxed), 0);
+  EXPECT_EQ(sub_error_count.load(std::memory_order_relaxed), 0);
+  EXPECT_EQ(range_violation_count.load(std::memory_order_relaxed), 0);
+}
+
+TEST(OperationsTest, PrimitiveSupportsCopyAndMoveSpecialMembers) {
+  using value_t = primitive<int, policy::value::checked, policy::error::expected>;
+
+  static_assert(std::is_copy_constructible_v<value_t>);
+  static_assert(std::is_copy_assignable_v<value_t>);
+  static_assert(std::is_move_constructible_v<value_t>);
+  static_assert(std::is_move_assignable_v<value_t>);
+
+  auto original = value_t{42};
+  auto copy_constructed = value_t{original};
+  EXPECT_EQ(copy_constructed.load(), 42);
+
+  auto copy_assigned = value_t{0};
+  copy_assigned = original;
+  EXPECT_EQ(copy_assigned.load(), 42);
+
+  auto move_constructed = value_t{std::move(copy_assigned)};
+  EXPECT_EQ(move_constructed.load(), 42);
+
+  auto move_assigned = value_t{0};
+  move_assigned = std::move(move_constructed);
+  EXPECT_EQ(move_assigned.load(), 42);
 }
 
 TEST(OperationsTest, StrictTypeRejectsMixedTypesAtCompileTime) {
