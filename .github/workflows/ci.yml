@@ -57,7 +57,7 @@ jobs:
 
   build-macos:
     runs-on: macos-15
-    timeout-minutes: 20
+    timeout-minutes: 25
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -68,15 +68,20 @@ jobs:
           xmake-version: latest
           package-cache: true
 
+      - name: Install LLVM 20
+        run: brew install llvm@20
+
       - name: Verify toolchain
         run: |
           xmake --version
+          /opt/homebrew/opt/llvm@20/bin/clang++ --version
           clang --version
 
       - name: Build with xmake
         run: |
-          xmake f -m release -vv -y
-          xmake -j$(sysctl -n hw.ncpu)
+          export PATH=/opt/homebrew/opt/llvm@20/bin:$PATH
+          xmake f -p macosx -m release --toolchain=llvm --sdk=/opt/homebrew/opt/llvm@20 -y -vv
+          xmake -y -vv -j$(sysctl -n hw.ncpu)
 
   build-windows:
     runs-on: windows-latest
