@@ -14,8 +14,7 @@
 
 ## 正在进行中的计划
 
-- 计划目录：`../.github/prompts/`
-- 当前计划：`../.github/prompts/plan-policyBehaviorProtocol.prompt.md`
+- 当前计划目录：`../.github/prompts/`
 
 ## 说明
 
