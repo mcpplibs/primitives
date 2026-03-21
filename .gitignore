@@ -2,6 +2,7 @@
 .xmake
 build/
 build-*/
+out/
 
 # xlings
 .xlings
