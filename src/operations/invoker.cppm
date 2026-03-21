@@ -1,6 +1,7 @@
 module;
 
 #include <atomic>
+#include <compare>
 #include <concepts>
 #include <expected>
 #include <limits>
@@ -218,6 +219,61 @@ constexpr auto compare_not_equal(T lhs, T rhs) -> policy::value::decision<T> {
 
   return make_error<T>(policy::error::kind::unspecified,
                        "comparison inequality not supported for negotiated "
+                       "common type");
+}
+
+template <typename T>
+constexpr auto compare_three_way(T lhs, T rhs) -> policy::value::decision<T> {
+  policy::value::decision<T> out{};
+  if constexpr (!(requires { T{0}; T{1}; T{2}; T{3}; })) {
+    return make_error<T>(
+        policy::error::kind::unspecified,
+        "three-way comparison codes are not representable for common type");
+  }
+
+  if constexpr (std::same_as<std::remove_cv_t<T>, bool>) {
+    return make_error<T>(
+        policy::error::kind::unspecified,
+        "three-way comparison is not representable for bool common type");
+  } else if constexpr (requires { lhs <=> rhs; }) {
+    auto const cmp = lhs <=> rhs;
+    out.has_value = true;
+
+    if (cmp < 0) {
+      out.value = T{0};
+      return out;
+    }
+    if (cmp > 0) {
+      out.value = T{2};
+      return out;
+    }
+
+    if constexpr (std::same_as<std::remove_cvref_t<decltype(cmp)>,
+                               std::partial_ordering>) {
+      if (cmp == std::partial_ordering::unordered) {
+        out.value = T{3};
+        return out;
+      }
+    }
+
+    out.value = T{1};
+    return out;
+  } else if constexpr (requires { lhs < rhs; lhs > rhs; }) {
+    out.has_value = true;
+    if (lhs < rhs) {
+      out.value = T{0};
+      return out;
+    }
+    if (lhs > rhs) {
+      out.value = T{2};
+      return out;
+    }
+    out.value = T{1};
+    return out;
+  }
+
+  return make_error<T>(policy::error::kind::unspecified,
+                       "three-way comparison not supported for negotiated "
                        "common type");
 }
 
@@ -623,6 +679,36 @@ struct op_binding<NotEqual, policy::value::saturating, CommonRep> {
   static constexpr auto apply(CommonRep lhs, CommonRep rhs)
       -> policy::value::decision<CommonRep> {
     return details::compare_not_equal(lhs, rhs);
+  }
+};
+
+template <typename CommonRep>
+struct op_binding<ThreeWayCompare, policy::value::checked, CommonRep> {
+  static constexpr bool enabled = true;
+
+  static constexpr auto apply(CommonRep lhs, CommonRep rhs)
+      -> policy::value::decision<CommonRep> {
+    return details::compare_three_way(lhs, rhs);
+  }
+};
+
+template <typename CommonRep>
+struct op_binding<ThreeWayCompare, policy::value::unchecked, CommonRep> {
+  static constexpr bool enabled = true;
+
+  static constexpr auto apply(CommonRep lhs, CommonRep rhs)
+      -> policy::value::decision<CommonRep> {
+    return details::compare_three_way(lhs, rhs);
+  }
+};
+
+template <typename CommonRep>
+struct op_binding<ThreeWayCompare, policy::value::saturating, CommonRep> {
+  static constexpr bool enabled = true;
+
+  static constexpr auto apply(CommonRep lhs, CommonRep rhs)
+      -> policy::value::decision<CommonRep> {
+    return details::compare_three_way(lhs, rhs);
   }
 };
 

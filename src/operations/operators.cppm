@@ -1,6 +1,9 @@
 module;
 
+#include <compare>
 #include <expected>
+#include <type_traits>
+#include <utility>
 
 export module mcpplibs.primitives.operations.operators;
 
@@ -14,12 +17,61 @@ import mcpplibs.primitives.underlying.traits;
 
 export namespace mcpplibs::primitives::operations {
 
+namespace details {
+template <typename CommonRep, typename = void> struct three_way_ordering {
+  using type = std::strong_ordering;
+};
+
+template <typename CommonRep>
+struct three_way_ordering<
+    CommonRep,
+    std::void_t<decltype(std::declval<CommonRep const &>() <=>
+                         std::declval<CommonRep const &>())>> {
+  using type = std::remove_cvref_t<decltype(std::declval<CommonRep const &>() <=>
+                                            std::declval<CommonRep const &>())>;
+};
+
+template <typename CommonRep>
+using three_way_ordering_t = typename three_way_ordering<CommonRep>::type;
+
+template <typename Ordering, typename CommonRep>
+constexpr auto decode_three_way_code(CommonRep const &code) -> Ordering {
+  if (code == static_cast<CommonRep>(0)) {
+    return Ordering::less;
+  }
+  if (code == static_cast<CommonRep>(2)) {
+    return Ordering::greater;
+  }
+
+  if constexpr (std::is_same_v<Ordering, std::partial_ordering>) {
+    if (code == static_cast<CommonRep>(3)) {
+      return std::partial_ordering::unordered;
+    }
+    return std::partial_ordering::equivalent;
+  }
+
+  if constexpr (std::is_same_v<Ordering, std::strong_ordering>) {
+    return std::strong_ordering::equal;
+  }
+
+  return Ordering::equivalent;
+}
+} // namespace details
+
 template <operation OpTag, primitive_instance Lhs, primitive_instance Rhs,
           typename ErrorPayload = policy::error::kind>
 using primitive_dispatch_result_t = std::expected<
     typename mcpplibs::primitives::traits::make_primitive_t<
         typename dispatcher_meta<OpTag, Lhs, Rhs, ErrorPayload>::common_rep,
         typename mcpplibs::primitives::traits::primitive_traits<Lhs>::policies>,
+    ErrorPayload>;
+
+template <primitive_instance Lhs, primitive_instance Rhs,
+          typename ErrorPayload = policy::error::kind>
+using three_way_dispatch_result_t = std::expected<
+    details::three_way_ordering_t<
+        typename dispatcher_meta<ThreeWayCompare, Lhs, Rhs,
+                                 ErrorPayload>::common_rep>,
     ErrorPayload>;
 
 template <operation OpTag, primitive_instance Lhs, primitive_instance Rhs,
@@ -78,6 +130,24 @@ template <primitive_instance Lhs, primitive_instance Rhs,
 constexpr auto not_equal(Lhs const &lhs, Rhs const &rhs)
     -> primitive_dispatch_result_t<NotEqual, Lhs, Rhs, ErrorPayload> {
   return apply<NotEqual, Lhs, Rhs, ErrorPayload>(lhs, rhs);
+}
+
+template <primitive_instance Lhs, primitive_instance Rhs,
+          typename ErrorPayload = policy::error::kind>
+constexpr auto three_way_compare(Lhs const &lhs, Rhs const &rhs)
+    -> three_way_dispatch_result_t<Lhs, Rhs, ErrorPayload> {
+  using common_rep =
+      typename dispatcher_meta<ThreeWayCompare, Lhs, Rhs,
+                               ErrorPayload>::common_rep;
+  using ordering =
+      typename three_way_dispatch_result_t<Lhs, Rhs, ErrorPayload>::value_type;
+
+  auto const raw = dispatch<ThreeWayCompare, Lhs, Rhs, ErrorPayload>(lhs, rhs);
+  if (!raw.has_value()) {
+    return std::unexpected(raw.error());
+  }
+
+  return details::decode_three_way_code<ordering, common_rep>(*raw);
 }
 
 template <operation OpTag, primitive_instance Lhs, primitive_instance Rhs,
@@ -172,6 +242,13 @@ template <operations::primitive_instance Lhs,
 constexpr auto operator!=(Lhs const &lhs, Rhs const &rhs)
     -> operations::primitive_dispatch_result_t<operations::NotEqual, Lhs, Rhs> {
   return operations::not_equal(lhs, rhs);
+}
+
+template <operations::primitive_instance Lhs,
+          operations::primitive_instance Rhs>
+constexpr auto operator<=>(Lhs const &lhs, Rhs const &rhs)
+    -> operations::three_way_dispatch_result_t<Lhs, Rhs> {
+  return operations::three_way_compare(lhs, rhs);
 }
 
 template <operations::primitive_instance Lhs,
