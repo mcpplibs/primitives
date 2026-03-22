@@ -49,6 +49,7 @@ int main() {
   for (int writer = 0; writer < kWriterThreads; ++writer) {
     workers.emplace_back([&, writer]() {
       while (!start.load(std::memory_order_acquire)) {
+        start.wait(false, std::memory_order_relaxed);
       }
 
       for (int n = 0; n < kIterationsPerThread; ++n) {
@@ -64,6 +65,7 @@ int main() {
   for (int reader = 0; reader < kReaderThreads; ++reader) {
     workers.emplace_back([&, reader]() {
       while (!start.load(std::memory_order_acquire)) {
+        start.wait(false, std::memory_order_relaxed);
       }
 
       for (int n = 0; n < kIterationsPerThread; ++n) {
@@ -100,6 +102,7 @@ int main() {
   }
 
   start.store(true, std::memory_order_release);
+  start.notify_all();
 
   for (auto &worker : workers) {
     worker.join();
