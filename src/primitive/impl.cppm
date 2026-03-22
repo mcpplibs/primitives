@@ -272,3 +272,20 @@ using F80 = primitive<long double, Policies...>;
 } // namespace types
 
 } // namespace mcpplibs::primitives
+
+export template <mcpplibs::primitives::underlying_type T, mcpplibs::primitives::policy::policy_type... Policies>
+struct mcpplibs::primitives::underlying::traits<mcpplibs::primitives::primitive<T, Policies...>>
+{
+  using value_type = void;
+  using rep_type = void;
+
+  static constexpr bool enabled = false;
+
+  static constexpr auto kind = static_cast<category>(-1);
+
+  template <typename U> static constexpr rep_type to_rep(U) noexcept = delete;
+
+  template <typename U> static constexpr value_type from_rep(U) noexcept = delete;
+
+  template <typename U> static constexpr bool is_valid_rep(U) noexcept = delete;
+};
