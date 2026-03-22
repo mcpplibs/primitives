@@ -18,6 +18,18 @@ concept constructible_from_underlying =
   Primitive{u};
 };
 
+template <typename Primitive, typename U>
+concept storable_from_underlying =
+    underlying_type<U> && requires(Primitive p, U u) {
+  p.store(u);
+};
+
+template <typename Primitive, typename U>
+concept cas_from_underlying =
+    underlying_type<U> && requires(Primitive p, U expected, U desired) {
+  { p.compare_exchange(expected, desired) } -> std::same_as<bool>;
+};
+
 TEST(OperationsTest, AddReturnsExpectedPrimitive) {
   using lhs_t = primitive<int, policy::value::checked>;
   using rhs_t = primitive<int, policy::value::checked>;
@@ -382,6 +394,55 @@ TEST(OperationsTest, TransparentTypePrimitiveConstructorAllowsCrossCategory) {
 
   auto const value = transparent_t{42.75};
   EXPECT_EQ(value.load(), 42);
+}
+
+TEST(OperationsTest, PrimitiveStoreAndCasRejectCrossUnderlyingWithStrictType) {
+  using strict_t = primitive<int, policy::type::strict, policy::error::expected>;
+
+  static_assert(!storable_from_underlying<strict_t, short>);
+  static_assert(!cas_from_underlying<strict_t, short>);
+}
+
+TEST(OperationsTest, PrimitiveStoreAndCasAllowCompatibleSameCategory) {
+  using compatible_t =
+      primitive<int, policy::type::compatible, policy::error::expected>;
+
+  static_assert(storable_from_underlying<compatible_t, short>);
+  static_assert(cas_from_underlying<compatible_t, short>);
+  static_assert(!storable_from_underlying<compatible_t, double>);
+  static_assert(!cas_from_underlying<compatible_t, double>);
+
+  auto value = compatible_t{10};
+  value.store(static_cast<short>(12));
+  EXPECT_EQ(value.load(), 12);
+
+  short expected = 12;
+  EXPECT_TRUE(value.compare_exchange(expected, static_cast<short>(20)));
+  EXPECT_EQ(value.load(), 20);
+
+  expected = 11;
+  EXPECT_FALSE(value.compare_exchange(expected, static_cast<short>(30)));
+  EXPECT_EQ(expected, 20);
+}
+
+TEST(OperationsTest, PrimitiveStoreAndCasAllowTransparentCrossCategory) {
+  using transparent_t =
+      primitive<int, policy::type::transparent, policy::error::expected>;
+
+  static_assert(storable_from_underlying<transparent_t, double>);
+  static_assert(cas_from_underlying<transparent_t, double>);
+
+  auto value = transparent_t{10};
+  value.store(42.75);
+  EXPECT_EQ(value.load(), 42);
+
+  double expected = 42.0;
+  EXPECT_TRUE(value.compare_exchange(expected, 99.5));
+  EXPECT_EQ(value.load(), 99);
+
+  expected = 3.0;
+  EXPECT_FALSE(value.compare_exchange(expected, 1.0));
+  EXPECT_EQ(expected, 99.0);
 }
 
 TEST(OperationsTest, PrimitiveSpecialMembersSupportCrossUnderlyingWithCompatibleType) {
