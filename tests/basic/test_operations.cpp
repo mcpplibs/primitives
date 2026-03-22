@@ -445,6 +445,22 @@ TEST(OperationsTest, PrimitiveStoreAndCasAllowTransparentCrossCategory) {
   EXPECT_EQ(expected, 99.0);
 }
 
+TEST(OperationsTest, PrimitiveTransparentStoreClampsOutOfRangeFloatingInput) {
+  using transparent_t =
+      primitive<int, policy::type::transparent, policy::error::expected>;
+
+  auto value = transparent_t{0};
+
+  value.store(std::numeric_limits<double>::infinity());
+  EXPECT_EQ(value.load(), std::numeric_limits<int>::max());
+
+  value.store(-std::numeric_limits<double>::infinity());
+  EXPECT_EQ(value.load(), std::numeric_limits<int>::lowest());
+
+  value.store(std::numeric_limits<double>::quiet_NaN());
+  EXPECT_EQ(value.load(), 0);
+}
+
 TEST(OperationsTest, PrimitiveSpecialMembersSupportCrossUnderlyingWithCompatibleType) {
   using dst_t =
       primitive<int, policy::type::compatible, policy::error::expected>;
@@ -856,6 +872,29 @@ TEST(OperationsTest, CompoundAssignmentKeepsLhsWhenOperationFails) {
   ASSERT_FALSE(result.has_value());
   EXPECT_EQ(result.error(), policy::error::kind::divide_by_zero);
   EXPECT_EQ(value.load(), 100);
+}
+
+TEST(OperationsTest,
+     CompoundAssignmentCheckedRejectsFloatingToIntegralOutOfRange) {
+  using lhs_t = primitive<int, policy::value::checked, policy::type::transparent,
+                          policy::error::expected>;
+  using rhs_t =
+      primitive<double, policy::value::checked, policy::type::transparent,
+                policy::error::expected>;
+
+  auto value = lhs_t{7};
+
+  auto const overflow_result =
+      operations::add_assign(value, rhs_t{std::numeric_limits<double>::max()});
+  ASSERT_FALSE(overflow_result.has_value());
+  EXPECT_EQ(overflow_result.error(), policy::error::kind::overflow);
+  EXPECT_EQ(value.load(), 7);
+
+  auto const domain_result = operations::add_assign(
+      value, rhs_t{std::numeric_limits<double>::quiet_NaN()});
+  ASSERT_FALSE(domain_result.has_value());
+  EXPECT_EQ(domain_result.error(), policy::error::kind::domain_error);
+  EXPECT_EQ(value.load(), 7);
 }
 
 TEST(OperationsTest, CompoundAssignmentSupportsMixedTypesWithCompatibleTypePolicy) {
