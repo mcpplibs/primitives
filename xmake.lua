@@ -1,3 +1,6 @@
+set_project("mcpplibs-primitives")
+set_version("0.3.0")
+
 add_rules("mode.release", "mode.debug")
 
 set_languages("c++23")
