@@ -1,6 +1,7 @@
 module;
 #include <cstdint>
 #include <tuple>
+#include <type_traits>
 
 export module mcpplibs.primitives.primitive.impl;
 
@@ -61,8 +62,9 @@ private:
         underlying::traits<std::remove_cv_t<Target>>::rep_type;
 
     auto const source_rep = underlying::traits<source_value_type>::to_rep(source);
-    auto const target_rep = static_cast<target_rep_type>(
-        static_cast<source_rep_type>(source_rep));
+    auto const target_rep =
+        policy::details::safe_numeric_cast<target_rep_type>(
+            static_cast<source_rep_type>(source_rep));
     return underlying::traits<std::remove_cv_t<Target>>::from_rep(target_rep);
   }
 
