@@ -379,15 +379,17 @@ struct mcpplibs::primitives::underlying::common_rep_traits<ExplicitCommonRhs,
 
 template <> struct mcpplibs::primitives::underlying::traits<VoidCommonLhs> {
   using value_type = VoidCommonLhs;
-  using rep_type = VoidCommonLhs;
+  using rep_type = int;
 
   static constexpr bool enabled = true;
   static constexpr auto kind = category::integer;
 
-  static constexpr rep_type to_rep(value_type value) noexcept { return value; }
+  static constexpr rep_type to_rep(value_type value) noexcept {
+    return value.value;
+  }
 
   static constexpr value_type from_rep(rep_type value) noexcept {
-    return value;
+    return VoidCommonLhs{value};
   }
 
   static constexpr bool is_valid_rep(rep_type) noexcept { return true; }
@@ -395,30 +397,30 @@ template <> struct mcpplibs::primitives::underlying::traits<VoidCommonLhs> {
 
 template <> struct mcpplibs::primitives::underlying::traits<VoidCommonRhs> {
   using value_type = VoidCommonRhs;
-  using rep_type = VoidCommonRhs;
+  using rep_type = short;
 
   static constexpr bool enabled = true;
   static constexpr auto kind = category::integer;
 
-  static constexpr rep_type to_rep(value_type value) noexcept { return value; }
+  static constexpr rep_type to_rep(value_type value) noexcept {
+    return static_cast<rep_type>(value.value);
+  }
 
   static constexpr value_type from_rep(rep_type value) noexcept {
-    return value;
+    return VoidCommonRhs{value};
   }
 
   static constexpr bool is_valid_rep(rep_type) noexcept { return true; }
 };
 
 template <>
-struct mcpplibs::primitives::underlying::common_rep_traits<VoidCommonLhs,
-                                                           VoidCommonRhs> {
+struct mcpplibs::primitives::underlying::common_rep_traits<int, short> {
   using type = void;
   static constexpr bool enabled = true;
 };
 
 template <>
-struct mcpplibs::primitives::underlying::common_rep_traits<VoidCommonRhs,
-                                                           VoidCommonLhs> {
+struct mcpplibs::primitives::underlying::common_rep_traits<short, int> {
   using type = void;
   static constexpr bool enabled = true;
 };
@@ -458,6 +460,24 @@ TEST(PrimitiveTraitsTest, UnderlyingTraitsDefaultsAndCustomRegistration) {
   EXPECT_FALSE((mcpplibs::primitives::underlying_type<NotRegistered>));
   EXPECT_FALSE(
       (mcpplibs::primitives::underlying::traits<NotRegistered>::enabled));
+}
+
+TEST(PrimitiveTraitsTest, LegacyPrimitiveTraitsNamespaceAliasesRemainAvailable) {
+  using value_t = mcpplibs::primitives::primitive<
+      int, mcpplibs::primitives::policy::error::expected>;
+  using legacy_traits_t =
+      mcpplibs::primitives::traits::primitive_traits<value_t>;
+  using meta_traits_t = mcpplibs::primitives::meta::traits<value_t>;
+
+  static_assert(std::same_as<typename legacy_traits_t::value_type,
+                             typename meta_traits_t::value_type>);
+  static_assert(std::same_as<typename legacy_traits_t::policies,
+                             typename meta_traits_t::policies>);
+  static_assert(std::same_as<
+                mcpplibs::primitives::traits::make_primitive_t<
+                    int, typename legacy_traits_t::policies>,
+                value_t>);
+  SUCCEED();
 }
 
 TEST(PrimitiveTraitsTest,
@@ -558,6 +578,11 @@ TEST(PrimitiveTraitsTest, UnderlyingCommonRepCanBeCustomizedViaTraits) {
 }
 
 TEST(PrimitiveTraitsTest, TypePoliciesRequireNonVoidCommonRep) {
+  static_assert(std::is_arithmetic_v<
+                mcpplibs::primitives::underlying::traits<VoidCommonLhs>::rep_type>);
+  static_assert(std::is_arithmetic_v<
+                mcpplibs::primitives::underlying::traits<VoidCommonRhs>::rep_type>);
+
   using compatible_handler_t = mcpplibs::primitives::policy::type::handler<
       mcpplibs::primitives::policy::type::compatible,
       mcpplibs::primitives::operations::Addition, VoidCommonLhs, VoidCommonRhs>;
