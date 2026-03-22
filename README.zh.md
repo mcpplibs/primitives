@@ -6,9 +6,10 @@
 [![Online-ebook](https://img.shields.io/badge/online-ebook-orange.svg)](https://github.com/d2learn/d2x)
 [![License](https://img.shields.io/badge/license-Apache_2.0-blue.svg)](LICENSE-CODE)
 
-| [中文](README.zh.md) - [English](README.md)                                                                            |
-|----------------------------------------------------------------------------------------------------------------------|
-| [中文用户文档](docs/zh/README.md) - [English User Documentation](docs/en/README.md) - [论坛](https://mcpp.d2learn.org/forum) |
+| [中文](README.zh.md) - [English](README.md) - [论坛](https://mcpp.d2learn.org/forum) |
+|----------------------------------------------------------------------------------|
+| [用户文档](docs/guide/zh/README.md) - [User Documentation](docs/guide/en/README.md)  |
+| [API文档](docs/guide/api/README.md) - [API Documentation](docs/api/en/README.md)   |
 
 本仓库提供可配置的 `primitive` 基础设施（`underlying traits`、`policy`、`operations/dispatcher`），用于统一约束数值计算、错误处理与并发访问语义。
 
