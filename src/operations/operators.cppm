@@ -138,12 +138,9 @@ constexpr auto apply(Lhs const &lhs, Rhs const &rhs)
 
 template <operation OpTag, primitive_instance Operand,
           typename ErrorPayload = policy::error::kind>
-constexpr auto apply_unary(Operand const &operand)
+constexpr auto apply(Operand const &operand)
     -> unary_dispatch_result_t<OpTag, Operand, ErrorPayload> {
-  using operand_traits = meta::traits<Operand>;
-  using value_type = typename operand_traits::value_type;
-  auto const dummy = Operand{value_type{}};
-  return apply<OpTag, Operand, Operand, ErrorPayload>(operand, dummy);
+  return apply<OpTag, Operand, Operand, ErrorPayload>(operand, operand);
 }
 
 template <operation OpTag, primitive_instance Lhs, underlying_operand Rhs,
@@ -169,37 +166,33 @@ constexpr auto apply(Lhs const &lhs, Rhs const &rhs)
 template <primitive_instance Operand, typename ErrorPayload = policy::error::kind>
 constexpr auto increment(Operand &operand)
     -> unary_dispatch_result_t<Increment, Operand, ErrorPayload> {
-  using operand_traits = meta::traits<Operand>;
-  using value_type = typename operand_traits::value_type;
-  auto const dummy = Operand{value_type{}};
-  return apply_assign<Increment, Operand, Operand, ErrorPayload>(operand, dummy);
+  return apply_assign<Increment, Operand, Operand, ErrorPayload>(operand,
+                                                                 operand);
 }
 
 template <primitive_instance Operand, typename ErrorPayload = policy::error::kind>
 constexpr auto decrement(Operand &operand)
     -> unary_dispatch_result_t<Decrement, Operand, ErrorPayload> {
-  using operand_traits = meta::traits<Operand>;
-  using value_type = typename operand_traits::value_type;
-  auto const dummy = Operand{value_type{}};
-  return apply_assign<Decrement, Operand, Operand, ErrorPayload>(operand, dummy);
+  return apply_assign<Decrement, Operand, Operand, ErrorPayload>(operand,
+                                                                 operand);
 }
 
 template <primitive_instance Operand, typename ErrorPayload = policy::error::kind>
 constexpr auto bit_not(Operand const &operand)
     -> unary_dispatch_result_t<BitwiseNot, Operand, ErrorPayload> {
-  return apply_unary<BitwiseNot, Operand, ErrorPayload>(operand);
+  return apply<BitwiseNot, Operand, ErrorPayload>(operand);
 }
 
 template <primitive_instance Operand, typename ErrorPayload = policy::error::kind>
 constexpr auto unary_plus(Operand const &operand)
     -> unary_dispatch_result_t<UnaryPlus, Operand, ErrorPayload> {
-  return apply_unary<UnaryPlus, Operand, ErrorPayload>(operand);
+  return apply<UnaryPlus, Operand, ErrorPayload>(operand);
 }
 
 template <primitive_instance Operand, typename ErrorPayload = policy::error::kind>
 constexpr auto unary_minus(Operand const &operand)
     -> unary_dispatch_result_t<UnaryMinus, Operand, ErrorPayload> {
-  return apply_unary<UnaryMinus, Operand, ErrorPayload>(operand);
+  return apply<UnaryMinus, Operand, ErrorPayload>(operand);
 }
 
 // Binary arithmetic operations
