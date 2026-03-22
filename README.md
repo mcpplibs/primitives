@@ -1,6 +1,6 @@
 # mcpplibs primitives
 
-> C++23 模块化原语库 - `import mcpplibs.primitives;`
+> C++23 modular primitives library - `import mcpplibs.primitives;`
 
 [![d2x](https://img.shields.io/badge/d2x-ok-green.svg)](https://github.com/d2learn/d2x)
 [![Online-ebook](https://img.shields.io/badge/online-ebook-orange.svg)](https://github.com/d2learn/d2x)
@@ -10,28 +10,28 @@
 | --- |
 | [d2x Tool](https://github.com/d2learn/d2x) - [Docs](https://mcpp-community.github.io/d2mystl) - [Forum](https://mcpp.d2learn.org/forum) |
 
-本仓库提供可配置的 `primitive` 基础设施（`underlying traits`、`policy`、`operations/dispatcher`），用于统一约束数值计算、错误处理与并发访问语义。
+This repository provides configurable `primitive` infrastructure (`underlying traits`, `policy`, and `operations/dispatcher`) to unify numeric behavior, error handling, and concurrency access semantics.
 
 > [!WARNING]
-> 当前项目仍在快速演进中，API 可能发生变更。
+> The project is still evolving quickly, and APIs may change.
 
-## 特性
+## Features
 
-- **C++23 模块** — `import mcpplibs.primitives;`
-- **双构建系统** — 同时支持 xmake 和 CMake
-- **策略驱动行为** — 值/类型/错误/并发策略可组合配置
-- **混合运算支持** — 支持 `primitive` 与 `underlying` 的混合二元运算
-- **并发访问接口** — `primitive::load/store/compare_exchange`
+- **C++23 modules** — `import mcpplibs.primitives;`
+- **Dual build systems** — both xmake and CMake are supported
+- **Policy-driven behavior** — value/type/error/concurrency policies are composable
+- **Mixed operations support** — binary operations between `primitive` and `underlying` are supported
+- **Concurrency access APIs** — `primitive::load/store/compare_exchange`
 
 ## Operators
 
-该库为 `primitive` 提供了常见的一元、算术、位运算与比较操作。  
-算术结果通过统一分发链路返回 `std::expected<..., policy::error::kind>`。
+The library provides unary, arithmetic, bitwise, and comparison operations for `primitive`.  
+Arithmetic paths are dispatched through a unified pipeline and return `std::expected<..., policy::error::kind>`.
 
-- 值策略（`policy::value::checked` / `policy::value::saturating` / `policy::value::unchecked`）决定溢出行为；
-- 错误策略（`policy::error::throwing` / `policy::error::expected` / `policy::error::terminate`）决定错误传播方式。
+- Value policies (`policy::value::checked` / `policy::value::saturating` / `policy::value::unchecked`) define overflow behavior.
+- Error policies (`policy::error::throwing` / `policy::error::expected` / `policy::error::terminate`) define how errors are propagated.
 
-示例：
+Example:
 
 ```cpp
 import std;
@@ -50,29 +50,29 @@ auto maybe_overflow =
     checked_t{std::numeric_limits<int>::max()} + checked_t{1};
 ```
 
-## Policy 协议命名空间
+## Policy Protocol Namespaces
 
-自定义 policy 时，协议入口按职责拆分到子命名空间：
+When implementing custom policies, protocol entry points are split by responsibility:
 
 - `policy::type::handler` / `policy::type::handler_available`
 - `policy::concurrency::handler` / `policy::concurrency::injection`
 - `policy::value::handler` / `policy::value::decision`
 - `policy::error::handler` / `policy::error::request` / `policy::error::kind`
 
-预设 policy 标签：
+Built-in policy tags:
 
 - `policy::value::{checked, unchecked, saturating}`
 - `policy::type::{strict, compatible, transparent}`
 - `policy::error::{throwing, expected, terminate}`
 - `policy::concurrency::{none, fenced, fenced_relaxed, fenced_acq_rel, fenced_seq_cst}`
 
-并发策略说明：
+Concurrency notes:
 
-- `fenced*` 系列是操作级并发语义，通过策略注入内存序 fence；
-- `primitive` 存储仍保持统一、零额外存储抽象；
-- `primitive::load/store/compare_exchange` 由并发策略协议提供，若策略未实现会在编译期报错。
+- `fenced*` policies provide operation-level concurrency semantics with injected memory-order fences.
+- `primitive` storage keeps a uniform, zero-extra-storage abstraction.
+- `primitive::load/store/compare_exchange` are provided by concurrency policy protocols and fail at compile time if unsupported.
 
-示例（并发访问 API）：
+Example (concurrent access APIs):
 
 ```cpp
 using shared_t = primitive<int, policy::value::checked,
@@ -88,42 +88,42 @@ if (v.compare_exchange(expected, 3)) {
 }
 ```
 
-默认策略位于 `policy::defaults`：
+Default policies are available under `policy::defaults`:
 
 - `policy::defaults::value`
 - `policy::defaults::type`
 - `policy::defaults::error`
 - `policy::defaults::concurrency`
 
-## 示例程序
+## Examples
 
-- `ex01_default_arithmetic`: 默认策略下的基础算术运算示例。
-- `ex02_type_policy`: 展示 `strict/compatible` 的类型协商差异，并包含 `underlying` 构造路径对 type 策略的影响。
-- `ex03_value_policy`: 展示 `checked/unchecked/saturating`，并包含与 `underlying` 的混合二元运算行为。
-- `ex04_error_policy`: 展示不同 error 策略的处理方式。
-- `ex05_concurrency_policy`: 读写组合并发场景（writer `store` + reader `add/sub` + `CAS`）示例。
-- `ex06_custom_underlying`: 自定义 underlying traits、rep 校验与 common rep 扩展。
-- `ex07_custom_policy`: 自定义策略协议实现示例。
-- `ex08_custom_operation`: 自定义 operation 扩展示例。
+- `ex01_default_arithmetic`: Basic arithmetic under default policies.
+- `ex02_type_policy`: Type negotiation with `strict/compatible`, including how type policy affects construction from `underlying`.
+- `ex03_value_policy`: `checked/unchecked/saturating` behavior, including mixed binary operations with `underlying`.
+- `ex04_error_policy`: Error-handling behavior across different error policies.
+- `ex05_concurrency_policy`: Representative mixed read/write concurrency workload (writer `store` + reader `add/sub` + `CAS`).
+- `ex06_custom_underlying`: Custom underlying traits, rep validation, and common-rep extension.
+- `ex07_custom_policy`: Custom policy protocol implementation.
+- `ex08_custom_operation`: Custom operation extension.
 
-## 项目结构
+## Project Layout
 
 ```
 mcpplibs-primitives/
-├── src/                        # 模块源码
-│   ├── primitives.cppm         # 顶层聚合模块
-│   ├── primitive/              # primitive 定义与 traits
-│   ├── policy/                 # policy 标签与协议实现
+├── src/                        # module sources
+│   ├── primitives.cppm         # top-level aggregate module
+│   ├── primitive/              # primitive definitions and traits
+│   ├── policy/                 # policy tags and protocol implementations
 │   ├── operations/             # operation tags / dispatcher / operators
-│   └── underlying/             # underlying traits 与 common_rep
-├── examples/                   # ex01 ~ ex08 示例
-├── tests/                      # 测试入口与 basic 测试集
-├── xmake.lua                   # xmake 构建脚本
-├── CMakeLists.txt              # CMake 构建脚本
-└── .xlings.json                # xlings 包描述文件
+│   └── underlying/             # underlying traits and common_rep
+├── examples/                   # ex01 ~ ex08 examples
+├── tests/                      # test entry and basic test suite
+├── xmake.lua                   # xmake build script
+├── CMakeLists.txt              # CMake build script
+└── .xlings.json                # xlings package descriptor
 ```
 
-## 快速开始
+## Quick Start
 
 ```cpp
 import std;
@@ -138,24 +138,24 @@ int main() {
 }
 ```
 
-## 安装与配置
+## Installation and Setup
 
 ```bash
 xlings install
 ```
 
-## 构建与运行
+## Build and Run
 
-**使用 xmake**
+**Using xmake**
 
 ```bash
 xmake build mcpplibs-primitives
-xmake run basic                    # 等价于 ex01_default_arithmetic
+xmake run basic                    # equivalent to ex01_default_arithmetic
 xmake run ex05_concurrency_policy
 xmake run primitives_test
 ```
 
-**使用 CMake**
+**Using CMake**
 
 ```bash
 cmake -B build -G Ninja
@@ -165,7 +165,7 @@ cmake --build build --target basic_tests
 ctest --test-dir build --output-on-failure
 ```
 
-## 集成到构建工具
+## Build System Integration
 
 ### xmake
 
@@ -182,10 +182,10 @@ target("myapp")
     set_policy("build.c++.modules", true)
 ```
 
-## 相关链接
+## Related Links
 
-- [mcpp-style-ref | 现代 C++ 编码/项目风格参考](https://github.com/mcpp-community/mcpp-style-ref)
-- [d2mystl | 从零实现一个迷你STL库](https://github.com/mcpp-community/d2mystl)
-- [mcpp 社区官网](https://mcpp.d2learn.org)
-- [mcpp | 现代 C++ 爱好者论坛](https://mcpp.d2learn.org/forum)
-- [入门教程: 动手学现代 C++](https://github.com/Sunrisepeak/mcpp-standard)
+- [mcpp-style-ref | Modern C++ coding and project style reference](https://github.com/mcpp-community/mcpp-style-ref)
+- [d2mystl | Build a mini STL from scratch](https://github.com/mcpp-community/d2mystl)
+- [mcpp community website](https://mcpp.d2learn.org)
+- [mcpp forum](https://mcpp.d2learn.org/forum)
+- [Getting Started: Learn Modern C++ by Building](https://github.com/Sunrisepeak/mcpp-standard)
