@@ -545,7 +545,13 @@ template <typename T>
 constexpr auto unchecked_mod(T lhs, T rhs) -> policy::value::decision<T> {
   policy::value::decision<T> out{};
   out.has_value = true;
-  out.value = static_cast<T>(lhs % rhs);
+
+  if constexpr (requires { lhs % rhs; }) {
+    out.value = static_cast<T>(lhs % rhs);
+    return out;
+  }
+
+  out.value = T{};
   return out;
 }
 
@@ -553,7 +559,13 @@ template <typename T>
 constexpr auto unchecked_shift_left(T lhs, T rhs) -> policy::value::decision<T> {
   policy::value::decision<T> out{};
   out.has_value = true;
-  out.value = static_cast<T>(lhs << rhs);
+
+  if constexpr (requires { lhs << rhs; }) {
+    out.value = static_cast<T>(lhs << rhs);
+    return out;
+  }
+
+  out.value = T{};
   return out;
 }
 
@@ -562,7 +574,13 @@ constexpr auto unchecked_shift_right(T lhs, T rhs)
     -> policy::value::decision<T> {
   policy::value::decision<T> out{};
   out.has_value = true;
-  out.value = static_cast<T>(lhs >> rhs);
+
+  if constexpr (requires { lhs >> rhs; }) {
+    out.value = static_cast<T>(lhs >> rhs);
+    return out;
+  }
+
+  out.value = T{};
   return out;
 }
 
@@ -570,7 +588,13 @@ template <typename T>
 constexpr auto unchecked_bit_and(T lhs, T rhs) -> policy::value::decision<T> {
   policy::value::decision<T> out{};
   out.has_value = true;
-  out.value = static_cast<T>(lhs & rhs);
+
+  if constexpr (requires { lhs & rhs; }) {
+    out.value = static_cast<T>(lhs & rhs);
+    return out;
+  }
+
+  out.value = T{};
   return out;
 }
 
@@ -578,7 +602,13 @@ template <typename T>
 constexpr auto unchecked_bit_or(T lhs, T rhs) -> policy::value::decision<T> {
   policy::value::decision<T> out{};
   out.has_value = true;
-  out.value = static_cast<T>(lhs | rhs);
+
+  if constexpr (requires { lhs | rhs; }) {
+    out.value = static_cast<T>(lhs | rhs);
+    return out;
+  }
+
+  out.value = T{};
   return out;
 }
 
@@ -586,7 +616,13 @@ template <typename T>
 constexpr auto unchecked_bit_xor(T lhs, T rhs) -> policy::value::decision<T> {
   policy::value::decision<T> out{};
   out.has_value = true;
-  out.value = static_cast<T>(lhs ^ rhs);
+
+  if constexpr (requires { lhs ^ rhs; }) {
+    out.value = static_cast<T>(lhs ^ rhs);
+    return out;
+  }
+
+  out.value = T{};
   return out;
 }
 
@@ -594,7 +630,13 @@ template <typename T>
 constexpr auto unchecked_bit_not(T lhs) -> policy::value::decision<T> {
   policy::value::decision<T> out{};
   out.has_value = true;
-  out.value = static_cast<T>(~lhs);
+
+  if constexpr (requires { ~lhs; }) {
+    out.value = static_cast<T>(~lhs);
+    return out;
+  }
+
+  out.value = T{};
   return out;
 }
 
@@ -602,7 +644,13 @@ template <typename T>
 constexpr auto unchecked_unary_plus(T lhs) -> policy::value::decision<T> {
   policy::value::decision<T> out{};
   out.has_value = true;
-  out.value = static_cast<T>(+lhs);
+
+  if constexpr (requires { +lhs; }) {
+    out.value = static_cast<T>(+lhs);
+    return out;
+  }
+
+  out.value = T{};
   return out;
 }
 
@@ -610,7 +658,13 @@ template <typename T>
 constexpr auto unchecked_unary_minus(T lhs) -> policy::value::decision<T> {
   policy::value::decision<T> out{};
   out.has_value = true;
-  out.value = static_cast<T>(-lhs);
+
+  if constexpr (requires { -lhs; }) {
+    out.value = static_cast<T>(-lhs);
+    return out;
+  }
+
+  out.value = T{};
   return out;
 }
 
