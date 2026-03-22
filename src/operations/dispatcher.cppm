@@ -17,7 +17,7 @@ export namespace mcpplibs::primitives::operations {
 
 template <typename T>
 concept primitive_instance = requires {
-  typename primitives::traits::primitive_traits<
+  typename primitives::meta::traits<
       std::remove_cvref_t<T>>::value_type;
 };
 
@@ -27,8 +27,8 @@ struct dispatcher_meta {
   using lhs_primitive = std::remove_cvref_t<Lhs>;
   using rhs_primitive = std::remove_cvref_t<Rhs>;
 
-  using lhs_traits = primitives::traits::primitive_traits<lhs_primitive>;
-  using rhs_traits = primitives::traits::primitive_traits<rhs_primitive>;
+  using lhs_traits = primitives::meta::traits<lhs_primitive>;
+  using rhs_traits = primitives::meta::traits<rhs_primitive>;
 
   using lhs_value_type = lhs_traits::value_type;
   using rhs_value_type = rhs_traits::value_type;
@@ -36,13 +36,30 @@ struct dispatcher_meta {
   using lhs_rep = underlying::traits<lhs_value_type>::rep_type;
   using rhs_rep = underlying::traits<rhs_value_type>::rep_type;
 
-  using type_policy = lhs_traits::type_policy;
-  using value_policy = lhs_traits::value_policy;
-  using error_policy = lhs_traits::error_policy;
-  using concurrency_policy = lhs_traits::concurrency_policy;
+  using lhs_type_policy = typename lhs_traits::type_policy;
+  using lhs_value_policy = typename lhs_traits::value_policy;
+  using lhs_error_policy = typename lhs_traits::error_policy;
+  using lhs_concurrency_policy = typename lhs_traits::concurrency_policy;
+
+  using rhs_type_policy = typename rhs_traits::type_policy;
+  using rhs_value_policy = typename rhs_traits::value_policy;
+  using rhs_error_policy = typename rhs_traits::error_policy;
+  using rhs_concurrency_policy = typename rhs_traits::concurrency_policy;
+
+  static constexpr bool policy_group_consistent =
+      std::is_same_v<lhs_type_policy, rhs_type_policy> &&
+      std::is_same_v<lhs_value_policy, rhs_value_policy> &&
+      std::is_same_v<lhs_error_policy, rhs_error_policy> &&
+      std::is_same_v<lhs_concurrency_policy, rhs_concurrency_policy>;
+
+  using type_policy = lhs_type_policy;
+  using value_policy = lhs_value_policy;
+  using error_policy = lhs_error_policy;
+  using concurrency_policy = lhs_concurrency_policy;
 
   using common_rep =
       policy::type::handler<type_policy, OpTag, lhs_rep, rhs_rep>::common_rep;
+  static constexpr bool common_rep_non_void = !std::is_same_v<common_rep, void>;
 
   static constexpr bool type_ready =
       policy::type::handler_available<type_policy, OpTag, lhs_rep, rhs_rep>;
@@ -90,6 +107,10 @@ constexpr auto dispatch(Lhs const &lhs, Rhs const &rhs)
                              ErrorPayload>;
 
   static_assert(
+      meta::policy_group_consistent,
+      "Primitive policy groups must match after default completion "
+      "(value/type/error/concurrency)");
+  static_assert(
       meta::type_ready,
       "Missing type_handler specialization for this operation/policy");
   static_assert(meta::type_protocol_ready,
@@ -98,6 +119,12 @@ constexpr auto dispatch(Lhs const &lhs, Rhs const &rhs)
                                       typename meta::lhs_rep,
                                       typename meta::rhs_rep>::allowed,
                 "Type policy rejected this operation for the given operands");
+  static_assert(
+      !policy::type::handler<typename meta::type_policy, OpTag,
+                             typename meta::lhs_rep,
+                             typename meta::rhs_rep>::allowed ||
+          meta::common_rep_non_void,
+      "Allowed type negotiation must produce a non-void common_rep");
   static_assert(op_capability_valid_v<OpTag>,
                 "Operation must declare a non-none capability_mask");
   static_assert(

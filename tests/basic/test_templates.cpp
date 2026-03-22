@@ -150,6 +150,64 @@ struct ExplicitCommonRep {
   }
 };
 
+struct VoidCommonLhs {
+  int value;
+
+  friend constexpr auto operator+(VoidCommonLhs lhs, VoidCommonLhs rhs) noexcept
+      -> VoidCommonLhs {
+    return VoidCommonLhs{lhs.value + rhs.value};
+  }
+
+  friend constexpr auto operator-(VoidCommonLhs lhs, VoidCommonLhs rhs) noexcept
+      -> VoidCommonLhs {
+    return VoidCommonLhs{lhs.value - rhs.value};
+  }
+
+  friend constexpr auto operator*(VoidCommonLhs lhs, VoidCommonLhs rhs) noexcept
+      -> VoidCommonLhs {
+    return VoidCommonLhs{lhs.value * rhs.value};
+  }
+
+  friend constexpr auto operator/(VoidCommonLhs lhs, VoidCommonLhs rhs) noexcept
+      -> VoidCommonLhs {
+    return VoidCommonLhs{lhs.value / rhs.value};
+  }
+
+  friend constexpr auto operator==(VoidCommonLhs lhs,
+                                   VoidCommonLhs rhs) noexcept -> bool {
+    return lhs.value == rhs.value;
+  }
+};
+
+struct VoidCommonRhs {
+  int value;
+
+  friend constexpr auto operator+(VoidCommonRhs lhs, VoidCommonRhs rhs) noexcept
+      -> VoidCommonRhs {
+    return VoidCommonRhs{lhs.value + rhs.value};
+  }
+
+  friend constexpr auto operator-(VoidCommonRhs lhs, VoidCommonRhs rhs) noexcept
+      -> VoidCommonRhs {
+    return VoidCommonRhs{lhs.value - rhs.value};
+  }
+
+  friend constexpr auto operator*(VoidCommonRhs lhs, VoidCommonRhs rhs) noexcept
+      -> VoidCommonRhs {
+    return VoidCommonRhs{lhs.value * rhs.value};
+  }
+
+  friend constexpr auto operator/(VoidCommonRhs lhs, VoidCommonRhs rhs) noexcept
+      -> VoidCommonRhs {
+    return VoidCommonRhs{lhs.value / rhs.value};
+  }
+
+  friend constexpr auto operator==(VoidCommonRhs lhs,
+                                   VoidCommonRhs rhs) noexcept -> bool {
+    return lhs.value == rhs.value;
+  }
+};
+
 } // namespace
 
 template <> struct mcpplibs::primitives::underlying::traits<UserInteger> {
@@ -319,6 +377,54 @@ struct mcpplibs::primitives::underlying::common_rep_traits<ExplicitCommonRhs,
   static constexpr bool enabled = true;
 };
 
+template <> struct mcpplibs::primitives::underlying::traits<VoidCommonLhs> {
+  using value_type = VoidCommonLhs;
+  using rep_type = int;
+
+  static constexpr bool enabled = true;
+  static constexpr auto kind = category::integer;
+
+  static constexpr rep_type to_rep(value_type value) noexcept {
+    return value.value;
+  }
+
+  static constexpr value_type from_rep(rep_type value) noexcept {
+    return VoidCommonLhs{value};
+  }
+
+  static constexpr bool is_valid_rep(rep_type) noexcept { return true; }
+};
+
+template <> struct mcpplibs::primitives::underlying::traits<VoidCommonRhs> {
+  using value_type = VoidCommonRhs;
+  using rep_type = short;
+
+  static constexpr bool enabled = true;
+  static constexpr auto kind = category::integer;
+
+  static constexpr rep_type to_rep(value_type value) noexcept {
+    return static_cast<rep_type>(value.value);
+  }
+
+  static constexpr value_type from_rep(rep_type value) noexcept {
+    return VoidCommonRhs{value};
+  }
+
+  static constexpr bool is_valid_rep(rep_type) noexcept { return true; }
+};
+
+template <>
+struct mcpplibs::primitives::underlying::common_rep_traits<int, short> {
+  using type = void;
+  static constexpr bool enabled = true;
+};
+
+template <>
+struct mcpplibs::primitives::underlying::common_rep_traits<short, int> {
+  using type = void;
+  static constexpr bool enabled = true;
+};
+
 TEST(PrimitiveTraitsTest, StandardTypeConcepts) {
   EXPECT_TRUE((mcpplibs::primitives::std_integer<int>));
   EXPECT_TRUE((mcpplibs::primitives::std_integer<long long>));
@@ -354,6 +460,24 @@ TEST(PrimitiveTraitsTest, UnderlyingTraitsDefaultsAndCustomRegistration) {
   EXPECT_FALSE((mcpplibs::primitives::underlying_type<NotRegistered>));
   EXPECT_FALSE(
       (mcpplibs::primitives::underlying::traits<NotRegistered>::enabled));
+}
+
+TEST(PrimitiveTraitsTest, LegacyPrimitiveTraitsNamespaceAliasesRemainAvailable) {
+  using value_t = mcpplibs::primitives::primitive<
+      int, mcpplibs::primitives::policy::error::expected>;
+  using legacy_traits_t =
+      mcpplibs::primitives::traits::primitive_traits<value_t>;
+  using meta_traits_t = mcpplibs::primitives::meta::traits<value_t>;
+
+  static_assert(std::same_as<typename legacy_traits_t::value_type,
+                             typename meta_traits_t::value_type>);
+  static_assert(std::same_as<typename legacy_traits_t::policies,
+                             typename meta_traits_t::policies>);
+  static_assert(std::same_as<
+                mcpplibs::primitives::traits::make_primitive_t<
+                    int, typename legacy_traits_t::policies>,
+                value_t>);
+  SUCCEED();
 }
 
 TEST(PrimitiveTraitsTest,
@@ -451,6 +575,30 @@ TEST(PrimitiveTraitsTest, UnderlyingCommonRepCanBeCustomizedViaTraits) {
   static_assert(
       std::same_as<typename handler_t::common_rep, ExplicitCommonRep>);
   SUCCEED();
+}
+
+TEST(PrimitiveTraitsTest, TypePoliciesRequireNonVoidCommonRep) {
+  static_assert(std::is_arithmetic_v<
+                mcpplibs::primitives::underlying::traits<VoidCommonLhs>::rep_type>);
+  static_assert(std::is_arithmetic_v<
+                mcpplibs::primitives::underlying::traits<VoidCommonRhs>::rep_type>);
+
+  using compatible_handler_t = mcpplibs::primitives::policy::type::handler<
+      mcpplibs::primitives::policy::type::compatible,
+      mcpplibs::primitives::operations::Addition, VoidCommonLhs, VoidCommonRhs>;
+  using transparent_handler_t = mcpplibs::primitives::policy::type::handler<
+      mcpplibs::primitives::policy::type::transparent,
+      mcpplibs::primitives::operations::Addition, VoidCommonLhs, VoidCommonRhs>;
+
+  static_assert(compatible_handler_t::enabled);
+  static_assert(transparent_handler_t::enabled);
+  static_assert(!compatible_handler_t::allowed);
+  static_assert(!transparent_handler_t::allowed);
+  static_assert(std::same_as<typename compatible_handler_t::common_rep, void>);
+  static_assert(std::same_as<typename transparent_handler_t::common_rep, void>);
+
+  EXPECT_EQ(compatible_handler_t::diagnostic_id, 2u);
+  EXPECT_EQ(transparent_handler_t::diagnostic_id, 3u);
 }
 
 int main(int argc, char **argv) {

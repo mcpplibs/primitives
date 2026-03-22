@@ -1,5 +1,5 @@
 module;
-#include <tuple>
+#include <cstddef>
 #include <type_traits>
 
 export module mcpplibs.primitives.policy.utility;
@@ -8,83 +8,67 @@ import mcpplibs.primitives.policy.traits;
 import mcpplibs.primitives.policy.impl;
 
 namespace mcpplibs::primitives::policy::details {
+using policy_category = category;
 
-template <typename T, typename... Ts> struct contains : std::false_type {};
-template <typename T, typename Head, typename... Tail>
-struct contains<T, Head, Tail...>
-    : std::conditional_t<std::is_same_v<T, Head>, std::true_type,
-                         contains<T, Tail...>> {};
+template <policy_category C, policy_type... Policies>
+struct count_matching_impl;
 
-template <typename Default, typename PriorityTuple, typename... Ps>
-struct pick_first_from_priority_impl;
-
-template <typename Default, typename FirstPriority, typename... RestPriorities,
-          typename... Ps>
-struct pick_first_from_priority_impl<
-    Default, std::tuple<FirstPriority, RestPriorities...>, Ps...> {
-  using type = std::conditional_t<
-      contains<FirstPriority, Ps...>::value, FirstPriority,
-      typename pick_first_from_priority_impl<
-          Default, std::tuple<RestPriorities...>, Ps...>::type>;
+template <policy_category C> struct count_matching_impl<C> {
+  static constexpr std::size_t value = 0;
 };
 
-template <typename Default, typename... Ps>
-struct pick_first_from_priority_impl<Default, std::tuple<>, Ps...> {
-  using type = Default;
+template <policy_category C, policy_type First, policy_type... Rest>
+struct count_matching_impl<C, First, Rest...> {
+  static constexpr std::size_t rest = count_matching_impl<C, Rest...>::value;
+  static constexpr bool is_match =
+      traits<First>::enabled && traits<First>::kind == C;
+  static constexpr std::size_t value = rest + (is_match ? 1u : 0u);
+};
+
+template <policy_category C, policy_type... Policies>
+constexpr std::size_t count_matching_v =
+    count_matching_impl<C, Policies...>::value;
+
+template <policy_category C, policy_type... Policies>
+struct find_first_impl;
+
+template <policy_category C> struct find_first_impl<C> {
+  using type = void;
+};
+
+template <policy_category C, policy_type First, policy_type... Rest>
+struct find_first_impl<C, First, Rest...> {
+  static constexpr bool is_match =
+      traits<First>::enabled && traits<First>::kind == C;
+  using type = std::conditional_t<is_match, First,
+                                  typename find_first_impl<C, Rest...>::type>;
+};
+
+template <policy_category C, policy_type... Policies>
+using find_first_t = find_first_impl<C, Policies...>::type;
+
+template <policy_category C, policy_type... Policies>
+struct resolve_policy_impl {
+  static_assert(count_matching_v<C, Policies...> <= 1,
+                "Multiple policies provided for the same category");
+
+  using found = find_first_t<C, Policies...>;
+  using type = std::conditional_t<
+      std::is_same_v<found, void>,
+      std::conditional_t<
+          C == policy_category::value, defaults::value,
+          std::conditional_t<C == policy_category::type, defaults::type,
+                             std::conditional_t<C == policy_category::error,
+                                                defaults::error,
+                                                defaults::concurrency>>>,
+      found>;
 };
 
 } // namespace mcpplibs::primitives::policy::details
 
 export namespace mcpplibs::primitives::policy {
+using policy_category = category;
 
-// Users can specialize these templates to customize policy selection order.
-template <typename = void> struct priority_value {
-  using type = std::tuple<>;
-};
-template <typename = void> struct priority_type {
-  using type = std::tuple<>;
-};
-template <typename = void> struct priority_error {
-  using type = std::tuple<>;
-};
-template <typename = void> struct priority_concurrency {
-  using type = std::tuple<>;
-};
-
-template <> struct priority_value<void> {
-  using type = std::tuple<value::checked, value::saturating, value::unchecked>;
-};
-
-template <> struct priority_type<void> {
-  using type = std::tuple<type::strict, type::compatible, type::transparent>;
-};
-
-template <> struct priority_error<void> {
-  using type = std::tuple<error::throwing, error::expected, error::terminate>;
-};
-
-template <> struct priority_concurrency<void> {
-  using type = std::tuple<concurrency::fenced, concurrency::none>;
-};
-
-template <typename... Ps> struct common_policies {
-  using value_policy = details::pick_first_from_priority_impl<
-      defaults::value, priority_value<>::type, Ps...>::type;
-
-  using type_policy = details::pick_first_from_priority_impl<
-      defaults::type, priority_type<>::type, Ps...>::type;
-
-  using error_policy = details::pick_first_from_priority_impl<
-      defaults::error, priority_error<>::type, Ps...>::type;
-
-  using concurrency_policy = details::pick_first_from_priority_impl<
-      defaults::concurrency, priority_concurrency<>::type, Ps...>::type;
-
-  using type =
-      std::tuple<value_policy, type_policy, error_policy, concurrency_policy>;
-};
-
-template <typename... Ps>
-using common_policies_t = common_policies<Ps...>::type;
-
+template <policy_category C, policy_type... Policies>
+using resolve_policy_t = details::resolve_policy_impl<C, Policies...>::type;
 } // namespace mcpplibs::primitives::policy

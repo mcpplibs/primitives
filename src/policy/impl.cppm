@@ -1,8 +1,12 @@
 module;
 #include <atomic>
+#include <cmath>
+#include <cstdint>
 #include <concepts>
 #include <exception>
 #include <expected>
+#include <limits>
+#include <optional>
 #include <stdexcept>
 #include <string>
 #include <type_traits>
@@ -184,6 +188,18 @@ inline constexpr bool rejects_arithmetic_for_boolean_or_character_v =
     is_arithmetic_operation_v<OpTag> &&
     (is_boolean_or_character_v<LhsRep> || is_boolean_or_character_v<RhsRep>);
 
+template <typename LhsRep, typename RhsRep>
+inline constexpr bool has_non_void_common_rep_v =
+    has_common_rep<LhsRep, RhsRep> &&
+    !std::same_as<common_rep_t<LhsRep, RhsRep>, void>;
+
+template <typename LhsRep, typename RhsRep>
+inline constexpr bool has_same_underlying_category_v =
+    underlying::traits<std::remove_cv_t<LhsRep>>::enabled &&
+    underlying::traits<std::remove_cv_t<RhsRep>>::enabled &&
+    (underlying::traits<std::remove_cv_t<LhsRep>>::kind ==
+     underlying::traits<std::remove_cv_t<RhsRep>>::kind);
+
 template <typename T>
 auto atomic_ref_load(T const &value, std::memory_order order) noexcept -> T {
   assert_atomic_ref_compatible<T>();
@@ -216,7 +232,8 @@ struct type::handler<type::compatible, OpTag, LhsRep, RhsRep> {
   static constexpr bool enabled = true;
   static constexpr bool allowed =
       std::is_arithmetic_v<LhsRep> && std::is_arithmetic_v<RhsRep> &&
-      has_common_rep<LhsRep, RhsRep> &&
+      details::has_same_underlying_category_v<LhsRep, RhsRep> &&
+      details::has_non_void_common_rep_v<LhsRep, RhsRep> &&
       !details::rejects_arithmetic_for_boolean_or_character_v<OpTag, LhsRep,
                                                               RhsRep>;
   static constexpr unsigned diagnostic_id =
@@ -232,7 +249,7 @@ template <operations::operation OpTag, typename LhsRep, typename RhsRep>
 struct type::handler<type::transparent, OpTag, LhsRep, RhsRep> {
   static constexpr bool enabled = true;
   static constexpr bool allowed =
-      has_common_rep<LhsRep, RhsRep> &&
+      details::has_non_void_common_rep_v<LhsRep, RhsRep> &&
       !details::rejects_arithmetic_for_boolean_or_character_v<OpTag, LhsRep,
                                                               RhsRep>;
   static constexpr unsigned diagnostic_id = allowed ? 0u : 3u;
@@ -518,6 +535,103 @@ constexpr auto to_error_payload(error::kind kind) -> ErrorPayload {
     static_cast<void>(kind);
     return ErrorPayload{};
   }
+}
+
+template <typename DestRep, typename SrcRep>
+constexpr auto narrow_integral_error(SrcRep value)
+    -> std::optional<error::kind> {
+  using dest_type = std::remove_cv_t<DestRep>;
+  using src_type = std::remove_cv_t<SrcRep>;
+
+  if constexpr (std::is_signed_v<src_type>) {
+    auto const signed_value = static_cast<std::intmax_t>(value);
+    if constexpr (std::is_signed_v<dest_type>) {
+      if (signed_value <
+          static_cast<std::intmax_t>(std::numeric_limits<dest_type>::min())) {
+        return error::kind::underflow;
+      }
+      if (signed_value >
+          static_cast<std::intmax_t>(std::numeric_limits<dest_type>::max())) {
+        return error::kind::overflow;
+      }
+      return std::nullopt;
+    } else {
+      if (signed_value < 0) {
+        return error::kind::underflow;
+      }
+
+      if (static_cast<std::uintmax_t>(signed_value) >
+          static_cast<std::uintmax_t>(std::numeric_limits<dest_type>::max())) {
+        return error::kind::overflow;
+      }
+      return std::nullopt;
+    }
+  } else {
+    auto const unsigned_value = static_cast<std::uintmax_t>(value);
+    if (unsigned_value >
+        static_cast<std::uintmax_t>(std::numeric_limits<dest_type>::max())) {
+      return error::kind::overflow;
+    }
+    return std::nullopt;
+  }
+}
+
+template <typename DestRep, typename SrcRep>
+constexpr auto narrow_numeric_error(SrcRep value)
+    -> std::optional<error::kind> {
+  using dest_type = std::remove_cv_t<DestRep>;
+  using src_type = std::remove_cv_t<SrcRep>;
+
+  if constexpr (std::integral<dest_type> && std::integral<src_type>) {
+    return narrow_integral_error<dest_type>(value);
+  } else if constexpr (std::integral<dest_type> &&
+                       std::floating_point<src_type>) {
+    if (std::isnan(value)) {
+      return error::kind::domain_error;
+    }
+    if (std::isinf(value)) {
+      return value < static_cast<src_type>(0) ? error::kind::underflow
+                                              : error::kind::overflow;
+    }
+
+    auto const normalized = static_cast<long double>(value);
+    auto const min_value =
+        static_cast<long double>(std::numeric_limits<dest_type>::lowest());
+    auto const max_value =
+        static_cast<long double>(std::numeric_limits<dest_type>::max());
+
+    if (normalized < min_value) {
+      return error::kind::underflow;
+    }
+    if (normalized > max_value) {
+      return error::kind::overflow;
+    }
+    return std::nullopt;
+  } else {
+    static_cast<void>(value);
+    return std::nullopt;
+  }
+}
+
+template <typename DestRep, typename SrcRep>
+constexpr auto safe_numeric_cast(SrcRep value) noexcept -> DestRep {
+  using dest_type = std::remove_cv_t<DestRep>;
+  using src_type = std::remove_cv_t<SrcRep>;
+
+  if constexpr (std::integral<dest_type> && std::floating_point<src_type>) {
+    if (auto const kind = narrow_numeric_error<dest_type>(value);
+        kind.has_value()) {
+      if (*kind == error::kind::overflow) {
+        return std::numeric_limits<dest_type>::max();
+      }
+      if (*kind == error::kind::underflow) {
+        return std::numeric_limits<dest_type>::lowest();
+      }
+      return dest_type{};
+    }
+  }
+
+  return static_cast<dest_type>(value);
 }
 } // namespace details
 
