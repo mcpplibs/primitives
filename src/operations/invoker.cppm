@@ -195,6 +195,217 @@ constexpr auto checked_div(T lhs, T rhs) -> policy::value::decision<T> {
 }
 
 template <typename T>
+constexpr auto checked_mod(T lhs, T rhs) -> policy::value::decision<T> {
+  if constexpr (!std::is_integral_v<T>) {
+    if constexpr (requires { lhs % rhs; }) {
+      policy::value::decision<T> out{};
+      out.has_value = true;
+      out.value = static_cast<T>(lhs % rhs);
+      return out;
+    }
+    return make_error<T>(
+        policy::error::kind::unspecified,
+        "checked modulus not supported for negotiated common type", lhs, rhs);
+  } else {
+    if (rhs == T{}) {
+      return make_error<T>(policy::error::kind::divide_by_zero,
+                           "checked modulus by zero", lhs, rhs);
+    }
+
+    if constexpr (std::is_signed_v<T>) {
+      auto const minv = std::numeric_limits<T>::min();
+      if (lhs == minv && rhs == static_cast<T>(-1)) {
+        return make_error<T>(policy::error::kind::overflow,
+                             "checked modulus overflow", lhs, rhs);
+      }
+    }
+
+    policy::value::decision<T> out{};
+    out.has_value = true;
+    out.value = static_cast<T>(lhs % rhs);
+    return out;
+  }
+}
+
+template <typename T>
+constexpr auto checked_unary_plus(T lhs) -> policy::value::decision<T> {
+  policy::value::decision<T> out{};
+  if constexpr (requires { +lhs; }) {
+    out.has_value = true;
+    out.value = static_cast<T>(+lhs);
+    return out;
+  }
+  return make_error<T>(policy::error::kind::unspecified,
+                       "checked unary plus not supported for negotiated "
+                       "common type");
+}
+
+template <typename T>
+constexpr auto checked_unary_minus(T lhs) -> policy::value::decision<T> {
+  if constexpr (std::is_integral_v<T> && std::is_signed_v<T>) {
+    auto const minv = std::numeric_limits<T>::min();
+    if (lhs == minv) {
+      return make_error<T>(policy::error::kind::overflow,
+                           "checked unary minus overflow", lhs);
+    }
+  }
+
+  policy::value::decision<T> out{};
+  if constexpr (requires { -lhs; }) {
+    out.has_value = true;
+    out.value = static_cast<T>(-lhs);
+    return out;
+  }
+  return make_error<T>(policy::error::kind::unspecified,
+                       "checked unary minus not supported for negotiated "
+                       "common type");
+}
+
+template <typename T>
+constexpr auto checked_shift_left(T lhs, T rhs) -> policy::value::decision<T> {
+  if constexpr (!std::is_integral_v<T> || std::same_as<T, bool>) {
+    return make_error<T>(
+        policy::error::kind::unspecified,
+        "checked left shift not supported for negotiated common type", lhs,
+        rhs);
+  } else {
+    using unsigned_t = std::make_unsigned_t<T>;
+    constexpr auto bit_width = std::numeric_limits<unsigned_t>::digits;
+
+    if constexpr (std::is_signed_v<T>) {
+      if (rhs < T{}) {
+        return make_error<T>(policy::error::kind::domain_error,
+                             "checked left shift negative count", lhs, rhs);
+      }
+    }
+
+    auto const shift = static_cast<unsigned long long>(rhs);
+    if (shift >= static_cast<unsigned long long>(bit_width)) {
+      return make_error<T>(policy::error::kind::domain_error,
+                           "checked left shift count out of range", lhs, rhs);
+    }
+
+    if constexpr (std::is_signed_v<T>) {
+      if (lhs < T{}) {
+        return make_error<T>(policy::error::kind::domain_error,
+                             "checked left shift negative lhs", lhs, rhs);
+      }
+
+      auto const maxv = std::numeric_limits<T>::max();
+      if (lhs > static_cast<T>(maxv >> shift)) {
+        return make_error<T>(policy::error::kind::overflow,
+                             "checked left shift overflow", lhs, rhs);
+      }
+    }
+
+    policy::value::decision<T> out{};
+    out.has_value = true;
+    out.value = static_cast<T>(lhs << shift);
+    return out;
+  }
+}
+
+template <typename T>
+constexpr auto checked_shift_right(T lhs, T rhs)
+    -> policy::value::decision<T> {
+  if constexpr (!std::is_integral_v<T> || std::same_as<T, bool>) {
+    return make_error<T>(
+        policy::error::kind::unspecified,
+        "checked right shift not supported for negotiated common type", lhs,
+        rhs);
+  } else {
+    using unsigned_t = std::make_unsigned_t<T>;
+    constexpr auto bit_width = std::numeric_limits<unsigned_t>::digits;
+
+    if constexpr (std::is_signed_v<T>) {
+      if (rhs < T{}) {
+        return make_error<T>(policy::error::kind::domain_error,
+                             "checked right shift negative count", lhs, rhs);
+      }
+    }
+
+    auto const shift = static_cast<unsigned long long>(rhs);
+    if (shift >= static_cast<unsigned long long>(bit_width)) {
+      return make_error<T>(policy::error::kind::domain_error,
+                           "checked right shift count out of range", lhs, rhs);
+    }
+
+    policy::value::decision<T> out{};
+    out.has_value = true;
+    out.value = static_cast<T>(lhs >> shift);
+    return out;
+  }
+}
+
+template <typename T>
+constexpr auto checked_bit_and(T lhs, T rhs) -> policy::value::decision<T> {
+  if constexpr (std::integral<T>) {
+    policy::value::decision<T> out{};
+    out.has_value = true;
+    out.value = static_cast<T>(lhs & rhs);
+    return out;
+  }
+
+  return make_error<T>(
+      policy::error::kind::unspecified,
+      "checked bitwise and not supported for negotiated common type", lhs, rhs);
+}
+
+template <typename T>
+constexpr auto checked_bit_or(T lhs, T rhs) -> policy::value::decision<T> {
+  if constexpr (std::integral<T>) {
+    policy::value::decision<T> out{};
+    out.has_value = true;
+    out.value = static_cast<T>(lhs | rhs);
+    return out;
+  }
+
+  return make_error<T>(
+      policy::error::kind::unspecified,
+      "checked bitwise or not supported for negotiated common type", lhs, rhs);
+}
+
+template <typename T>
+constexpr auto checked_bit_xor(T lhs, T rhs) -> policy::value::decision<T> {
+  if constexpr (std::integral<T>) {
+    policy::value::decision<T> out{};
+    out.has_value = true;
+    out.value = static_cast<T>(lhs ^ rhs);
+    return out;
+  }
+
+  return make_error<T>(policy::error::kind::unspecified,
+                       "checked bitwise xor not supported for negotiated "
+                       "common type",
+                       lhs, rhs);
+}
+
+template <typename T>
+constexpr auto checked_bit_not(T lhs) -> policy::value::decision<T> {
+  if constexpr (std::integral<T>) {
+    policy::value::decision<T> out{};
+    out.has_value = true;
+    out.value = static_cast<T>(~lhs);
+    return out;
+  }
+
+  return make_error<T>(policy::error::kind::unspecified,
+                       "checked bitwise not supported for negotiated "
+                       "common type",
+                       lhs);
+}
+
+template <typename T>
+constexpr auto checked_inc(T lhs) -> policy::value::decision<T> {
+  return checked_add(lhs, static_cast<T>(1));
+}
+
+template <typename T>
+constexpr auto checked_dec(T lhs) -> policy::value::decision<T> {
+  return checked_sub(lhs, static_cast<T>(1));
+}
+
+template <typename T>
 constexpr auto compare_equal(T lhs, T rhs) -> policy::value::decision<T> {
   policy::value::decision<T> out{};
   if constexpr (requires { lhs == rhs; }) {
@@ -330,6 +541,143 @@ constexpr auto unchecked_div(T lhs, T rhs) -> policy::value::decision<T> {
   return out;
 }
 
+template <typename T>
+constexpr auto unchecked_mod(T lhs, T rhs) -> policy::value::decision<T> {
+  policy::value::decision<T> out{};
+  out.has_value = true;
+
+  if constexpr (requires { lhs % rhs; }) {
+    out.value = static_cast<T>(lhs % rhs);
+    return out;
+  }
+
+  out.value = T{};
+  return out;
+}
+
+template <typename T>
+constexpr auto unchecked_shift_left(T lhs, T rhs) -> policy::value::decision<T> {
+  policy::value::decision<T> out{};
+  out.has_value = true;
+
+  if constexpr (requires { lhs << rhs; }) {
+    out.value = static_cast<T>(lhs << rhs);
+    return out;
+  }
+
+  out.value = T{};
+  return out;
+}
+
+template <typename T>
+constexpr auto unchecked_shift_right(T lhs, T rhs)
+    -> policy::value::decision<T> {
+  policy::value::decision<T> out{};
+  out.has_value = true;
+
+  if constexpr (requires { lhs >> rhs; }) {
+    out.value = static_cast<T>(lhs >> rhs);
+    return out;
+  }
+
+  out.value = T{};
+  return out;
+}
+
+template <typename T>
+constexpr auto unchecked_bit_and(T lhs, T rhs) -> policy::value::decision<T> {
+  policy::value::decision<T> out{};
+  out.has_value = true;
+
+  if constexpr (requires { lhs & rhs; }) {
+    out.value = static_cast<T>(lhs & rhs);
+    return out;
+  }
+
+  out.value = T{};
+  return out;
+}
+
+template <typename T>
+constexpr auto unchecked_bit_or(T lhs, T rhs) -> policy::value::decision<T> {
+  policy::value::decision<T> out{};
+  out.has_value = true;
+
+  if constexpr (requires { lhs | rhs; }) {
+    out.value = static_cast<T>(lhs | rhs);
+    return out;
+  }
+
+  out.value = T{};
+  return out;
+}
+
+template <typename T>
+constexpr auto unchecked_bit_xor(T lhs, T rhs) -> policy::value::decision<T> {
+  policy::value::decision<T> out{};
+  out.has_value = true;
+
+  if constexpr (requires { lhs ^ rhs; }) {
+    out.value = static_cast<T>(lhs ^ rhs);
+    return out;
+  }
+
+  out.value = T{};
+  return out;
+}
+
+template <typename T>
+constexpr auto unchecked_bit_not(T lhs) -> policy::value::decision<T> {
+  policy::value::decision<T> out{};
+  out.has_value = true;
+
+  if constexpr (requires { ~lhs; }) {
+    out.value = static_cast<T>(~lhs);
+    return out;
+  }
+
+  out.value = T{};
+  return out;
+}
+
+template <typename T>
+constexpr auto unchecked_unary_plus(T lhs) -> policy::value::decision<T> {
+  policy::value::decision<T> out{};
+  out.has_value = true;
+
+  if constexpr (requires { +lhs; }) {
+    out.value = static_cast<T>(+lhs);
+    return out;
+  }
+
+  out.value = T{};
+  return out;
+}
+
+template <typename T>
+constexpr auto unchecked_unary_minus(T lhs) -> policy::value::decision<T> {
+  policy::value::decision<T> out{};
+  out.has_value = true;
+
+  if constexpr (requires { -lhs; }) {
+    out.value = static_cast<T>(-lhs);
+    return out;
+  }
+
+  out.value = T{};
+  return out;
+}
+
+template <typename T>
+constexpr auto unchecked_inc(T lhs) -> policy::value::decision<T> {
+  return unchecked_add(lhs, static_cast<T>(1));
+}
+
+template <typename T>
+constexpr auto unchecked_dec(T lhs) -> policy::value::decision<T> {
+  return unchecked_sub(lhs, static_cast<T>(1));
+}
+
 template <typename T> constexpr auto saturating_add(T lhs, T rhs) -> T {
   if constexpr (!std::is_integral_v<T> || std::is_same_v<T, bool>) {
     return static_cast<T>(lhs + rhs);
@@ -407,6 +755,18 @@ template <typename T> constexpr auto saturating_mul(T lhs, T rhs) -> T {
       return static_cast<T>(lhs * rhs);
     }
   }
+}
+
+template <typename T> constexpr auto saturating_unary_minus(T lhs) -> T {
+  return saturating_sub(static_cast<T>(0), lhs);
+}
+
+template <typename T> constexpr auto saturating_inc(T lhs) -> T {
+  return saturating_add(lhs, static_cast<T>(1));
+}
+
+template <typename T> constexpr auto saturating_dec(T lhs) -> T {
+  return saturating_sub(lhs, static_cast<T>(1));
 }
 
 template <typename CommonRep>
@@ -509,6 +869,131 @@ struct op_binding<Division, policy::value::checked, CommonRep> {
 };
 
 template <typename CommonRep>
+struct op_binding<Modulus, policy::value::checked, CommonRep> {
+  static constexpr bool enabled = true;
+
+  static constexpr auto apply(CommonRep lhs, CommonRep rhs)
+      -> policy::value::decision<CommonRep> {
+    if constexpr (requires { details::checked_mod(lhs, rhs); }) {
+      return details::checked_mod(lhs, rhs);
+    }
+
+    return details::make_unsupported<CommonRep>(
+        "checked modulus not supported for negotiated common type");
+  }
+};
+
+template <typename CommonRep>
+struct op_binding<LeftShift, policy::value::checked, CommonRep> {
+  static constexpr bool enabled = true;
+
+  static constexpr auto apply(CommonRep lhs, CommonRep rhs)
+      -> policy::value::decision<CommonRep> {
+    if constexpr (requires { details::checked_shift_left(lhs, rhs); }) {
+      return details::checked_shift_left(lhs, rhs);
+    }
+
+    return details::make_unsupported<CommonRep>(
+        "checked left shift not supported for negotiated common type");
+  }
+};
+
+template <typename CommonRep>
+struct op_binding<RightShift, policy::value::checked, CommonRep> {
+  static constexpr bool enabled = true;
+
+  static constexpr auto apply(CommonRep lhs, CommonRep rhs)
+      -> policy::value::decision<CommonRep> {
+    if constexpr (requires { details::checked_shift_right(lhs, rhs); }) {
+      return details::checked_shift_right(lhs, rhs);
+    }
+
+    return details::make_unsupported<CommonRep>(
+        "checked right shift not supported for negotiated common type");
+  }
+};
+
+template <typename CommonRep>
+struct op_binding<BitwiseAnd, policy::value::checked, CommonRep> {
+  static constexpr bool enabled = true;
+
+  static constexpr auto apply(CommonRep lhs, CommonRep rhs)
+      -> policy::value::decision<CommonRep> {
+    return details::checked_bit_and(lhs, rhs);
+  }
+};
+
+template <typename CommonRep>
+struct op_binding<BitwiseOr, policy::value::checked, CommonRep> {
+  static constexpr bool enabled = true;
+
+  static constexpr auto apply(CommonRep lhs, CommonRep rhs)
+      -> policy::value::decision<CommonRep> {
+    return details::checked_bit_or(lhs, rhs);
+  }
+};
+
+template <typename CommonRep>
+struct op_binding<BitwiseXor, policy::value::checked, CommonRep> {
+  static constexpr bool enabled = true;
+
+  static constexpr auto apply(CommonRep lhs, CommonRep rhs)
+      -> policy::value::decision<CommonRep> {
+    return details::checked_bit_xor(lhs, rhs);
+  }
+};
+
+template <typename CommonRep>
+struct op_binding<Increment, policy::value::checked, CommonRep> {
+  static constexpr bool enabled = true;
+
+  static constexpr auto apply(CommonRep lhs, CommonRep)
+      -> policy::value::decision<CommonRep> {
+    return details::checked_inc(lhs);
+  }
+};
+
+template <typename CommonRep>
+struct op_binding<Decrement, policy::value::checked, CommonRep> {
+  static constexpr bool enabled = true;
+
+  static constexpr auto apply(CommonRep lhs, CommonRep)
+      -> policy::value::decision<CommonRep> {
+    return details::checked_dec(lhs);
+  }
+};
+
+template <typename CommonRep>
+struct op_binding<UnaryPlus, policy::value::checked, CommonRep> {
+  static constexpr bool enabled = true;
+
+  static constexpr auto apply(CommonRep lhs, CommonRep)
+      -> policy::value::decision<CommonRep> {
+    return details::checked_unary_plus(lhs);
+  }
+};
+
+template <typename CommonRep>
+struct op_binding<UnaryMinus, policy::value::checked, CommonRep> {
+  static constexpr bool enabled = true;
+
+  static constexpr auto apply(CommonRep lhs, CommonRep)
+      -> policy::value::decision<CommonRep> {
+    return details::checked_unary_minus(lhs);
+  }
+};
+
+template <typename CommonRep>
+struct op_binding<BitwiseNot, policy::value::checked, CommonRep> {
+  static constexpr bool enabled = true;
+
+  static constexpr auto apply(CommonRep lhs, CommonRep)
+      -> policy::value::decision<CommonRep> {
+    return details::checked_bit_not(lhs);
+  }
+};
+
+template <typename CommonRep>
 struct op_binding<Addition, policy::value::unchecked, CommonRep> {
   static constexpr bool enabled = true;
 
@@ -545,6 +1030,116 @@ struct op_binding<Division, policy::value::unchecked, CommonRep> {
   static constexpr auto apply(CommonRep lhs, CommonRep rhs)
       -> policy::value::decision<CommonRep> {
     return details::unchecked_div(lhs, rhs);
+  }
+};
+
+template <typename CommonRep>
+struct op_binding<Modulus, policy::value::unchecked, CommonRep> {
+  static constexpr bool enabled = true;
+
+  static constexpr auto apply(CommonRep lhs, CommonRep rhs)
+      -> policy::value::decision<CommonRep> {
+    return details::unchecked_mod(lhs, rhs);
+  }
+};
+
+template <typename CommonRep>
+struct op_binding<LeftShift, policy::value::unchecked, CommonRep> {
+  static constexpr bool enabled = true;
+
+  static constexpr auto apply(CommonRep lhs, CommonRep rhs)
+      -> policy::value::decision<CommonRep> {
+    return details::unchecked_shift_left(lhs, rhs);
+  }
+};
+
+template <typename CommonRep>
+struct op_binding<RightShift, policy::value::unchecked, CommonRep> {
+  static constexpr bool enabled = true;
+
+  static constexpr auto apply(CommonRep lhs, CommonRep rhs)
+      -> policy::value::decision<CommonRep> {
+    return details::unchecked_shift_right(lhs, rhs);
+  }
+};
+
+template <typename CommonRep>
+struct op_binding<BitwiseAnd, policy::value::unchecked, CommonRep> {
+  static constexpr bool enabled = true;
+
+  static constexpr auto apply(CommonRep lhs, CommonRep rhs)
+      -> policy::value::decision<CommonRep> {
+    return details::unchecked_bit_and(lhs, rhs);
+  }
+};
+
+template <typename CommonRep>
+struct op_binding<BitwiseOr, policy::value::unchecked, CommonRep> {
+  static constexpr bool enabled = true;
+
+  static constexpr auto apply(CommonRep lhs, CommonRep rhs)
+      -> policy::value::decision<CommonRep> {
+    return details::unchecked_bit_or(lhs, rhs);
+  }
+};
+
+template <typename CommonRep>
+struct op_binding<BitwiseXor, policy::value::unchecked, CommonRep> {
+  static constexpr bool enabled = true;
+
+  static constexpr auto apply(CommonRep lhs, CommonRep rhs)
+      -> policy::value::decision<CommonRep> {
+    return details::unchecked_bit_xor(lhs, rhs);
+  }
+};
+
+template <typename CommonRep>
+struct op_binding<Increment, policy::value::unchecked, CommonRep> {
+  static constexpr bool enabled = true;
+
+  static constexpr auto apply(CommonRep lhs, CommonRep)
+      -> policy::value::decision<CommonRep> {
+    return details::unchecked_inc(lhs);
+  }
+};
+
+template <typename CommonRep>
+struct op_binding<Decrement, policy::value::unchecked, CommonRep> {
+  static constexpr bool enabled = true;
+
+  static constexpr auto apply(CommonRep lhs, CommonRep)
+      -> policy::value::decision<CommonRep> {
+    return details::unchecked_dec(lhs);
+  }
+};
+
+template <typename CommonRep>
+struct op_binding<UnaryPlus, policy::value::unchecked, CommonRep> {
+  static constexpr bool enabled = true;
+
+  static constexpr auto apply(CommonRep lhs, CommonRep)
+      -> policy::value::decision<CommonRep> {
+    return details::unchecked_unary_plus(lhs);
+  }
+};
+
+template <typename CommonRep>
+struct op_binding<UnaryMinus, policy::value::unchecked, CommonRep> {
+  static constexpr bool enabled = true;
+
+  static constexpr auto apply(CommonRep lhs, CommonRep)
+      -> policy::value::decision<CommonRep> {
+    return details::unchecked_unary_minus(lhs);
+  }
+};
+
+template <typename CommonRep>
+struct op_binding<BitwiseNot, policy::value::unchecked, CommonRep> {
+  static constexpr bool enabled = true;
+
+  static constexpr auto apply(CommonRep lhs, CommonRep)
+      -> policy::value::decision<CommonRep> {
+    return details::unchecked_bit_not(lhs);
   }
 };
 
@@ -619,6 +1214,140 @@ struct op_binding<Division, policy::value::saturating, CommonRep> {
 
     return details::make_unsupported<CommonRep>(
         "saturating division not supported for negotiated common type");
+  }
+};
+
+template <typename CommonRep>
+struct op_binding<Modulus, policy::value::saturating, CommonRep> {
+  static constexpr bool enabled = true;
+
+  static constexpr auto apply(CommonRep lhs, CommonRep rhs)
+      -> policy::value::decision<CommonRep> {
+    return op_binding<Modulus, policy::value::checked, CommonRep>::apply(lhs,
+                                                                          rhs);
+  }
+};
+
+template <typename CommonRep>
+struct op_binding<LeftShift, policy::value::saturating, CommonRep> {
+  static constexpr bool enabled = true;
+
+  static constexpr auto apply(CommonRep lhs, CommonRep rhs)
+      -> policy::value::decision<CommonRep> {
+    return op_binding<LeftShift, policy::value::checked, CommonRep>::apply(lhs,
+                                                                            rhs);
+  }
+};
+
+template <typename CommonRep>
+struct op_binding<RightShift, policy::value::saturating, CommonRep> {
+  static constexpr bool enabled = true;
+
+  static constexpr auto apply(CommonRep lhs, CommonRep rhs)
+      -> policy::value::decision<CommonRep> {
+    return op_binding<RightShift, policy::value::checked, CommonRep>::apply(
+        lhs, rhs);
+  }
+};
+
+template <typename CommonRep>
+struct op_binding<BitwiseAnd, policy::value::saturating, CommonRep> {
+  static constexpr bool enabled = true;
+
+  static constexpr auto apply(CommonRep lhs, CommonRep rhs)
+      -> policy::value::decision<CommonRep> {
+    return details::checked_bit_and(lhs, rhs);
+  }
+};
+
+template <typename CommonRep>
+struct op_binding<BitwiseOr, policy::value::saturating, CommonRep> {
+  static constexpr bool enabled = true;
+
+  static constexpr auto apply(CommonRep lhs, CommonRep rhs)
+      -> policy::value::decision<CommonRep> {
+    return details::checked_bit_or(lhs, rhs);
+  }
+};
+
+template <typename CommonRep>
+struct op_binding<BitwiseXor, policy::value::saturating, CommonRep> {
+  static constexpr bool enabled = true;
+
+  static constexpr auto apply(CommonRep lhs, CommonRep rhs)
+      -> policy::value::decision<CommonRep> {
+    return details::checked_bit_xor(lhs, rhs);
+  }
+};
+
+template <typename CommonRep>
+struct op_binding<Increment, policy::value::saturating, CommonRep> {
+  static constexpr bool enabled = true;
+
+  static constexpr auto apply(CommonRep lhs, CommonRep)
+      -> policy::value::decision<CommonRep> {
+    policy::value::decision<CommonRep> out{};
+    if constexpr (requires { details::saturating_inc(lhs); }) {
+      out.has_value = true;
+      out.value = details::saturating_inc(lhs);
+      return out;
+    }
+    return details::make_unsupported<CommonRep>(
+        "saturating increment not supported for negotiated common type");
+  }
+};
+
+template <typename CommonRep>
+struct op_binding<Decrement, policy::value::saturating, CommonRep> {
+  static constexpr bool enabled = true;
+
+  static constexpr auto apply(CommonRep lhs, CommonRep)
+      -> policy::value::decision<CommonRep> {
+    policy::value::decision<CommonRep> out{};
+    if constexpr (requires { details::saturating_dec(lhs); }) {
+      out.has_value = true;
+      out.value = details::saturating_dec(lhs);
+      return out;
+    }
+    return details::make_unsupported<CommonRep>(
+        "saturating decrement not supported for negotiated common type");
+  }
+};
+
+template <typename CommonRep>
+struct op_binding<UnaryPlus, policy::value::saturating, CommonRep> {
+  static constexpr bool enabled = true;
+
+  static constexpr auto apply(CommonRep lhs, CommonRep)
+      -> policy::value::decision<CommonRep> {
+    return details::checked_unary_plus(lhs);
+  }
+};
+
+template <typename CommonRep>
+struct op_binding<UnaryMinus, policy::value::saturating, CommonRep> {
+  static constexpr bool enabled = true;
+
+  static constexpr auto apply(CommonRep lhs, CommonRep)
+      -> policy::value::decision<CommonRep> {
+    policy::value::decision<CommonRep> out{};
+    if constexpr (requires { details::saturating_unary_minus(lhs); }) {
+      out.has_value = true;
+      out.value = details::saturating_unary_minus(lhs);
+      return out;
+    }
+    return details::make_unsupported<CommonRep>(
+        "saturating unary minus not supported for negotiated common type");
+  }
+};
+
+template <typename CommonRep>
+struct op_binding<BitwiseNot, policy::value::saturating, CommonRep> {
+  static constexpr bool enabled = true;
+
+  static constexpr auto apply(CommonRep lhs, CommonRep)
+      -> policy::value::decision<CommonRep> {
+    return details::checked_bit_not(lhs);
   }
 };
 

@@ -4,13 +4,69 @@ import mcpplibs.primitives.operations.traits;
 
 export namespace mcpplibs::primitives::operations {
 
+// Unary operations
+struct Increment {};
+struct Decrement {};
+struct BitwiseNot {};
+struct UnaryPlus {};
+struct UnaryMinus {};
+
+// Binary operations
 struct Addition {};
 struct Subtraction {};
 struct Multiplication {};
 struct Division {};
+struct Modulus {};
+struct LeftShift {};
+struct RightShift {};
+struct BitwiseAnd {};
+struct BitwiseOr {};
+struct BitwiseXor {};
+
+// Comparison operations
 struct Equal {};
 struct NotEqual {};
 struct ThreeWayCompare {};
+
+template <> struct traits<Increment> {
+  using op_tag = Increment;
+
+  static constexpr bool enabled = true;
+  static constexpr auto arity = dimension::unary;
+  static constexpr auto capability_mask = capability::arithmetic;
+};
+
+template <> struct traits<Decrement> {
+  using op_tag = Decrement;
+
+  static constexpr bool enabled = true;
+  static constexpr auto arity = dimension::unary;
+  static constexpr auto capability_mask = capability::arithmetic;
+};
+
+template <> struct traits<BitwiseNot> {
+  using op_tag = BitwiseNot;
+
+  static constexpr bool enabled = true;
+  static constexpr auto arity = dimension::unary;
+  static constexpr auto capability_mask = capability::bitwise;
+};
+
+template <> struct traits<UnaryPlus> {
+  using op_tag = UnaryPlus;
+
+  static constexpr bool enabled = true;
+  static constexpr auto arity = dimension::unary;
+  static constexpr auto capability_mask = capability::arithmetic;
+};
+
+template <> struct traits<UnaryMinus> {
+  using op_tag = UnaryMinus;
+
+  static constexpr bool enabled = true;
+  static constexpr auto arity = dimension::unary;
+  static constexpr auto capability_mask = capability::arithmetic;
+};
 
 template <> struct traits<Addition> {
   using op_tag = Addition;
@@ -42,6 +98,54 @@ template <> struct traits<Division> {
   static constexpr bool enabled = true;
   static constexpr auto arity = dimension::binary;
   static constexpr auto capability_mask = capability::arithmetic;
+};
+
+template <> struct traits<Modulus> {
+  using op_tag = Modulus;
+
+  static constexpr bool enabled = true;
+  static constexpr auto arity = dimension::binary;
+  static constexpr auto capability_mask = capability::arithmetic;
+};
+
+template <> struct traits<LeftShift> {
+  using op_tag = LeftShift;
+
+  static constexpr bool enabled = true;
+  static constexpr auto arity = dimension::binary;
+  static constexpr auto capability_mask = capability::bitwise;
+};
+
+template <> struct traits<RightShift> {
+  using op_tag = RightShift;
+
+  static constexpr bool enabled = true;
+  static constexpr auto arity = dimension::binary;
+  static constexpr auto capability_mask = capability::bitwise;
+};
+
+template <> struct traits<BitwiseAnd> {
+  using op_tag = BitwiseAnd;
+
+  static constexpr bool enabled = true;
+  static constexpr auto arity = dimension::binary;
+  static constexpr auto capability_mask = capability::bitwise;
+};
+
+template <> struct traits<BitwiseOr> {
+  using op_tag = BitwiseOr;
+
+  static constexpr bool enabled = true;
+  static constexpr auto arity = dimension::binary;
+  static constexpr auto capability_mask = capability::bitwise;
+};
+
+template <> struct traits<BitwiseXor> {
+  using op_tag = BitwiseXor;
+
+  static constexpr bool enabled = true;
+  static constexpr auto arity = dimension::binary;
+  static constexpr auto capability_mask = capability::bitwise;
 };
 
 template <> struct traits<Equal> {
