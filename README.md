@@ -6,9 +6,9 @@
 [![Online-ebook](https://img.shields.io/badge/online-ebook-orange.svg)](https://github.com/d2learn/d2x)
 [![License](https://img.shields.io/badge/license-Apache_2.0-blue.svg)](LICENSE-CODE)
 
-| [中文](README.zh.md) - [English](README.md) |
-| --- |
-| [d2x Tool](https://github.com/d2learn/d2x) - [Docs](https://mcpp-community.github.io/d2mystl) - [Forum](https://mcpp.d2learn.org/forum) |
+| [中文](README.zh.md) - [English](README.md)                                                                                             |
+|---------------------------------------------------------------------------------------------------------------------------------------|
+| [中文用户文档](docs/zh/README.md) - [English User Documentation](docs/en/README.md) - [Forum](https://mcpp.d2learn.org/forum) |
 
 This repository provides configurable `primitive` infrastructure (`underlying traits`, `policy`, and `operations/dispatcher`) to unify numeric behavior, error handling, and concurrency access semantics.
 
