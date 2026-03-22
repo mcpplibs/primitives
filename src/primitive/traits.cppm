@@ -44,3 +44,19 @@ struct traits<primitive<T, Policies...>> {
 };
 
 } // namespace mcpplibs::primitives::meta
+
+// Backward-compatible aliases for existing downstream users.
+export namespace mcpplibs::primitives::traits {
+using policy_category [[deprecated]] = meta::policy_category;
+
+template <typename T, typename PoliciesTuple>
+using make_primitive [[deprecated]] = meta::make_primitive<T, PoliciesTuple>;
+
+template <underlying_type T, typename PoliciesTuple>
+using make_primitive_t [[deprecated]] = meta::make_primitive_t<T, PoliciesTuple>;
+
+using default_policies [[deprecated]] = meta::default_policies;
+
+template <typename T>
+using primitive_traits [[deprecated]] = meta::traits<T>;
+} // namespace mcpplibs::primitives::traits
