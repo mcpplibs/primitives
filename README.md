@@ -2,6 +2,14 @@
 
 > C++23 模块化原语库 - `import mcpplibs.primitives;`
 
+[![d2x](https://img.shields.io/badge/d2x-ok-green.svg)](https://github.com/d2learn/d2x)
+[![Online-ebook](https://img.shields.io/badge/online-ebook-orange.svg)](https://github.com/d2learn/d2x)
+[![License](https://img.shields.io/badge/license-Apache_2.0-blue.svg)](LICENSE-CODE)
+
+| [中文](README.zh.md) - [English](README.md) |
+| --- |
+| [d2x Tool](https://github.com/d2learn/d2x) - [Docs](https://mcpp-community.github.io/d2mystl) - [Forum](https://mcpp.d2learn.org/forum) |
+
 本仓库提供可配置的 `primitive` 基础设施（`underlying traits`、`policy`、`operations/dispatcher`），用于统一约束数值计算、错误处理与并发访问语义。
 
 > [!WARNING]
