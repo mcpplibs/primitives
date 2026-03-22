@@ -784,6 +784,120 @@ TEST(OperationsTest, OperatorPlusDelegatesToDispatcher) {
   EXPECT_EQ(result->value(), 15);
 }
 
+TEST(OperationsTest, UnaryOperatorsDelegateToDispatcher) {
+  using namespace mcpplibs::primitives::operators;
+  using value_t =
+      primitive<int, policy::value::checked, policy::error::expected>;
+
+  auto value = value_t{10};
+
+  auto const inc = ++value;
+  ASSERT_TRUE(inc.has_value());
+  EXPECT_EQ(inc->value(), 11);
+  EXPECT_EQ(value.load(), 11);
+
+  auto const dec = --value;
+  ASSERT_TRUE(dec.has_value());
+  EXPECT_EQ(dec->value(), 10);
+  EXPECT_EQ(value.load(), 10);
+
+  auto const post_inc = value++;
+  ASSERT_TRUE(post_inc.has_value());
+  EXPECT_EQ(post_inc->value(), 10);
+  EXPECT_EQ(value.load(), 11);
+
+  auto const post_dec = value--;
+  ASSERT_TRUE(post_dec.has_value());
+  EXPECT_EQ(post_dec->value(), 11);
+  EXPECT_EQ(value.load(), 10);
+
+  auto const pos = +value;
+  auto const neg = -value;
+  auto const inv = ~value;
+
+  ASSERT_TRUE(pos.has_value());
+  ASSERT_TRUE(neg.has_value());
+  ASSERT_TRUE(inv.has_value());
+  EXPECT_EQ(pos->value(), 10);
+  EXPECT_EQ(neg->value(), -10);
+  EXPECT_EQ(inv->value(), ~10);
+}
+
+TEST(OperationsTest, NewBinaryOperatorsDelegateToDispatcher) {
+  using namespace mcpplibs::primitives::operators;
+  using value_t =
+      primitive<int, policy::value::checked, policy::error::expected>;
+
+  auto const lhs = value_t{12};
+  auto const rhs = value_t{5};
+
+  auto const mod = lhs % rhs;
+  auto const shl = rhs << value_t{1};
+  auto const shr = lhs >> value_t{2};
+  auto const bit_and = lhs & value_t{10};
+  auto const bit_or = lhs | value_t{10};
+  auto const bit_xor = lhs ^ value_t{10};
+
+  ASSERT_TRUE(mod.has_value());
+  ASSERT_TRUE(shl.has_value());
+  ASSERT_TRUE(shr.has_value());
+  ASSERT_TRUE(bit_and.has_value());
+  ASSERT_TRUE(bit_or.has_value());
+  ASSERT_TRUE(bit_xor.has_value());
+  EXPECT_EQ(mod->value(), 2);
+  EXPECT_EQ(shl->value(), 10);
+  EXPECT_EQ(shr->value(), 3);
+  EXPECT_EQ(bit_and->value(), 8);
+  EXPECT_EQ(bit_or->value(), 14);
+  EXPECT_EQ(bit_xor->value(), 6);
+}
+
+TEST(OperationsTest, NewCompoundAssignmentOperatorsMutateLhsOnSuccess) {
+  using namespace mcpplibs::primitives::operators;
+  using value_t =
+      primitive<int, policy::value::checked, policy::error::expected>;
+
+  auto value = value_t{12};
+
+  auto mod = (value %= value_t{5});
+  ASSERT_TRUE(mod.has_value());
+  EXPECT_EQ(value.load(), 2);
+
+  auto shl = (value <<= value_t{2});
+  ASSERT_TRUE(shl.has_value());
+  EXPECT_EQ(value.load(), 8);
+
+  auto shr = (value >>= value_t{1});
+  ASSERT_TRUE(shr.has_value());
+  EXPECT_EQ(value.load(), 4);
+
+  auto bit_and = (value &= value_t{6});
+  ASSERT_TRUE(bit_and.has_value());
+  EXPECT_EQ(value.load(), 4);
+
+  auto bit_or = (value |= value_t{1});
+  ASSERT_TRUE(bit_or.has_value());
+  EXPECT_EQ(value.load(), 5);
+
+  auto bit_xor = (value ^= value_t{7});
+  ASSERT_TRUE(bit_xor.has_value());
+  EXPECT_EQ(value.load(), 2);
+}
+
+TEST(OperationsTest, ModulusAndShiftReportExpectedErrors) {
+  using value_t =
+      primitive<int, policy::value::checked, policy::error::expected>;
+
+  auto const mod_zero = operations::mod(value_t{7}, value_t{0});
+  ASSERT_FALSE(mod_zero.has_value());
+  EXPECT_EQ(mod_zero.error(), policy::error::kind::divide_by_zero);
+
+  auto const invalid_shift = operations::shift_left(
+      value_t{1}, value_t{std::numeric_limits<int>::digits + 1});
+  ASSERT_FALSE(invalid_shift.has_value());
+  EXPECT_EQ(invalid_shift.error(), policy::error::kind::domain_error);
+}
+
 TEST(OperationsTest, ThreeWayCompareReturnsStrongOrderingForIntegers) {
   using namespace mcpplibs::primitives::operators;
   using value_t =
