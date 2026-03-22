@@ -333,16 +333,17 @@ constexpr auto apply_assign(Lhs &lhs, Rhs const &rhs)
 
   auto const assigned_common = out->load();
   if constexpr (std::same_as<lhs_value_policy, policy::value::checked> &&
-                std::integral<lhs_rep> && std::integral<common_rep>) {
+                std::integral<lhs_rep>) {
     if (auto const kind =
-            policy::details::narrow_integral_error<lhs_rep>(assigned_common);
+            policy::details::narrow_numeric_error<lhs_rep>(assigned_common);
         kind.has_value()) {
       return std::unexpected(
           policy::details::to_error_payload<ErrorPayload>(*kind));
     }
   }
 
-  auto const assigned_rep = static_cast<lhs_rep>(assigned_common);
+  auto const assigned_rep =
+      policy::details::safe_numeric_cast<lhs_rep>(assigned_common);
   lhs.store(underlying::traits<lhs_value_type>::from_rep(assigned_rep));
   return out;
 }

@@ -1,5 +1,6 @@
 module;
 #include <atomic>
+#include <cmath>
 #include <cstdint>
 #include <concepts>
 #include <exception>
@@ -573,6 +574,64 @@ constexpr auto narrow_integral_error(SrcRep value)
     }
     return std::nullopt;
   }
+}
+
+template <typename DestRep, typename SrcRep>
+constexpr auto narrow_numeric_error(SrcRep value)
+    -> std::optional<error::kind> {
+  using dest_type = std::remove_cv_t<DestRep>;
+  using src_type = std::remove_cv_t<SrcRep>;
+
+  if constexpr (std::integral<dest_type> && std::integral<src_type>) {
+    return narrow_integral_error<dest_type>(value);
+  } else if constexpr (std::integral<dest_type> &&
+                       std::floating_point<src_type>) {
+    if (std::isnan(value)) {
+      return error::kind::domain_error;
+    }
+    if (std::isinf(value)) {
+      return value < static_cast<src_type>(0) ? error::kind::underflow
+                                              : error::kind::overflow;
+    }
+
+    auto const normalized = static_cast<long double>(value);
+    auto const min_value =
+        static_cast<long double>(std::numeric_limits<dest_type>::lowest());
+    auto const max_value =
+        static_cast<long double>(std::numeric_limits<dest_type>::max());
+
+    if (normalized < min_value) {
+      return error::kind::underflow;
+    }
+    if (normalized > max_value) {
+      return error::kind::overflow;
+    }
+    return std::nullopt;
+  } else {
+    static_cast<void>(value);
+    return std::nullopt;
+  }
+}
+
+template <typename DestRep, typename SrcRep>
+constexpr auto safe_numeric_cast(SrcRep value) noexcept -> DestRep {
+  using dest_type = std::remove_cv_t<DestRep>;
+  using src_type = std::remove_cv_t<SrcRep>;
+
+  if constexpr (std::integral<dest_type> && std::floating_point<src_type>) {
+    if (auto const kind = narrow_numeric_error<dest_type>(value);
+        kind.has_value()) {
+      if (*kind == error::kind::overflow) {
+        return std::numeric_limits<dest_type>::max();
+      }
+      if (*kind == error::kind::underflow) {
+        return std::numeric_limits<dest_type>::lowest();
+      }
+      return dest_type{};
+    }
+  }
+
+  return static_cast<dest_type>(value);
 }
 } // namespace details
 
