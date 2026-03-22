@@ -390,7 +390,7 @@ constexpr auto checked_bit_not(T lhs) -> policy::value::decision<T> {
   }
 
   return make_error<T>(policy::error::kind::unspecified,
-                       "checked bitwise not not supported for negotiated "
+                       "checked bitwise not supported for negotiated "
                        "common type",
                        lhs);
 }
