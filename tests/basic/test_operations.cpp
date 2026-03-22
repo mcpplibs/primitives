@@ -644,6 +644,103 @@ TEST(OperationsTest, PrimitiveAliasMixesWithBuiltinArithmeticExplicitly) {
   EXPECT_EQ(result->value(), 43);
 }
 
+TEST(OperationsTest, MixedBinaryOperationsSupportUnderlyingOnBothSides) {
+  using value_t = primitive<int, policy::value::checked,
+                            policy::type::compatible, policy::error::expected>;
+
+  auto const lhs = value_t{40};
+  short const rhs = 2;
+
+  auto const apply_lr = operations::apply<operations::Addition>(lhs, rhs);
+  auto const apply_rl = operations::apply<operations::Addition>(rhs, lhs);
+  auto const add_lr = operations::add(lhs, rhs);
+  auto const add_rl = operations::add(rhs, lhs);
+  auto const sub_lr = operations::sub(lhs, rhs);
+  auto const sub_rl = operations::sub(rhs, lhs);
+  auto const div_lr = operations::div(lhs, rhs);
+  auto const div_rl = operations::div(rhs, lhs);
+  auto const cmp_lr = operations::three_way_compare(lhs, rhs);
+  auto const cmp_rl = operations::three_way_compare(rhs, lhs);
+
+  static_assert(std::is_same_v<typename decltype(apply_lr)::value_type, value_t>);
+  static_assert(std::is_same_v<typename decltype(apply_rl)::value_type, value_t>);
+  static_assert(std::is_same_v<typename decltype(add_lr)::value_type, value_t>);
+  static_assert(std::is_same_v<typename decltype(add_rl)::value_type, value_t>);
+  static_assert(std::is_same_v<typename decltype(cmp_lr)::value_type,
+                               std::strong_ordering>);
+  static_assert(std::is_same_v<typename decltype(cmp_rl)::value_type,
+                               std::strong_ordering>);
+
+  ASSERT_TRUE(apply_lr.has_value());
+  ASSERT_TRUE(apply_rl.has_value());
+  ASSERT_TRUE(add_lr.has_value());
+  ASSERT_TRUE(add_rl.has_value());
+  ASSERT_TRUE(sub_lr.has_value());
+  ASSERT_TRUE(sub_rl.has_value());
+  ASSERT_TRUE(div_lr.has_value());
+  ASSERT_TRUE(div_rl.has_value());
+  ASSERT_TRUE(cmp_lr.has_value());
+  ASSERT_TRUE(cmp_rl.has_value());
+
+  EXPECT_EQ(apply_lr->value(), 42);
+  EXPECT_EQ(apply_rl->value(), 42);
+  EXPECT_EQ(add_lr->value(), 42);
+  EXPECT_EQ(add_rl->value(), 42);
+  EXPECT_EQ(sub_lr->value(), 38);
+  EXPECT_EQ(sub_rl->value(), -38);
+  EXPECT_EQ(div_lr->value(), 20);
+  EXPECT_EQ(div_rl->value(), 0);
+  EXPECT_EQ(*cmp_lr, std::strong_ordering::greater);
+  EXPECT_EQ(*cmp_rl, std::strong_ordering::less);
+}
+
+TEST(OperationsTest, MixedFrameworkOperatorsSupportUnderlyingOnBothSides) {
+  using namespace mcpplibs::primitives::operators;
+  using value_t = primitive<int, policy::value::checked,
+                            policy::type::compatible, policy::error::expected>;
+
+  auto const lhs = value_t{40};
+  short const rhs = 2;
+
+  auto const add_lr = lhs + rhs;
+  auto const add_rl = rhs + lhs;
+  auto const sub_lr = lhs - rhs;
+  auto const sub_rl = rhs - lhs;
+  auto const eq_lr = lhs == static_cast<short>(40);
+  auto const eq_rl = static_cast<short>(40) == lhs;
+  auto const ne_lr = lhs != static_cast<short>(41);
+  auto const ne_rl = static_cast<short>(41) != lhs;
+  auto const cmp_lr = lhs <=> rhs;
+  auto const cmp_rl = rhs <=> lhs;
+
+  static_assert(std::is_same_v<typename decltype(cmp_lr)::value_type,
+                               std::strong_ordering>);
+  static_assert(std::is_same_v<typename decltype(cmp_rl)::value_type,
+                               std::strong_ordering>);
+
+  ASSERT_TRUE(add_lr.has_value());
+  ASSERT_TRUE(add_rl.has_value());
+  ASSERT_TRUE(sub_lr.has_value());
+  ASSERT_TRUE(sub_rl.has_value());
+  ASSERT_TRUE(eq_lr.has_value());
+  ASSERT_TRUE(eq_rl.has_value());
+  ASSERT_TRUE(ne_lr.has_value());
+  ASSERT_TRUE(ne_rl.has_value());
+  ASSERT_TRUE(cmp_lr.has_value());
+  ASSERT_TRUE(cmp_rl.has_value());
+
+  EXPECT_EQ(add_lr->value(), 42);
+  EXPECT_EQ(add_rl->value(), 42);
+  EXPECT_EQ(sub_lr->value(), 38);
+  EXPECT_EQ(sub_rl->value(), -38);
+  EXPECT_EQ(eq_lr->value(), 1);
+  EXPECT_EQ(eq_rl->value(), 1);
+  EXPECT_EQ(ne_lr->value(), 1);
+  EXPECT_EQ(ne_rl->value(), 1);
+  EXPECT_EQ(*cmp_lr, std::strong_ordering::greater);
+  EXPECT_EQ(*cmp_rl, std::strong_ordering::less);
+}
+
 TEST(OperationsTest, OperatorEqualDelegatesToDispatcher) {
   using namespace mcpplibs::primitives::operators;
   using value_t = primitive<int, policy::value::checked, policy::type::strict,
