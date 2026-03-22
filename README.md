@@ -1,166 +1,192 @@
 # mcpplibs primitives
 
-> C++23 模块化原语库 - `import mcpplibs.primitives;`
+> C++23 modular primitives library - `import mcpplibs.primitives;`
 
-本仓库实现了底层强类型 primitive 基础设施（traits、policy、underlying 类型分类），供上层 `Integer`/`Floating`/`Boolean` 等封装使用。
+[![d2x](https://img.shields.io/badge/d2x-ok-green.svg)](https://github.com/d2learn/d2x)
+[![Online-ebook](https://img.shields.io/badge/online-ebook-orange.svg)](https://github.com/d2learn/d2x)
+[![License](https://img.shields.io/badge/license-Apache_2.0-blue.svg)](LICENSE-CODE)
+
+| [中文](README.zh.md) - [English](README.md) - [Forum](https://mcpp.d2learn.org/forum) |
+|---------------------------------------------------------------------------------|
+| [用户文档](docs/guide/zh/README.md) - [User Documentation](docs/guide/en/README.md) |
+| [API文档](docs/guide/api/README.md) - [API Documentation](docs/api/en/README.md)  |
+
+This repository provides configurable `primitive` infrastructure (`underlying traits`, `policy`, and `operations/dispatcher`) to unify numeric behavior, error handling, and concurrency access semantics.
 
 > [!WARNING]
-> 目前项目还在开发中，API会随着后续演进而改变
+> The project is still evolving quickly, and APIs may change.
 
-## 特性
+## Features
 
-- **C++23 模块** — `import mcpplibs.primitives;`
-- **双构建系统** — 同时支持 xmake 和 CMake
-- **CI/CD** — GitHub Actions 多平台构建（Linux / macOS / Windows）
-- **标准化结构** — 遵循 [mcpp-style-ref](https://github.com/mcpp-community/mcpp-style-ref) 编码规范
-- **开箱即用** — 包含示例、测试和架构文档
+- **C++23 modules** — `import mcpplibs.primitives;`
+- **Dual build systems** — both xmake and CMake are supported
+- **Policy-driven behavior** — value/type/error/concurrency policies are composable
+- **Mixed operations support** — binary operations between `primitive` and `underlying` are supported
+- **Concurrency access APIs** — `primitive::load/store/compare_exchange`
 
 ## Operators
 
-该库在 `primitive` 类型上重载了常见的 C++ 算术、位运算和一元运算符。算术行为受策略（policy）控制：
+The library provides unary, arithmetic, bitwise, and comparison operations for `primitive`.  
+Arithmetic paths are dispatched through a unified pipeline and return `std::expected<..., policy::error::kind>`.
 
-- 值策略（`policy::value::checked` / `policy::value::saturating` / `policy::value::unchecked`）决定溢出行为；
-- 错误策略（`policy::error::throwing` / `policy::error::expected` / `policy::error::terminate`）决定在 `policy::value::checked` 且发生错误时的处理方式。
+- Value policies (`policy::value::checked` / `policy::value::saturating` / `policy::value::unchecked`) define overflow behavior.
+- Error policies (`policy::error::throwing` / `policy::error::expected` / `policy::error::terminate`) define how errors are propagated.
 
-示例：
+Example:
 
 ```cpp
+import std;
 import mcpplibs.primitives;
+
 using namespace mcpplibs::primitives;
-using namespace mcpplibs::primitives::policy;
+using namespace mcpplibs::primitives::operators;
 
-primitive<int> a{1}, b{2};
-auto c = a + b; // primitive<int>
+primitive<int> a{1};
+primitive<int> b{2};
+auto sum = a + b; // std::expected<primitive<int>, policy::error::kind>
 
-primitive<int, policy::error::expected> x{std::numeric_limits<int>::max()};
-primitive<int, policy::error::expected> y{1};
-auto maybe = x + y; // std::expected<primitive<int, policy::error::expected>, policy::error::kind>
+using checked_t =
+    primitive<int, policy::value::checked, policy::error::expected>;
+auto maybe_overflow =
+    checked_t{std::numeric_limits<int>::max()} + checked_t{1};
 ```
 
-## Policy 协议命名空间
+## Policy Protocol Namespaces
 
-自定义 policy 时，协议入口已按职责拆分到子命名空间：
+When implementing custom policies, protocol entry points are split by responsibility:
 
 - `policy::type::handler` / `policy::type::handler_available`
 - `policy::concurrency::handler` / `policy::concurrency::injection`
 - `policy::value::handler` / `policy::value::decision`
 - `policy::error::handler` / `policy::error::request` / `policy::error::kind`
 
-预设 policy 标签也按类别归档：
+Built-in policy tags:
 
 - `policy::value::{checked, unchecked, saturating}`
 - `policy::type::{strict, compatible, transparent}`
 - `policy::error::{throwing, expected, terminate}`
 - `policy::concurrency::{none, fenced, fenced_relaxed, fenced_acq_rel, fenced_seq_cst}`
 
-并发策略说明：
+Concurrency notes:
 
-- `fenced*` 系列是操作级并发语义，通过策略注入内存序 fence；
-- `primitive` 存储仍保持统一、零开销布局，不引入额外存储层抽象；
-- `primitive::load/store/compare_exchange` 由并发策略的协议实现提供，若策略未实现该协议会在编译期报错。
+- `fenced*` policies provide operation-level concurrency semantics with injected memory-order fences.
+- `primitive` storage keeps a uniform, zero-extra-storage abstraction.
+- `primitive::load/store/compare_exchange` are provided by concurrency policy protocols and fail at compile time if unsupported.
 
-示例（并发访问 API）：
+Example (concurrent access APIs):
 
 ```cpp
 using shared_t = primitive<int, policy::value::checked,
-                                                     policy::concurrency::fenced_acq_rel,
-                                                     policy::error::expected>;
+                           policy::concurrency::fenced_acq_rel,
+                           policy::error::expected>;
 
 shared_t v{1};
 v.store(2);
 auto expected = 2;
 if (v.compare_exchange(expected, 3)) {
-    auto now = v.load();
-    (void)now;
+  auto now = v.load();
+  (void)now;
 }
 ```
 
-默认策略位于 `policy::defaults`：
+Default policies are available under `policy::defaults`:
 
 - `policy::defaults::value`
 - `policy::defaults::type`
 - `policy::defaults::error`
 - `policy::defaults::concurrency`
 
+## Examples
 
-## 项目结构
+- `ex01_default_arithmetic`: Basic arithmetic under default policies.
+- `ex02_type_policy`: Type negotiation with `strict/compatible`, including how type policy affects construction from `underlying`.
+- `ex03_value_policy`: `checked/unchecked/saturating` behavior, including mixed binary operations with `underlying`.
+- `ex04_error_policy`: Error-handling behavior across different error policies.
+- `ex05_concurrency_policy`: Representative mixed read/write concurrency workload (writer `store` + reader `add/sub` + `CAS`).
+- `ex06_custom_underlying`: Custom underlying traits, rep validation, and common-rep extension.
+- `ex07_custom_policy`: Custom policy protocol implementation.
+- `ex08_custom_operation`: Custom operation extension.
+
+## Project Layout
 
 ```
 mcpplibs-primitives/
-├── src/                    # 模块源码
-│   └── primitive.cppm      # 主模块接口（导出 traits 与 primitive 聚合）
-├── tests/                  # 测试
-│   ├── main.cpp
-│   └── xmake.lua
-├── examples/               # 示例
-│   ├── basic.cpp
-│   └── xmake.lua
-├── docs/                   # 文档
-│   └── architecture.md
-├── .github/workflows/      # CI/CD
-│   └── ci.yml
-├── xmake.lua               # xmake 构建配置
-├── CMakeLists.txt           # CMake 构建配置
-└── config.xlings            # xlings 工具链配置
+├── src/                        # module sources
+│   ├── primitives.cppm         # top-level aggregate module
+│   ├── primitive/              # primitive definitions and traits
+│   ├── policy/                 # policy tags and protocol implementations
+│   ├── operations/             # operation tags / dispatcher / operators
+│   └── underlying/             # underlying traits and common_rep
+├── examples/                   # ex01 ~ ex08 examples
+├── tests/                      # test entry and basic test suite
+├── xmake.lua                   # xmake build script
+├── CMakeLists.txt              # CMake build script
+└── .xlings.json                # xlings package descriptor
 ```
 
-## 快速开始
+## Quick Start
 
 ```cpp
 import std;
 import mcpplibs.primitives;
 
 int main() {
-    static_assert(mcpplibs::primitives::std_integer<int>);
-    return 0;
+  using namespace mcpplibs::primitives;
+
+  using value_t = primitive<int, policy::error::expected>;
+  auto const result = operations::add(value_t{40}, value_t{2});
+  return (result.has_value() && result->value() == 42) ? 0 : 1;
 }
 ```
 
-## 安装与配置
+## Installation and Setup
 
 ```bash
 xlings install
 ```
 
-## 构建与运行
+## Build and Run
 
-**使用 xmake**
+**Using xmake**
 
 ```bash
-xmake build                 # 构建库
-xmake run basic             # 运行基础示例
-xmake run primitives_test   # 运行测试
+xmake build mcpplibs-primitives
+xmake run basic                    # equivalent to ex01_default_arithmetic
+xmake run ex05_concurrency_policy
+xmake run primitives_test
 ```
 
-**使用 CMake**
+**Using CMake**
 
 ```bash
 cmake -B build -G Ninja
-cmake --build build
-ctest --test-dir build
+cmake --build build --target mcpplibs-primitives
+cmake --build build --target ex01_default_arithmetic
+cmake --build build --target basic_tests
+ctest --test-dir build --output-on-failure
 ```
 
-## 集成到构建工具
+## Build System Integration
 
 ### xmake
 
 ```lua
 add_repositories("mcpplibs-index https://github.com/mcpplibs/mcpplibs-index.git")
 
-add_requires("templates")
+add_requires("primitives")
 
 target("myapp")
     set_kind("binary")
     set_languages("c++23")
     add_files("main.cpp")
-    add_packages("templates")
+    add_packages("primitives")
     set_policy("build.c++.modules", true)
 ```
 
-## 相关链接
+## Related Links
 
-- [mcpp-style-ref | 现代C++编码/项目风格参考](https://github.com/mcpp-community/mcpp-style-ref)
-- [mcpplibs/cmdline | 命令行解析库](https://github.com/mcpplibs/cmdline)
-- [mcpp社区官网](https://mcpp.d2learn.org)
-- [mcpp | 现代C++爱好者论坛](https://mcpp.d2learn.org/forum)
-- [入门教程: 动手学现代C++](https://github.com/Sunrisepeak/mcpp-standard)
+- [mcpp-style-ref | Modern C++ coding and project style reference](https://github.com/mcpp-community/mcpp-style-ref)
+- [d2mystl | Build a mini STL from scratch](https://github.com/mcpp-community/d2mystl)
+- [mcpp community website](https://mcpp.d2learn.org)
+- [mcpp forum](https://mcpp.d2learn.org/forum)
+- [Getting Started: Learn Modern C++ by Building](https://github.com/Sunrisepeak/mcpp-standard)
