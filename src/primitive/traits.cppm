@@ -34,13 +34,13 @@ struct traits<primitive<T, Policies...>> {
   using value_type = T;
   using policies = std::tuple<Policies...>;
   using value_policy =
-      policy::resolve_policy_t<policy_category::value, Policies...>;
+      policy::resolve_policy_t<policy::category::value, Policies...>;
   using type_policy =
-      policy::resolve_policy_t<policy_category::type, Policies...>;
+      policy::resolve_policy_t<policy::category::type, Policies...>;
   using error_policy =
-      policy::resolve_policy_t<policy_category::error, Policies...>;
+      policy::resolve_policy_t<policy::category::error, Policies...>;
   using concurrency_policy =
-      policy::resolve_policy_t<policy_category::concurrency, Policies...>;
+      policy::resolve_policy_t<policy::category::concurrency, Policies...>;
 };
 
 } // namespace mcpplibs::primitives::meta
