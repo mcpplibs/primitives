@@ -15,15 +15,15 @@ import mcpplibs.primitives.underlying;
 
 export namespace mcpplibs::primitives::operations {
 
-template <operation OpTag, primitives::meta::primitive_type Lhs,
-          primitives::meta::primitive_type Rhs,
+template <operation OpTag, meta::primitive_type Lhs,
+          meta::primitive_type Rhs,
           typename ErrorPayload = policy::error::kind>
 struct dispatcher_meta {
   using lhs_primitive = std::remove_cvref_t<Lhs>;
   using rhs_primitive = std::remove_cvref_t<Rhs>;
 
-  using lhs_traits = primitives::meta::traits<lhs_primitive>;
-  using rhs_traits = primitives::meta::traits<rhs_primitive>;
+  using lhs_traits = meta::traits<lhs_primitive>;
+  using rhs_traits = meta::traits<rhs_primitive>;
 
   using lhs_value_type = lhs_traits::value_type;
   using rhs_value_type = rhs_traits::value_type;
@@ -31,15 +31,15 @@ struct dispatcher_meta {
   using lhs_rep = underlying::traits<lhs_value_type>::rep_type;
   using rhs_rep = underlying::traits<rhs_value_type>::rep_type;
 
-  using lhs_type_policy = typename lhs_traits::type_policy;
-  using lhs_value_policy = typename lhs_traits::value_policy;
-  using lhs_error_policy = typename lhs_traits::error_policy;
-  using lhs_concurrency_policy = typename lhs_traits::concurrency_policy;
+  using lhs_type_policy = lhs_traits::type_policy;
+  using lhs_value_policy = lhs_traits::value_policy;
+  using lhs_error_policy = lhs_traits::error_policy;
+  using lhs_concurrency_policy = lhs_traits::concurrency_policy;
 
-  using rhs_type_policy = typename rhs_traits::type_policy;
-  using rhs_value_policy = typename rhs_traits::value_policy;
-  using rhs_error_policy = typename rhs_traits::error_policy;
-  using rhs_concurrency_policy = typename rhs_traits::concurrency_policy;
+  using rhs_type_policy = rhs_traits::type_policy;
+  using rhs_value_policy = rhs_traits::value_policy;
+  using rhs_error_policy = rhs_traits::error_policy;
+  using rhs_concurrency_policy = rhs_traits::concurrency_policy;
 
   static constexpr bool policy_group_consistent =
       std::is_same_v<lhs_type_policy, rhs_type_policy> &&
