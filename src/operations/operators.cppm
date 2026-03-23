@@ -510,9 +510,6 @@ constexpr auto apply_assign(Lhs &lhs, Rhs const &rhs)
   using lhs_value_type = lhs_traits::value_type;
   using lhs_value_policy = lhs_traits::value_policy;
   using lhs_rep = underlying::traits<lhs_value_type>::rep_type;
-  using out_primitive = primitive_dispatch_result_t<OpTag, Lhs, Rhs,
-                                           ErrorPayload>::value_type;
-  using common_rep = meta::traits<out_primitive>::value_type;
 
   auto out = apply<OpTag, Lhs, Rhs, ErrorPayload>(lhs, rhs);
   if (!out.has_value()) {
