@@ -17,6 +17,13 @@ import mcpplibs.primitives.policy.handler;
 import mcpplibs.primitives.policy.impl;
 import mcpplibs.primitives.underlying.traits;
 
+namespace mcpplibs::primitives::operations {
+
+template <typename T>
+concept underlying_operand = underlying_type<std::remove_cvref_t<T>>;
+
+} // namespace mcpplibs::primitives::operations
+
 export namespace mcpplibs::primitives::operations {
 
 namespace details {
@@ -67,9 +74,6 @@ using primitive_dispatch_result_t = std::expected<meta::make_primitive_t<
         typename dispatcher_meta<OpTag, Lhs, Rhs, ErrorPayload>::common_rep,
         typename meta::traits<Lhs>::policies>,
     ErrorPayload>;
-
-template <typename T>
-concept underlying_operand = underlying_type<std::remove_cvref_t<T>>;
 
 template <meta::primitive_type Primitive, underlying_operand Underlying>
 using mixed_bridge_primitive_t = meta::make_primitive_t<
