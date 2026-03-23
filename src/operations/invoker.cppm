@@ -781,13 +781,13 @@ constexpr auto make_div_zero(char const *reason)
   return make_error<CommonRep>(policy::error::kind::divide_by_zero, reason);
 }
 
-constexpr auto apply_runtime_fence(bool enabled,
-                                   std::memory_order order) noexcept -> void {
+constexpr auto apply_runtime_fence(const bool enabled,
+                                   const std::memory_order order) noexcept -> void {
   if (!enabled) {
     return;
   }
 
-  if (!std::is_constant_evaluated()) {
+  if !consteval {
     std::atomic_thread_fence(order);
   }
 }
