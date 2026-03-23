@@ -22,10 +22,6 @@ namespace mcpplibs::primitives::operations {
 template <typename T>
 concept underlying_operand = underlying_type<std::remove_cvref_t<T>>;
 
-} // namespace mcpplibs::primitives::operations
-
-export namespace mcpplibs::primitives::operations {
-
 namespace details {
 template <typename CommonRep, typename = void> struct three_way_ordering {
   using type = std::strong_ordering;
@@ -67,6 +63,10 @@ constexpr auto decode_three_way_code(CommonRep const &code) -> Ordering {
 }
 
 } // namespace details
+
+} // namespace mcpplibs::primitives::operations
+
+export namespace mcpplibs::primitives::operations {
 
 template <operation OpTag, meta::primitive_type Lhs, meta::primitive_type Rhs,
           typename ErrorPayload = policy::error::kind>

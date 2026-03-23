@@ -17,9 +17,8 @@ import mcpplibs.primitives.policy.handler;
 import mcpplibs.primitives.policy.impl;
 import mcpplibs.primitives.policy.traits;
 
-export namespace mcpplibs::primitives::operations::runtime {
 
-namespace details {
+namespace mcpplibs::primitives::operations::runtime::details {
 
 template <typename CommonRep>
 constexpr auto make_error(policy::error::kind kind, char const *reason,
@@ -792,7 +791,11 @@ constexpr auto apply_runtime_fence(const bool enabled,
   }
 }
 
-} // namespace details
+} // namespace mcpplibs::primitives::operations::runtime::details
+
+
+
+export namespace mcpplibs::primitives::operations::runtime {
 
 template <operation OpTag, policy::value_policy ValuePolicy, typename CommonRep>
 struct op_binding {
