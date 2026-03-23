@@ -19,6 +19,79 @@ import mcpplibs.primitives.policy.traits;
 import mcpplibs.primitives.policy.handler;
 import mcpplibs.primitives.underlying.traits;
 
+namespace mcpplibs::primitives::policy::details {
+
+template <typename T, bool = std::is_trivially_copyable_v<T>>
+struct atomic_ref_alignment_compatible : std::false_type {};
+
+template <typename T>
+struct atomic_ref_alignment_compatible<T, true>
+    : std::bool_constant<(alignof(T) >=
+                          std::atomic_ref<T>::required_alignment)> {};
+
+template <typename T>
+inline constexpr bool atomic_ref_compatible_v =
+    atomic_ref_alignment_compatible<T>::value;
+
+template <typename T> constexpr void assert_atomic_ref_compatible() {
+  static_assert(std::is_trivially_copyable_v<T>,
+                "concurrency::handler atomic access requires trivially "
+                "copyable CommonRep");
+  static_assert(
+      atomic_ref_alignment_compatible<T>::value,
+      "concurrency::handler atomic access requires alignof(CommonRep) to "
+      "satisfy std::atomic_ref<CommonRep>::required_alignment");
+}
+
+template <typename T>
+concept has_underlying_rep_not_equal =
+    underlying_type<T> &&
+    requires(T const &lhs, T const &rhs) {
+      {
+        underlying::traits<std::remove_cv_t<T>>::to_rep(lhs) !=
+        underlying::traits<std::remove_cv_t<T>>::to_rep(rhs)
+      } -> std::convertible_to<bool>;
+    };
+
+template <typename T>
+inline constexpr bool none_compare_exchange_available_v =
+    has_underlying_rep_not_equal<T>;
+
+template <typename OpTag>
+inline constexpr bool is_arithmetic_operation_v =
+    operations::op_has_capability_v<OpTag, operations::capability::arithmetic>;
+
+template <typename T>
+inline constexpr bool is_boolean_or_character_v = std_bool<T> || std_char<T>;
+
+template <typename OpTag, typename LhsRep, typename RhsRep>
+inline constexpr bool rejects_arithmetic_for_boolean_or_character_v =
+    is_arithmetic_operation_v<OpTag> &&
+    (is_boolean_or_character_v<LhsRep> || is_boolean_or_character_v<RhsRep>);
+
+template <typename LhsRep, typename RhsRep>
+inline constexpr bool has_non_void_common_rep_v =
+    has_common_rep<LhsRep, RhsRep> &&
+    !std::same_as<common_rep_t<LhsRep, RhsRep>, void>;
+
+template <typename LhsRep, typename RhsRep>
+inline constexpr bool has_same_underlying_category_v =
+    underlying::traits<std::remove_cv_t<LhsRep>>::enabled &&
+    underlying::traits<std::remove_cv_t<RhsRep>>::enabled &&
+    (underlying::traits<std::remove_cv_t<LhsRep>>::kind ==
+     underlying::traits<std::remove_cv_t<RhsRep>>::kind);
+
+template <typename T>
+auto atomic_ref_load(T const &value, std::memory_order order) noexcept -> T {
+  assert_atomic_ref_compatible<T>();
+  // libc++ rejects std::atomic_ref<const T>; load through a non-mutating view.
+  auto &mutable_value = const_cast<T &>(value);
+  std::atomic_ref<T> ref(mutable_value);
+  return ref.load(order);
+}
+
+} // namespace mcpplibs::primitives::policy::details
+
 export namespace mcpplibs::primitives::policy {
 
 namespace value {
@@ -137,79 +210,6 @@ using type = type::strict;
 using error = error::throwing;
 using concurrency = concurrency::none;
 } // namespace defaults
-
-namespace details {
-
-template <typename T, bool = std::is_trivially_copyable_v<T>>
-struct atomic_ref_alignment_compatible : std::false_type {};
-
-template <typename T>
-struct atomic_ref_alignment_compatible<T, true>
-    : std::bool_constant<(alignof(T) >=
-                          std::atomic_ref<T>::required_alignment)> {};
-
-template <typename T>
-inline constexpr bool atomic_ref_compatible_v =
-    atomic_ref_alignment_compatible<T>::value;
-
-template <typename T> constexpr void assert_atomic_ref_compatible() {
-  static_assert(std::is_trivially_copyable_v<T>,
-                "concurrency::handler atomic access requires trivially "
-                "copyable CommonRep");
-  static_assert(
-      atomic_ref_alignment_compatible<T>::value,
-      "concurrency::handler atomic access requires alignof(CommonRep) to "
-      "satisfy std::atomic_ref<CommonRep>::required_alignment");
-}
-
-template <typename T>
-concept has_underlying_rep_not_equal =
-    underlying_type<T> &&
-    requires(T const &lhs, T const &rhs) {
-      {
-        underlying::traits<std::remove_cv_t<T>>::to_rep(lhs) !=
-        underlying::traits<std::remove_cv_t<T>>::to_rep(rhs)
-      } -> std::convertible_to<bool>;
-    };
-
-template <typename T>
-inline constexpr bool none_compare_exchange_available_v =
-    has_underlying_rep_not_equal<T>;
-
-template <typename OpTag>
-inline constexpr bool is_arithmetic_operation_v =
-    operations::op_has_capability_v<OpTag, operations::capability::arithmetic>;
-
-template <typename T>
-inline constexpr bool is_boolean_or_character_v = std_bool<T> || std_char<T>;
-
-template <typename OpTag, typename LhsRep, typename RhsRep>
-inline constexpr bool rejects_arithmetic_for_boolean_or_character_v =
-    is_arithmetic_operation_v<OpTag> &&
-    (is_boolean_or_character_v<LhsRep> || is_boolean_or_character_v<RhsRep>);
-
-template <typename LhsRep, typename RhsRep>
-inline constexpr bool has_non_void_common_rep_v =
-    has_common_rep<LhsRep, RhsRep> &&
-    !std::same_as<common_rep_t<LhsRep, RhsRep>, void>;
-
-template <typename LhsRep, typename RhsRep>
-inline constexpr bool has_same_underlying_category_v =
-    underlying::traits<std::remove_cv_t<LhsRep>>::enabled &&
-    underlying::traits<std::remove_cv_t<RhsRep>>::enabled &&
-    (underlying::traits<std::remove_cv_t<LhsRep>>::kind ==
-     underlying::traits<std::remove_cv_t<RhsRep>>::kind);
-
-template <typename T>
-auto atomic_ref_load(T const &value, std::memory_order order) noexcept -> T {
-  assert_atomic_ref_compatible<T>();
-  // libc++ rejects std::atomic_ref<const T>; load through a non-mutating view.
-  auto &mutable_value = const_cast<T &>(value);
-  std::atomic_ref<T> ref(mutable_value);
-  return ref.load(order);
-}
-
-} // namespace details
 
 // Default protocol specializations.
 template <operations::operation OpTag, typename LhsRep, typename RhsRep>
