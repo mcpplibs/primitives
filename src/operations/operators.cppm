@@ -61,6 +61,9 @@ constexpr auto decode_three_way_code(CommonRep const &code) -> Ordering {
 
 } // namespace details
 
+template <typename T>
+concept primitive_instance = meta::primitive_type<T>;
+
 template <operation OpTag, primitive_instance Lhs, primitive_instance Rhs,
           typename ErrorPayload = policy::error::kind>
 using primitive_dispatch_result_t = std::expected<meta::make_primitive_t<

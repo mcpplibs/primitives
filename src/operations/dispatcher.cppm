@@ -15,13 +15,8 @@ import mcpplibs.primitives.underlying;
 
 export namespace mcpplibs::primitives::operations {
 
-template <typename T>
-concept primitive_instance = requires {
-  typename primitives::meta::traits<
-      std::remove_cvref_t<T>>::value_type;
-};
-
-template <operation OpTag, primitive_instance Lhs, primitive_instance Rhs,
+template <operation OpTag, primitives::meta::primitive_type Lhs,
+          primitives::meta::primitive_type Rhs,
           typename ErrorPayload = policy::error::kind>
 struct dispatcher_meta {
   using lhs_primitive = std::remove_cvref_t<Lhs>;
@@ -85,7 +80,8 @@ struct dispatcher_meta {
                                       ErrorPayload>;
 };
 
-template <operation OpTag, primitive_instance Lhs, primitive_instance Rhs,
+template <operation OpTag, primitives::meta::primitive_type Lhs,
+          primitives::meta::primitive_type Rhs,
           typename ErrorPayload = policy::error::kind>
 using dispatch_result_t = std::expected<
     typename dispatcher_meta<OpTag, Lhs, Rhs, ErrorPayload>::common_rep,
@@ -93,7 +89,8 @@ using dispatch_result_t = std::expected<
 
 // Dispatcher pipeline: compile-time negotiation plus runtime chain
 // (concurrency -> value -> error) through selected policy handlers.
-template <operation OpTag, primitive_instance Lhs, primitive_instance Rhs,
+template <operation OpTag, primitives::meta::primitive_type Lhs,
+          primitives::meta::primitive_type Rhs,
           typename ErrorPayload = policy::error::kind>
 constexpr auto dispatch(Lhs const &lhs, Rhs const &rhs)
     -> dispatch_result_t<OpTag, Lhs, Rhs, ErrorPayload> {
