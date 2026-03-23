@@ -51,6 +51,43 @@ using default_policies =
 template <typename T>
 using traits = details::primitive_traits_impl<std::remove_cvref_t<T>>;
 
+template <typename T>
+concept primitive_type = requires {
+  typename traits<T>::value_type;
+  typename traits<T>::policies;
+  typename traits<T>::value_policy;
+  typename traits<T>::type_policy;
+  typename traits<T>::error_policy;
+  typename traits<T>::concurrency_policy;
+};
+
+template <typename T>
+concept boolean =
+    primitive_type<T> &&
+    (underlying::traits<typename traits<T>::value_type>::kind ==
+     underlying::category::boolean);
+
+template <typename T>
+concept character =
+    primitive_type<T> &&
+    (underlying::traits<typename traits<T>::value_type>::kind ==
+     underlying::category::character);
+
+template <typename T>
+concept integer =
+    primitive_type<T> &&
+    (underlying::traits<typename traits<T>::value_type>::kind ==
+     underlying::category::integer);
+
+template <typename T>
+concept floating =
+    primitive_type<T> &&
+    (underlying::traits<typename traits<T>::value_type>::kind ==
+     underlying::category::floating);
+
+template <typename T>
+concept numeric = integer<T> || floating<T>;
+
 } // namespace mcpplibs::primitives::meta
 
 // Backward-compatible aliases for existing downstream users.
