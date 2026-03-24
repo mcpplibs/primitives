@@ -6,7 +6,6 @@ export module mcpplibs.primitives.primitive.traits;
 
 import mcpplibs.primitives.primitive.impl;
 import mcpplibs.primitives.policy.traits;
-import mcpplibs.primitives.policy.impl;
 import mcpplibs.primitives.policy.utility;
 import mcpplibs.primitives.underlying.traits;
 
@@ -45,8 +44,10 @@ template <underlying_type T, typename PoliciesTuple>
 using make_primitive_t = make_primitive<T, PoliciesTuple>::type;
 
 using default_policies =
-    std::tuple<policy::defaults::value, policy::defaults::type,
-               policy::defaults::error, policy::defaults::concurrency>;
+    std::tuple<policy::resolve_policy_t<policy::category::value>,
+               policy::resolve_policy_t<policy::category::type>,
+               policy::resolve_policy_t<policy::category::error>,
+               policy::resolve_policy_t<policy::category::concurrency>>;
 
 template <typename T>
 using traits = details::primitive_traits_impl<std::remove_cvref_t<T>>;
