@@ -63,6 +63,9 @@ concept primitive_type = requires {
 };
 
 template <typename T>
+concept primitive_operand = primitive_type<std::remove_cvref_t<T>>;
+
+template <typename T>
 concept boolean =
     primitive_type<T> &&
     (underlying::traits<typename traits<T>::value_type>::kind ==
