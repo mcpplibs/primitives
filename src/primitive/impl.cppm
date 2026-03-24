@@ -64,7 +64,7 @@ private:
 
     auto const source_rep = underlying::traits<source_value_type>::to_rep(source);
     auto const target_rep =
-        conversion::underlying::safe_numeric_cast<target_rep_type>(
+        conversion::underlying::saturating_cast<target_rep_type>(
             static_cast<source_rep_type>(source_rep));
     return underlying::traits<std::remove_cv_t<Target>>::from_rep(target_rep);
   }
