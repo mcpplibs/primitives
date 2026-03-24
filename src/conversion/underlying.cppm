@@ -14,6 +14,18 @@ import mcpplibs.primitives.underlying.traits;
 
 namespace mcpplibs::primitives::conversion::details {
 
+template <typename T>
+concept integral_like = std::integral<std::remove_cvref_t<T>>;
+
+template <typename T>
+concept numeric_like = integral_like<T> || std::floating_point<std::remove_cvref_t<T>>;
+
+template <typename DestRep, typename SrcRep>
+concept statically_castable =
+    requires(SrcRep value) {
+      static_cast<std::remove_cv_t<DestRep>>(value);
+    };
+
 template <typename DestRep, typename SrcRep>
 constexpr auto narrow_integral_error(SrcRep value)
     -> std::optional<risk::kind> {
@@ -114,18 +126,19 @@ constexpr auto safe_numeric_cast(SrcRep value) noexcept -> DestRep {
 
 export namespace mcpplibs::primitives::conversion::underlying {
 
-template <typename DestRep, typename SrcRep>
+template <details::integral_like DestRep, details::integral_like SrcRep>
 constexpr auto narrow_integral_error(SrcRep value)
     -> std::optional<risk::kind> {
   return details::narrow_integral_error<DestRep>(value);
 }
 
-template <typename DestRep, typename SrcRep>
+template <details::integral_like DestRep, details::numeric_like SrcRep>
 constexpr auto narrow_numeric_error(SrcRep value) -> std::optional<risk::kind> {
   return details::narrow_numeric_error<DestRep>(value);
 }
 
 template <typename DestRep, typename SrcRep>
+  requires details::statically_castable<DestRep, SrcRep>
 constexpr auto safe_numeric_cast(SrcRep value) noexcept -> DestRep {
   return details::safe_numeric_cast<DestRep>(value);
 }
