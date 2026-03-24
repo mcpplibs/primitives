@@ -13,13 +13,14 @@ import mcpplibs.primitives.operations.dispatcher;
 import mcpplibs.primitives.operations.impl;
 import mcpplibs.primitives.primitive.impl;
 import mcpplibs.primitives.primitive.traits;
+import mcpplibs.primitives.conversion.traits;
+import mcpplibs.primitives.conversion.underlying;
 import mcpplibs.primitives.policy.handler;
 import mcpplibs.primitives.policy.impl;
 import mcpplibs.primitives.underlying.traits;
 
-namespace mcpplibs::primitives::operations {
 
-namespace details {
+namespace mcpplibs::primitives::operations::details {
 template <typename CommonRep, typename = void> struct three_way_ordering {
   using type = std::strong_ordering;
 };
@@ -59,9 +60,33 @@ constexpr auto decode_three_way_code(CommonRep const &code) -> Ordering {
   return Ordering::equivalent;
 }
 
-} // namespace details
+constexpr auto to_policy_error_kind(const conversion::risk::kind kind)
+    -> policy::error::kind {
+  switch (kind) {
+  case conversion::risk::kind::overflow:
+    return policy::error::kind::overflow;
+  case conversion::risk::kind::underflow:
+    return policy::error::kind::underflow;
+  case conversion::risk::kind::domain_error:
+    return policy::error::kind::domain_error;
+  default:
+    return policy::error::kind::unspecified;
+  }
+}
 
-} // namespace mcpplibs::primitives::operations
+template <typename ErrorPayload>
+constexpr auto to_error_payload(policy::error::kind kind) -> ErrorPayload {
+  if constexpr (std::same_as<ErrorPayload, policy::error::kind>) {
+    return kind;
+  } else {
+    static_cast<void>(kind);
+    return ErrorPayload{};
+  }
+}
+
+} // namespace mcpplibs::primitives::operations::details
+
+
 
 export namespace mcpplibs::primitives::operations {
 
@@ -517,15 +542,17 @@ constexpr auto apply_assign(Lhs &lhs, Rhs const &rhs)
   if constexpr (std::same_as<lhs_value_policy, policy::value::checked> &&
                 std::integral<lhs_rep>) {
     if (auto const kind =
-            policy::details::narrow_numeric_error<lhs_rep>(assigned_common);
+            conversion::underlying::narrow_numeric_error<lhs_rep>(
+                assigned_common);
         kind.has_value()) {
       return std::unexpected(
-          policy::details::to_error_payload<ErrorPayload>(*kind));
+          details::to_error_payload<ErrorPayload>(
+              details::to_policy_error_kind(*kind)));
     }
   }
 
   auto const assigned_rep =
-      policy::details::safe_numeric_cast<lhs_rep>(assigned_common);
+      conversion::underlying::safe_numeric_cast<lhs_rep>(assigned_common);
   lhs.store(underlying::traits<lhs_value_type>::from_rep(assigned_rep));
   return out;
 }
