@@ -20,10 +20,23 @@ concept integral_like = std::integral<std::remove_cvref_t<T>>;
 template <typename T>
 concept numeric_like = integral_like<T> || std::floating_point<std::remove_cvref_t<T>>;
 
+template <typename T>
+concept custom_numeric_like =
+    requires(std::remove_cvref_t<T> a, std::remove_cvref_t<T> b) {
+      { a + b };
+      { a - b };
+      { a * b };
+      { a / b };
+      { a == b } -> std::convertible_to<bool>;
+    };
+
+template <typename T>
+concept numeric_cast_operand = numeric_like<T> || custom_numeric_like<T>;
+
 template <typename DestRep, typename SrcRep>
 concept statically_castable =
     requires(SrcRep value) {
-      static_cast<std::remove_cv_t<DestRep>>(value);
+      static_cast<std::remove_cvref_t<DestRep>>(value);
     };
 
 template <typename DestRep, typename SrcRep>
@@ -137,7 +150,7 @@ constexpr auto narrow_numeric_error(SrcRep value) -> std::optional<risk::kind> {
   return details::narrow_numeric_error<DestRep>(value);
 }
 
-template <typename DestRep, typename SrcRep>
+template <details::numeric_cast_operand DestRep, details::numeric_cast_operand SrcRep>
   requires details::statically_castable<DestRep, SrcRep>
 constexpr auto safe_numeric_cast(SrcRep value) noexcept -> DestRep {
   return details::safe_numeric_cast<DestRep>(value);
