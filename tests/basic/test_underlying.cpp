@@ -519,6 +519,43 @@ TEST(PrimitiveTraitsTest, MetaPrimitiveConceptsMatchUnderlyingCategory) {
   EXPECT_TRUE((mcpplibs::primitives::meta::floating<floating_t>));
 }
 
+TEST(PrimitiveTraitsTest, MetaPrimitiveLikeConceptsAcceptPrimitiveOrUnderlying) {
+  using boolean_t = mcpplibs::primitives::primitive<bool>;
+  using character_t = mcpplibs::primitives::primitive<char>;
+  using integer_t = mcpplibs::primitives::primitive<int>;
+  using floating_t = mcpplibs::primitives::primitive<double>;
+
+  static_assert(mcpplibs::primitives::meta::primitive_like<boolean_t>);
+  static_assert(mcpplibs::primitives::meta::primitive_like<int>);
+  static_assert(!mcpplibs::primitives::meta::primitive_like<void *>);
+
+  static_assert(mcpplibs::primitives::meta::boolean_like<boolean_t>);
+  static_assert(mcpplibs::primitives::meta::boolean_like<bool>);
+  static_assert(!mcpplibs::primitives::meta::boolean_like<int>);
+
+  static_assert(mcpplibs::primitives::meta::character_like<character_t>);
+  static_assert(mcpplibs::primitives::meta::character_like<char>);
+  static_assert(!mcpplibs::primitives::meta::character_like<int>);
+
+  static_assert(mcpplibs::primitives::meta::integer_like<integer_t>);
+  static_assert(mcpplibs::primitives::meta::integer_like<int>);
+  static_assert(!mcpplibs::primitives::meta::integer_like<char>);
+
+  static_assert(mcpplibs::primitives::meta::floating_like<floating_t>);
+  static_assert(mcpplibs::primitives::meta::floating_like<double>);
+  static_assert(!mcpplibs::primitives::meta::floating_like<int>);
+
+  static_assert(mcpplibs::primitives::meta::numeric_like<integer_t>);
+  static_assert(mcpplibs::primitives::meta::numeric_like<floating_t>);
+  static_assert(mcpplibs::primitives::meta::numeric_like<int>);
+  static_assert(mcpplibs::primitives::meta::numeric_like<double>);
+  static_assert(!mcpplibs::primitives::meta::numeric_like<bool>);
+  static_assert(!mcpplibs::primitives::meta::numeric_like<char>);
+
+  EXPECT_TRUE((mcpplibs::primitives::meta::primitive_like<boolean_t>));
+  EXPECT_TRUE((mcpplibs::primitives::meta::primitive_like<int>));
+}
+
 TEST(PrimitiveTraitsTest,
      UnderlyingTypeRequiresValidRepTypeAndCategoryConsistency) {
   EXPECT_TRUE((mcpplibs::primitives::underlying::traits<BadRep>::enabled));
