@@ -88,6 +88,30 @@ concept floating =
 template <typename T>
 concept numeric = integer<T> || floating<T>;
 
+template <typename T>
+concept primitive_like =
+    primitive_type<T> || underlying_type<std::remove_cvref_t<T>>;
+
+template <typename T>
+concept boolean_like =
+    boolean<T> || boolean_underlying_type<std::remove_cvref_t<T>>;
+
+template <typename T>
+concept character_like =
+    character<T> || character_underlying_type<std::remove_cvref_t<T>>;
+
+template <typename T>
+concept integer_like =
+    integer<T> || integer_underlying_type<std::remove_cvref_t<T>>;
+
+template <typename T>
+concept floating_like =
+    floating<T> || floating_underlying_type<std::remove_cvref_t<T>>;
+
+template <typename T>
+concept numeric_like =
+    numeric<T> || numeric_underlying_type<std::remove_cvref_t<T>>;
+
 } // namespace mcpplibs::primitives::meta
 
 // Backward-compatible aliases for existing downstream users.
