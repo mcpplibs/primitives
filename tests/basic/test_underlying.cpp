@@ -480,6 +480,63 @@ TEST(PrimitiveTraitsTest, LegacyPrimitiveTraitsNamespaceAliasesRemainAvailable) 
   SUCCEED();
 }
 
+TEST(PrimitiveTraitsTest, MetaTraitsExposeValueTypeAndPrimitiveMetadata) {
+  using value_t = mcpplibs::primitives::primitive<
+      short, mcpplibs::primitives::policy::value::checked,
+      mcpplibs::primitives::policy::type::compatible,
+      mcpplibs::primitives::policy::error::expected,
+      mcpplibs::primitives::policy::concurrency::fenced>;
+  using traits_t = mcpplibs::primitives::meta::traits<value_t const &>;
+
+  static_assert(
+      std::same_as<typename traits_t::value_type, typename value_t::value_type>);
+  static_assert(std::same_as<typename traits_t::policies, typename value_t::policies>);
+  static_assert(std::same_as<typename traits_t::value_policy,
+                             mcpplibs::primitives::policy::value::checked>);
+  static_assert(std::same_as<typename traits_t::type_policy,
+                             mcpplibs::primitives::policy::type::compatible>);
+  static_assert(std::same_as<typename traits_t::error_policy,
+                             mcpplibs::primitives::policy::error::expected>);
+  static_assert(std::same_as<typename traits_t::concurrency_policy,
+                             mcpplibs::primitives::policy::concurrency::fenced>);
+
+  SUCCEED();
+}
+
+TEST(PrimitiveTraitsTest, MetaPrimitiveConceptsMatchUnderlyingCategory) {
+  using boolean_t = mcpplibs::primitives::primitive<bool>;
+  using character_t = mcpplibs::primitives::primitive<char>;
+  using integer_t = mcpplibs::primitives::primitive<int>;
+  using floating_t = mcpplibs::primitives::primitive<double>;
+
+  static_assert(mcpplibs::primitives::meta::primitive_type<boolean_t const &>);
+  static_assert(mcpplibs::primitives::meta::primitive_type<integer_t>);
+  static_assert(!mcpplibs::primitives::meta::primitive_type<int>);
+
+  static_assert(mcpplibs::primitives::meta::boolean<boolean_t>);
+  static_assert(!mcpplibs::primitives::meta::boolean<integer_t>);
+
+  static_assert(mcpplibs::primitives::meta::character<character_t>);
+  static_assert(!mcpplibs::primitives::meta::character<boolean_t>);
+
+  static_assert(mcpplibs::primitives::meta::integer<integer_t>);
+  static_assert(!mcpplibs::primitives::meta::integer<character_t>);
+
+  static_assert(mcpplibs::primitives::meta::floating<floating_t>);
+  static_assert(!mcpplibs::primitives::meta::floating<integer_t>);
+
+  static_assert(mcpplibs::primitives::meta::numeric<integer_t>);
+  static_assert(mcpplibs::primitives::meta::numeric<floating_t>);
+  static_assert(!mcpplibs::primitives::meta::numeric<boolean_t>);
+  static_assert(!mcpplibs::primitives::meta::numeric<character_t>);
+  static_assert(!mcpplibs::primitives::meta::numeric<int>);
+
+  EXPECT_TRUE((mcpplibs::primitives::meta::boolean<boolean_t>));
+  EXPECT_TRUE((mcpplibs::primitives::meta::character<character_t>));
+  EXPECT_TRUE((mcpplibs::primitives::meta::integer<integer_t>));
+  EXPECT_TRUE((mcpplibs::primitives::meta::floating<floating_t>));
+}
+
 TEST(PrimitiveTraitsTest,
      UnderlyingTypeRequiresValidRepTypeAndCategoryConsistency) {
   EXPECT_TRUE((mcpplibs::primitives::underlying::traits<BadRep>::enabled));

@@ -14,7 +14,7 @@
 
 ## 正在进行中的计划
 
-- 当前计划目录：`../.github/prompts/`
+- 当前计划目录：`../.agents/docs/plans/`
 
 ## 说明
 

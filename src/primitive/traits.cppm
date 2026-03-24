@@ -1,5 +1,6 @@
 module;
 #include <tuple>
+#include <type_traits>
 
 export module mcpplibs.primitives.primitive.traits;
 
@@ -8,6 +9,26 @@ import mcpplibs.primitives.policy.traits;
 import mcpplibs.primitives.policy.impl;
 import mcpplibs.primitives.policy.utility;
 import mcpplibs.primitives.underlying.traits;
+
+namespace mcpplibs::primitives::meta::details {
+
+template <typename T> struct primitive_traits_impl;
+
+template <underlying_type T, policy::policy_type... Policies>
+struct primitive_traits_impl<primitive<T, Policies...>> {
+  using value_type = T;
+  using policies = std::tuple<Policies...>;
+  using value_policy =
+      policy::resolve_policy_t<policy::category::value, Policies...>;
+  using type_policy =
+      policy::resolve_policy_t<policy::category::type, Policies...>;
+  using error_policy =
+      policy::resolve_policy_t<policy::category::error, Policies...>;
+  using concurrency_policy =
+      policy::resolve_policy_t<policy::category::concurrency, Policies...>;
+};
+
+} // namespace mcpplibs::primitives::meta::details
 
 // Public API exported from this module.
 export namespace mcpplibs::primitives::meta {
@@ -27,21 +48,45 @@ using default_policies =
     std::tuple<policy::defaults::value, policy::defaults::type,
                policy::defaults::error, policy::defaults::concurrency>;
 
-template <typename T> struct traits;
+template <typename T>
+using traits = details::primitive_traits_impl<std::remove_cvref_t<T>>;
 
-template <underlying_type T, policy::policy_type... Policies>
-struct traits<primitive<T, Policies...>> {
-  using value_type = T;
-  using policies = std::tuple<Policies...>;
-  using value_policy =
-      policy::resolve_policy_t<policy_category::value, Policies...>;
-  using type_policy =
-      policy::resolve_policy_t<policy_category::type, Policies...>;
-  using error_policy =
-      policy::resolve_policy_t<policy_category::error, Policies...>;
-  using concurrency_policy =
-      policy::resolve_policy_t<policy_category::concurrency, Policies...>;
+template <typename T>
+concept primitive_type = requires {
+  typename traits<T>::value_type;
+  typename traits<T>::policies;
+  typename traits<T>::value_policy;
+  typename traits<T>::type_policy;
+  typename traits<T>::error_policy;
+  typename traits<T>::concurrency_policy;
 };
+
+template <typename T>
+concept boolean =
+    primitive_type<T> &&
+    (underlying::traits<typename traits<T>::value_type>::kind ==
+     underlying::category::boolean);
+
+template <typename T>
+concept character =
+    primitive_type<T> &&
+    (underlying::traits<typename traits<T>::value_type>::kind ==
+     underlying::category::character);
+
+template <typename T>
+concept integer =
+    primitive_type<T> &&
+    (underlying::traits<typename traits<T>::value_type>::kind ==
+     underlying::category::integer);
+
+template <typename T>
+concept floating =
+    primitive_type<T> &&
+    (underlying::traits<typename traits<T>::value_type>::kind ==
+     underlying::category::floating);
+
+template <typename T>
+concept numeric = integer<T> || floating<T>;
 
 } // namespace mcpplibs::primitives::meta
 

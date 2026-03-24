@@ -17,7 +17,10 @@ import mcpplibs.primitives.policy.handler;
 import mcpplibs.primitives.policy.impl;
 import mcpplibs.primitives.underlying.traits;
 
-export namespace mcpplibs::primitives::operations {
+namespace mcpplibs::primitives::operations {
+
+template <typename T>
+concept underlying_operand = underlying_type<std::remove_cvref_t<T>>;
 
 namespace details {
 template <typename CommonRep, typename = void> struct three_way_ordering {
@@ -61,21 +64,22 @@ constexpr auto decode_three_way_code(CommonRep const &code) -> Ordering {
 
 } // namespace details
 
-template <operation OpTag, primitive_instance Lhs, primitive_instance Rhs,
+} // namespace mcpplibs::primitives::operations
+
+export namespace mcpplibs::primitives::operations {
+
+template <operation OpTag, meta::primitive_type Lhs, meta::primitive_type Rhs,
           typename ErrorPayload = policy::error::kind>
 using primitive_dispatch_result_t = std::expected<meta::make_primitive_t<
         typename dispatcher_meta<OpTag, Lhs, Rhs, ErrorPayload>::common_rep,
         typename meta::traits<Lhs>::policies>,
     ErrorPayload>;
 
-template <typename T>
-concept underlying_operand = underlying_type<std::remove_cvref_t<T>>;
-
-template <primitive_instance Primitive, underlying_operand Underlying>
+template <meta::primitive_type Primitive, underlying_operand Underlying>
 using mixed_bridge_primitive_t = meta::make_primitive_t<
     std::remove_cvref_t<Underlying>, typename meta::traits<Primitive>::policies>;
 
-template <operation OpTag, primitive_instance Primitive,
+template <operation OpTag, meta::primitive_type Primitive,
           underlying_operand Underlying,
           typename ErrorPayload = policy::error::kind>
 using mixed_primitive_dispatch_result_t =
@@ -83,7 +87,7 @@ using mixed_primitive_dispatch_result_t =
                                 mixed_bridge_primitive_t<Primitive, Underlying>,
                                 ErrorPayload>;
 
-template <primitive_instance Lhs, primitive_instance Rhs,
+template <meta::primitive_type Lhs, meta::primitive_type Rhs,
           typename ErrorPayload = policy::error::kind>
 using three_way_dispatch_result_t = std::expected<
     details::three_way_ordering_t<
@@ -91,7 +95,7 @@ using three_way_dispatch_result_t = std::expected<
                                  ErrorPayload>::common_rep>,
     ErrorPayload>;
 
-template <primitive_instance Primitive, underlying_operand Underlying,
+template <meta::primitive_type Primitive, underlying_operand Underlying,
           typename ErrorPayload = policy::error::kind>
 using mixed_three_way_dispatch_result_t =
     three_way_dispatch_result_t<Primitive,
@@ -99,28 +103,28 @@ using mixed_three_way_dispatch_result_t =
                                 ErrorPayload>;
 
 template <operation OpTag, underlying_operand Underlying,
-          primitive_instance Primitive,
+          meta::primitive_type Primitive,
           typename ErrorPayload = policy::error::kind>
 using flipped_mixed_primitive_dispatch_result_t = primitive_dispatch_result_t<
     OpTag, mixed_bridge_primitive_t<Primitive, Underlying>, Primitive,
     ErrorPayload>;
 
-template <underlying_operand Underlying, primitive_instance Primitive,
+template <underlying_operand Underlying, meta::primitive_type Primitive,
           typename ErrorPayload = policy::error::kind>
 using flipped_mixed_three_way_dispatch_result_t = three_way_dispatch_result_t<
     mixed_bridge_primitive_t<Primitive, Underlying>, Primitive, ErrorPayload>;
 
-template <operation OpTag, primitive_instance Operand,
+template <operation OpTag, meta::primitive_type Operand,
           typename ErrorPayload = policy::error::kind>
 using unary_dispatch_result_t =
     primitive_dispatch_result_t<OpTag, Operand, Operand, ErrorPayload>;
 
-template <operation OpTag, primitive_instance Lhs, primitive_instance Rhs,
+template <operation OpTag, meta::primitive_type Lhs, meta::primitive_type Rhs,
           typename ErrorPayload>
 constexpr auto apply_assign(Lhs &lhs, Rhs const &rhs)
     -> primitive_dispatch_result_t<OpTag, Lhs, Rhs, ErrorPayload>;
 
-template <operation OpTag, primitive_instance Lhs, primitive_instance Rhs,
+template <operation OpTag, meta::primitive_type Lhs, meta::primitive_type Rhs,
           typename ErrorPayload = policy::error::kind>
 constexpr auto apply(Lhs const &lhs, Rhs const &rhs)
     -> primitive_dispatch_result_t<OpTag, Lhs, Rhs, ErrorPayload> {
@@ -136,14 +140,14 @@ constexpr auto apply(Lhs const &lhs, Rhs const &rhs)
   return result_primitive{*raw};
 }
 
-template <operation OpTag, primitive_instance Operand,
+template <operation OpTag, meta::primitive_type Operand,
           typename ErrorPayload = policy::error::kind>
 constexpr auto apply(Operand const &operand)
     -> unary_dispatch_result_t<OpTag, Operand, ErrorPayload> {
   return apply<OpTag, Operand, Operand, ErrorPayload>(operand, operand);
 }
 
-template <operation OpTag, primitive_instance Lhs, underlying_operand Rhs,
+template <operation OpTag, meta::primitive_type Lhs, underlying_operand Rhs,
           typename ErrorPayload = policy::error::kind>
 constexpr auto apply(Lhs const &lhs, Rhs const &rhs)
     -> mixed_primitive_dispatch_result_t<OpTag, Lhs, Rhs, ErrorPayload> {
@@ -152,7 +156,7 @@ constexpr auto apply(Lhs const &lhs, Rhs const &rhs)
   return apply<OpTag, Lhs, bridge_rhs_t, ErrorPayload>(lhs, bridge_rhs);
 }
 
-template <operation OpTag, underlying_operand Lhs, primitive_instance Rhs,
+template <operation OpTag, underlying_operand Lhs, meta::primitive_type Rhs,
           typename ErrorPayload = policy::error::kind>
 constexpr auto apply(Lhs const &lhs, Rhs const &rhs)
     -> flipped_mixed_primitive_dispatch_result_t<OpTag, Lhs, Rhs,
@@ -163,54 +167,54 @@ constexpr auto apply(Lhs const &lhs, Rhs const &rhs)
 }
 
 // Unary operations
-template <primitive_instance Operand, typename ErrorPayload = policy::error::kind>
+template <meta::primitive_type Operand, typename ErrorPayload = policy::error::kind>
 constexpr auto increment(Operand &operand)
     -> unary_dispatch_result_t<Increment, Operand, ErrorPayload> {
   return apply_assign<Increment, Operand, Operand, ErrorPayload>(operand,
                                                                  operand);
 }
 
-template <primitive_instance Operand, typename ErrorPayload = policy::error::kind>
+template <meta::primitive_type Operand, typename ErrorPayload = policy::error::kind>
 constexpr auto decrement(Operand &operand)
     -> unary_dispatch_result_t<Decrement, Operand, ErrorPayload> {
   return apply_assign<Decrement, Operand, Operand, ErrorPayload>(operand,
                                                                  operand);
 }
 
-template <primitive_instance Operand, typename ErrorPayload = policy::error::kind>
+template <meta::primitive_type Operand, typename ErrorPayload = policy::error::kind>
 constexpr auto bit_not(Operand const &operand)
     -> unary_dispatch_result_t<BitwiseNot, Operand, ErrorPayload> {
   return apply<BitwiseNot, Operand, ErrorPayload>(operand);
 }
 
-template <primitive_instance Operand, typename ErrorPayload = policy::error::kind>
+template <meta::primitive_type Operand, typename ErrorPayload = policy::error::kind>
 constexpr auto unary_plus(Operand const &operand)
     -> unary_dispatch_result_t<UnaryPlus, Operand, ErrorPayload> {
   return apply<UnaryPlus, Operand, ErrorPayload>(operand);
 }
 
-template <primitive_instance Operand, typename ErrorPayload = policy::error::kind>
+template <meta::primitive_type Operand, typename ErrorPayload = policy::error::kind>
 constexpr auto unary_minus(Operand const &operand)
     -> unary_dispatch_result_t<UnaryMinus, Operand, ErrorPayload> {
   return apply<UnaryMinus, Operand, ErrorPayload>(operand);
 }
 
 // Binary arithmetic operations
-template <primitive_instance Lhs, primitive_instance Rhs,
+template <meta::primitive_type Lhs, meta::primitive_type Rhs,
           typename ErrorPayload = policy::error::kind>
 constexpr auto add(Lhs const &lhs, Rhs const &rhs)
     -> primitive_dispatch_result_t<Addition, Lhs, Rhs, ErrorPayload> {
   return apply<Addition, Lhs, Rhs, ErrorPayload>(lhs, rhs);
 }
 
-template <primitive_instance Lhs, underlying_operand Rhs,
+template <meta::primitive_type Lhs, underlying_operand Rhs,
           typename ErrorPayload = policy::error::kind>
 constexpr auto add(Lhs const &lhs, Rhs const &rhs)
     -> mixed_primitive_dispatch_result_t<Addition, Lhs, Rhs, ErrorPayload> {
   return apply<Addition, Lhs, Rhs, ErrorPayload>(lhs, rhs);
 }
 
-template <underlying_operand Lhs, primitive_instance Rhs,
+template <underlying_operand Lhs, meta::primitive_type Rhs,
           typename ErrorPayload = policy::error::kind>
 constexpr auto add(Lhs const &lhs, Rhs const &rhs)
     -> flipped_mixed_primitive_dispatch_result_t<Addition, Lhs, Rhs,
@@ -218,21 +222,21 @@ constexpr auto add(Lhs const &lhs, Rhs const &rhs)
   return apply<Addition, Lhs, Rhs, ErrorPayload>(lhs, rhs);
 }
 
-template <primitive_instance Lhs, primitive_instance Rhs,
+template <meta::primitive_type Lhs, meta::primitive_type Rhs,
           typename ErrorPayload = policy::error::kind>
 constexpr auto sub(Lhs const &lhs, Rhs const &rhs)
     -> primitive_dispatch_result_t<Subtraction, Lhs, Rhs, ErrorPayload> {
   return apply<Subtraction, Lhs, Rhs, ErrorPayload>(lhs, rhs);
 }
 
-template <primitive_instance Lhs, underlying_operand Rhs,
+template <meta::primitive_type Lhs, underlying_operand Rhs,
           typename ErrorPayload = policy::error::kind>
 constexpr auto sub(Lhs const &lhs, Rhs const &rhs)
     -> mixed_primitive_dispatch_result_t<Subtraction, Lhs, Rhs, ErrorPayload> {
   return apply<Subtraction, Lhs, Rhs, ErrorPayload>(lhs, rhs);
 }
 
-template <underlying_operand Lhs, primitive_instance Rhs,
+template <underlying_operand Lhs, meta::primitive_type Rhs,
           typename ErrorPayload = policy::error::kind>
 constexpr auto sub(Lhs const &lhs, Rhs const &rhs)
     -> flipped_mixed_primitive_dispatch_result_t<Subtraction, Lhs, Rhs,
@@ -240,14 +244,14 @@ constexpr auto sub(Lhs const &lhs, Rhs const &rhs)
   return apply<Subtraction, Lhs, Rhs, ErrorPayload>(lhs, rhs);
 }
 
-template <primitive_instance Lhs, primitive_instance Rhs,
+template <meta::primitive_type Lhs, meta::primitive_type Rhs,
           typename ErrorPayload = policy::error::kind>
 constexpr auto mul(Lhs const &lhs, Rhs const &rhs)
     -> primitive_dispatch_result_t<Multiplication, Lhs, Rhs, ErrorPayload> {
   return apply<Multiplication, Lhs, Rhs, ErrorPayload>(lhs, rhs);
 }
 
-template <primitive_instance Lhs, underlying_operand Rhs,
+template <meta::primitive_type Lhs, underlying_operand Rhs,
           typename ErrorPayload = policy::error::kind>
 constexpr auto mul(Lhs const &lhs, Rhs const &rhs)
     -> mixed_primitive_dispatch_result_t<Multiplication, Lhs, Rhs,
@@ -255,7 +259,7 @@ constexpr auto mul(Lhs const &lhs, Rhs const &rhs)
   return apply<Multiplication, Lhs, Rhs, ErrorPayload>(lhs, rhs);
 }
 
-template <underlying_operand Lhs, primitive_instance Rhs,
+template <underlying_operand Lhs, meta::primitive_type Rhs,
           typename ErrorPayload = policy::error::kind>
 constexpr auto mul(Lhs const &lhs, Rhs const &rhs)
     -> flipped_mixed_primitive_dispatch_result_t<Multiplication, Lhs, Rhs,
@@ -263,28 +267,28 @@ constexpr auto mul(Lhs const &lhs, Rhs const &rhs)
   return apply<Multiplication, Lhs, Rhs, ErrorPayload>(lhs, rhs);
 }
 
-template <primitive_instance Lhs, primitive_instance Rhs,
+template <meta::primitive_type Lhs, meta::primitive_type Rhs,
           typename ErrorPayload = policy::error::kind>
 constexpr auto div(Lhs const &lhs, Rhs const &rhs)
     -> primitive_dispatch_result_t<Division, Lhs, Rhs, ErrorPayload> {
   return apply<Division, Lhs, Rhs, ErrorPayload>(lhs, rhs);
 }
 
-template <primitive_instance Lhs, primitive_instance Rhs,
+template <meta::primitive_type Lhs, meta::primitive_type Rhs,
           typename ErrorPayload = policy::error::kind>
 constexpr auto mod(Lhs const &lhs, Rhs const &rhs)
     -> primitive_dispatch_result_t<Modulus, Lhs, Rhs, ErrorPayload> {
   return apply<Modulus, Lhs, Rhs, ErrorPayload>(lhs, rhs);
 }
 
-template <primitive_instance Lhs, underlying_operand Rhs,
+template <meta::primitive_type Lhs, underlying_operand Rhs,
           typename ErrorPayload = policy::error::kind>
 constexpr auto mod(Lhs const &lhs, Rhs const &rhs)
     -> mixed_primitive_dispatch_result_t<Modulus, Lhs, Rhs, ErrorPayload> {
   return apply<Modulus, Lhs, Rhs, ErrorPayload>(lhs, rhs);
 }
 
-template <underlying_operand Lhs, primitive_instance Rhs,
+template <underlying_operand Lhs, meta::primitive_type Rhs,
           typename ErrorPayload = policy::error::kind>
 constexpr auto mod(Lhs const &lhs, Rhs const &rhs)
     -> flipped_mixed_primitive_dispatch_result_t<Modulus, Lhs, Rhs,
@@ -293,21 +297,21 @@ constexpr auto mod(Lhs const &lhs, Rhs const &rhs)
 }
 
 // Binary bitwise operations
-template <primitive_instance Lhs, primitive_instance Rhs,
+template <meta::primitive_type Lhs, meta::primitive_type Rhs,
           typename ErrorPayload = policy::error::kind>
 constexpr auto shift_left(Lhs const &lhs, Rhs const &rhs)
     -> primitive_dispatch_result_t<LeftShift, Lhs, Rhs, ErrorPayload> {
   return apply<LeftShift, Lhs, Rhs, ErrorPayload>(lhs, rhs);
 }
 
-template <primitive_instance Lhs, underlying_operand Rhs,
+template <meta::primitive_type Lhs, underlying_operand Rhs,
           typename ErrorPayload = policy::error::kind>
 constexpr auto shift_left(Lhs const &lhs, Rhs const &rhs)
     -> mixed_primitive_dispatch_result_t<LeftShift, Lhs, Rhs, ErrorPayload> {
   return apply<LeftShift, Lhs, Rhs, ErrorPayload>(lhs, rhs);
 }
 
-template <underlying_operand Lhs, primitive_instance Rhs,
+template <underlying_operand Lhs, meta::primitive_type Rhs,
           typename ErrorPayload = policy::error::kind>
 constexpr auto shift_left(Lhs const &lhs, Rhs const &rhs)
     -> flipped_mixed_primitive_dispatch_result_t<LeftShift, Lhs, Rhs,
@@ -315,21 +319,21 @@ constexpr auto shift_left(Lhs const &lhs, Rhs const &rhs)
   return apply<LeftShift, Lhs, Rhs, ErrorPayload>(lhs, rhs);
 }
 
-template <primitive_instance Lhs, primitive_instance Rhs,
+template <meta::primitive_type Lhs, meta::primitive_type Rhs,
           typename ErrorPayload = policy::error::kind>
 constexpr auto shift_right(Lhs const &lhs, Rhs const &rhs)
     -> primitive_dispatch_result_t<RightShift, Lhs, Rhs, ErrorPayload> {
   return apply<RightShift, Lhs, Rhs, ErrorPayload>(lhs, rhs);
 }
 
-template <primitive_instance Lhs, underlying_operand Rhs,
+template <meta::primitive_type Lhs, underlying_operand Rhs,
           typename ErrorPayload = policy::error::kind>
 constexpr auto shift_right(Lhs const &lhs, Rhs const &rhs)
     -> mixed_primitive_dispatch_result_t<RightShift, Lhs, Rhs, ErrorPayload> {
   return apply<RightShift, Lhs, Rhs, ErrorPayload>(lhs, rhs);
 }
 
-template <underlying_operand Lhs, primitive_instance Rhs,
+template <underlying_operand Lhs, meta::primitive_type Rhs,
           typename ErrorPayload = policy::error::kind>
 constexpr auto shift_right(Lhs const &lhs, Rhs const &rhs)
     -> flipped_mixed_primitive_dispatch_result_t<RightShift, Lhs, Rhs,
@@ -337,21 +341,21 @@ constexpr auto shift_right(Lhs const &lhs, Rhs const &rhs)
   return apply<RightShift, Lhs, Rhs, ErrorPayload>(lhs, rhs);
 }
 
-template <primitive_instance Lhs, primitive_instance Rhs,
+template <meta::primitive_type Lhs, meta::primitive_type Rhs,
           typename ErrorPayload = policy::error::kind>
 constexpr auto bit_and(Lhs const &lhs, Rhs const &rhs)
     -> primitive_dispatch_result_t<BitwiseAnd, Lhs, Rhs, ErrorPayload> {
   return apply<BitwiseAnd, Lhs, Rhs, ErrorPayload>(lhs, rhs);
 }
 
-template <primitive_instance Lhs, underlying_operand Rhs,
+template <meta::primitive_type Lhs, underlying_operand Rhs,
           typename ErrorPayload = policy::error::kind>
 constexpr auto bit_and(Lhs const &lhs, Rhs const &rhs)
     -> mixed_primitive_dispatch_result_t<BitwiseAnd, Lhs, Rhs, ErrorPayload> {
   return apply<BitwiseAnd, Lhs, Rhs, ErrorPayload>(lhs, rhs);
 }
 
-template <underlying_operand Lhs, primitive_instance Rhs,
+template <underlying_operand Lhs, meta::primitive_type Rhs,
           typename ErrorPayload = policy::error::kind>
 constexpr auto bit_and(Lhs const &lhs, Rhs const &rhs)
     -> flipped_mixed_primitive_dispatch_result_t<BitwiseAnd, Lhs, Rhs,
@@ -359,21 +363,21 @@ constexpr auto bit_and(Lhs const &lhs, Rhs const &rhs)
   return apply<BitwiseAnd, Lhs, Rhs, ErrorPayload>(lhs, rhs);
 }
 
-template <primitive_instance Lhs, primitive_instance Rhs,
+template <meta::primitive_type Lhs, meta::primitive_type Rhs,
           typename ErrorPayload = policy::error::kind>
 constexpr auto bit_or(Lhs const &lhs, Rhs const &rhs)
     -> primitive_dispatch_result_t<BitwiseOr, Lhs, Rhs, ErrorPayload> {
   return apply<BitwiseOr, Lhs, Rhs, ErrorPayload>(lhs, rhs);
 }
 
-template <primitive_instance Lhs, underlying_operand Rhs,
+template <meta::primitive_type Lhs, underlying_operand Rhs,
           typename ErrorPayload = policy::error::kind>
 constexpr auto bit_or(Lhs const &lhs, Rhs const &rhs)
     -> mixed_primitive_dispatch_result_t<BitwiseOr, Lhs, Rhs, ErrorPayload> {
   return apply<BitwiseOr, Lhs, Rhs, ErrorPayload>(lhs, rhs);
 }
 
-template <underlying_operand Lhs, primitive_instance Rhs,
+template <underlying_operand Lhs, meta::primitive_type Rhs,
           typename ErrorPayload = policy::error::kind>
 constexpr auto bit_or(Lhs const &lhs, Rhs const &rhs)
     -> flipped_mixed_primitive_dispatch_result_t<BitwiseOr, Lhs, Rhs,
@@ -381,21 +385,21 @@ constexpr auto bit_or(Lhs const &lhs, Rhs const &rhs)
   return apply<BitwiseOr, Lhs, Rhs, ErrorPayload>(lhs, rhs);
 }
 
-template <primitive_instance Lhs, primitive_instance Rhs,
+template <meta::primitive_type Lhs, meta::primitive_type Rhs,
           typename ErrorPayload = policy::error::kind>
 constexpr auto bit_xor(Lhs const &lhs, Rhs const &rhs)
     -> primitive_dispatch_result_t<BitwiseXor, Lhs, Rhs, ErrorPayload> {
   return apply<BitwiseXor, Lhs, Rhs, ErrorPayload>(lhs, rhs);
 }
 
-template <primitive_instance Lhs, underlying_operand Rhs,
+template <meta::primitive_type Lhs, underlying_operand Rhs,
           typename ErrorPayload = policy::error::kind>
 constexpr auto bit_xor(Lhs const &lhs, Rhs const &rhs)
     -> mixed_primitive_dispatch_result_t<BitwiseXor, Lhs, Rhs, ErrorPayload> {
   return apply<BitwiseXor, Lhs, Rhs, ErrorPayload>(lhs, rhs);
 }
 
-template <underlying_operand Lhs, primitive_instance Rhs,
+template <underlying_operand Lhs, meta::primitive_type Rhs,
           typename ErrorPayload = policy::error::kind>
 constexpr auto bit_xor(Lhs const &lhs, Rhs const &rhs)
     -> flipped_mixed_primitive_dispatch_result_t<BitwiseXor, Lhs, Rhs,
@@ -403,14 +407,14 @@ constexpr auto bit_xor(Lhs const &lhs, Rhs const &rhs)
   return apply<BitwiseXor, Lhs, Rhs, ErrorPayload>(lhs, rhs);
 }
 
-template <primitive_instance Lhs, underlying_operand Rhs,
+template <meta::primitive_type Lhs, underlying_operand Rhs,
           typename ErrorPayload = policy::error::kind>
 constexpr auto div(Lhs const &lhs, Rhs const &rhs)
     -> mixed_primitive_dispatch_result_t<Division, Lhs, Rhs, ErrorPayload> {
   return apply<Division, Lhs, Rhs, ErrorPayload>(lhs, rhs);
 }
 
-template <underlying_operand Lhs, primitive_instance Rhs,
+template <underlying_operand Lhs, meta::primitive_type Rhs,
           typename ErrorPayload = policy::error::kind>
 constexpr auto div(Lhs const &lhs, Rhs const &rhs)
     -> flipped_mixed_primitive_dispatch_result_t<Division, Lhs, Rhs,
@@ -418,21 +422,21 @@ constexpr auto div(Lhs const &lhs, Rhs const &rhs)
   return apply<Division, Lhs, Rhs, ErrorPayload>(lhs, rhs);
 }
 
-template <primitive_instance Lhs, primitive_instance Rhs,
+template <meta::primitive_type Lhs, meta::primitive_type Rhs,
           typename ErrorPayload = policy::error::kind>
 constexpr auto equal(Lhs const &lhs, Rhs const &rhs)
     -> primitive_dispatch_result_t<Equal, Lhs, Rhs, ErrorPayload> {
   return apply<Equal, Lhs, Rhs, ErrorPayload>(lhs, rhs);
 }
 
-template <primitive_instance Lhs, underlying_operand Rhs,
+template <meta::primitive_type Lhs, underlying_operand Rhs,
           typename ErrorPayload = policy::error::kind>
 constexpr auto equal(Lhs const &lhs, Rhs const &rhs)
     -> mixed_primitive_dispatch_result_t<Equal, Lhs, Rhs, ErrorPayload> {
   return apply<Equal, Lhs, Rhs, ErrorPayload>(lhs, rhs);
 }
 
-template <underlying_operand Lhs, primitive_instance Rhs,
+template <underlying_operand Lhs, meta::primitive_type Rhs,
           typename ErrorPayload = policy::error::kind>
 constexpr auto equal(Lhs const &lhs, Rhs const &rhs)
     -> flipped_mixed_primitive_dispatch_result_t<Equal, Lhs, Rhs,
@@ -440,21 +444,21 @@ constexpr auto equal(Lhs const &lhs, Rhs const &rhs)
   return apply<Equal, Lhs, Rhs, ErrorPayload>(lhs, rhs);
 }
 
-template <primitive_instance Lhs, primitive_instance Rhs,
+template <meta::primitive_type Lhs, meta::primitive_type Rhs,
           typename ErrorPayload = policy::error::kind>
 constexpr auto not_equal(Lhs const &lhs, Rhs const &rhs)
     -> primitive_dispatch_result_t<NotEqual, Lhs, Rhs, ErrorPayload> {
   return apply<NotEqual, Lhs, Rhs, ErrorPayload>(lhs, rhs);
 }
 
-template <primitive_instance Lhs, underlying_operand Rhs,
+template <meta::primitive_type Lhs, underlying_operand Rhs,
           typename ErrorPayload = policy::error::kind>
 constexpr auto not_equal(Lhs const &lhs, Rhs const &rhs)
     -> mixed_primitive_dispatch_result_t<NotEqual, Lhs, Rhs, ErrorPayload> {
   return apply<NotEqual, Lhs, Rhs, ErrorPayload>(lhs, rhs);
 }
 
-template <underlying_operand Lhs, primitive_instance Rhs,
+template <underlying_operand Lhs, meta::primitive_type Rhs,
           typename ErrorPayload = policy::error::kind>
 constexpr auto not_equal(Lhs const &lhs, Rhs const &rhs)
     -> flipped_mixed_primitive_dispatch_result_t<NotEqual, Lhs, Rhs,
@@ -462,7 +466,7 @@ constexpr auto not_equal(Lhs const &lhs, Rhs const &rhs)
   return apply<NotEqual, Lhs, Rhs, ErrorPayload>(lhs, rhs);
 }
 
-template <primitive_instance Lhs, primitive_instance Rhs,
+template <meta::primitive_type Lhs, meta::primitive_type Rhs,
           typename ErrorPayload = policy::error::kind>
 constexpr auto three_way_compare(Lhs const &lhs, Rhs const &rhs)
     -> three_way_dispatch_result_t<Lhs, Rhs, ErrorPayload> {
@@ -480,7 +484,7 @@ constexpr auto three_way_compare(Lhs const &lhs, Rhs const &rhs)
   return details::decode_three_way_code<ordering, common_rep>(*raw);
 }
 
-template <primitive_instance Lhs, underlying_operand Rhs,
+template <meta::primitive_type Lhs, underlying_operand Rhs,
           typename ErrorPayload = policy::error::kind>
 constexpr auto three_way_compare(Lhs const &lhs, Rhs const &rhs)
     -> mixed_three_way_dispatch_result_t<Lhs, Rhs, ErrorPayload> {
@@ -489,7 +493,7 @@ constexpr auto three_way_compare(Lhs const &lhs, Rhs const &rhs)
   return three_way_compare<Lhs, bridge_rhs_t, ErrorPayload>(lhs, bridge_rhs);
 }
 
-template <underlying_operand Lhs, primitive_instance Rhs,
+template <underlying_operand Lhs, meta::primitive_type Rhs,
           typename ErrorPayload = policy::error::kind>
 constexpr auto three_way_compare(Lhs const &lhs, Rhs const &rhs)
     -> flipped_mixed_three_way_dispatch_result_t<Lhs, Rhs, ErrorPayload> {
@@ -498,7 +502,7 @@ constexpr auto three_way_compare(Lhs const &lhs, Rhs const &rhs)
   return three_way_compare<bridge_lhs_t, Rhs, ErrorPayload>(bridge_lhs, rhs);
 }
 
-template <operation OpTag, primitive_instance Lhs, primitive_instance Rhs,
+template <operation OpTag, meta::primitive_type Lhs, meta::primitive_type Rhs,
           typename ErrorPayload = policy::error::kind>
 constexpr auto apply_assign(Lhs &lhs, Rhs const &rhs)
     -> primitive_dispatch_result_t<OpTag, Lhs, Rhs, ErrorPayload> {
@@ -506,9 +510,6 @@ constexpr auto apply_assign(Lhs &lhs, Rhs const &rhs)
   using lhs_value_type = lhs_traits::value_type;
   using lhs_value_policy = lhs_traits::value_policy;
   using lhs_rep = underlying::traits<lhs_value_type>::rep_type;
-  using out_primitive = primitive_dispatch_result_t<OpTag, Lhs, Rhs,
-                                           ErrorPayload>::value_type;
-  using common_rep = meta::traits<out_primitive>::value_type;
 
   auto out = apply<OpTag, Lhs, Rhs, ErrorPayload>(lhs, rhs);
   if (!out.has_value()) {
@@ -532,70 +533,70 @@ constexpr auto apply_assign(Lhs &lhs, Rhs const &rhs)
   return out;
 }
 
-template <primitive_instance Lhs, primitive_instance Rhs,
+template <meta::primitive_type Lhs, meta::primitive_type Rhs,
           typename ErrorPayload = policy::error::kind>
 constexpr auto add_assign(Lhs &lhs, Rhs const &rhs)
     -> primitive_dispatch_result_t<Addition, Lhs, Rhs, ErrorPayload> {
   return apply_assign<Addition, Lhs, Rhs, ErrorPayload>(lhs, rhs);
 }
 
-template <primitive_instance Lhs, primitive_instance Rhs,
+template <meta::primitive_type Lhs, meta::primitive_type Rhs,
           typename ErrorPayload = policy::error::kind>
 constexpr auto sub_assign(Lhs &lhs, Rhs const &rhs)
     -> primitive_dispatch_result_t<Subtraction, Lhs, Rhs, ErrorPayload> {
   return apply_assign<Subtraction, Lhs, Rhs, ErrorPayload>(lhs, rhs);
 }
 
-template <primitive_instance Lhs, primitive_instance Rhs,
+template <meta::primitive_type Lhs, meta::primitive_type Rhs,
           typename ErrorPayload = policy::error::kind>
 constexpr auto mul_assign(Lhs &lhs, Rhs const &rhs)
     -> primitive_dispatch_result_t<Multiplication, Lhs, Rhs, ErrorPayload> {
   return apply_assign<Multiplication, Lhs, Rhs, ErrorPayload>(lhs, rhs);
 }
 
-template <primitive_instance Lhs, primitive_instance Rhs,
+template <meta::primitive_type Lhs, meta::primitive_type Rhs,
           typename ErrorPayload = policy::error::kind>
 constexpr auto div_assign(Lhs &lhs, Rhs const &rhs)
     -> primitive_dispatch_result_t<Division, Lhs, Rhs, ErrorPayload> {
   return apply_assign<Division, Lhs, Rhs, ErrorPayload>(lhs, rhs);
 }
 
-template <primitive_instance Lhs, primitive_instance Rhs,
+template <meta::primitive_type Lhs, meta::primitive_type Rhs,
           typename ErrorPayload = policy::error::kind>
 constexpr auto mod_assign(Lhs &lhs, Rhs const &rhs)
     -> primitive_dispatch_result_t<Modulus, Lhs, Rhs, ErrorPayload> {
   return apply_assign<Modulus, Lhs, Rhs, ErrorPayload>(lhs, rhs);
 }
 
-template <primitive_instance Lhs, primitive_instance Rhs,
+template <meta::primitive_type Lhs, meta::primitive_type Rhs,
           typename ErrorPayload = policy::error::kind>
 constexpr auto shift_left_assign(Lhs &lhs, Rhs const &rhs)
     -> primitive_dispatch_result_t<LeftShift, Lhs, Rhs, ErrorPayload> {
   return apply_assign<LeftShift, Lhs, Rhs, ErrorPayload>(lhs, rhs);
 }
 
-template <primitive_instance Lhs, primitive_instance Rhs,
+template <meta::primitive_type Lhs, meta::primitive_type Rhs,
           typename ErrorPayload = policy::error::kind>
 constexpr auto shift_right_assign(Lhs &lhs, Rhs const &rhs)
     -> primitive_dispatch_result_t<RightShift, Lhs, Rhs, ErrorPayload> {
   return apply_assign<RightShift, Lhs, Rhs, ErrorPayload>(lhs, rhs);
 }
 
-template <primitive_instance Lhs, primitive_instance Rhs,
+template <meta::primitive_type Lhs, meta::primitive_type Rhs,
           typename ErrorPayload = policy::error::kind>
 constexpr auto bit_and_assign(Lhs &lhs, Rhs const &rhs)
     -> primitive_dispatch_result_t<BitwiseAnd, Lhs, Rhs, ErrorPayload> {
   return apply_assign<BitwiseAnd, Lhs, Rhs, ErrorPayload>(lhs, rhs);
 }
 
-template <primitive_instance Lhs, primitive_instance Rhs,
+template <meta::primitive_type Lhs, meta::primitive_type Rhs,
           typename ErrorPayload = policy::error::kind>
 constexpr auto bit_or_assign(Lhs &lhs, Rhs const &rhs)
     -> primitive_dispatch_result_t<BitwiseOr, Lhs, Rhs, ErrorPayload> {
   return apply_assign<BitwiseOr, Lhs, Rhs, ErrorPayload>(lhs, rhs);
 }
 
-template <primitive_instance Lhs, primitive_instance Rhs,
+template <meta::primitive_type Lhs, meta::primitive_type Rhs,
           typename ErrorPayload = policy::error::kind>
 constexpr auto bit_xor_assign(Lhs &lhs, Rhs const &rhs)
     -> primitive_dispatch_result_t<BitwiseXor, Lhs, Rhs, ErrorPayload> {
@@ -607,13 +608,13 @@ constexpr auto bit_xor_assign(Lhs &lhs, Rhs const &rhs)
 export namespace mcpplibs::primitives::operators {
 
 // Unary operators
-template <operations::primitive_instance Operand>
+template <meta::primitive_type Operand>
 constexpr auto operator++(Operand &operand)
     -> operations::unary_dispatch_result_t<operations::Increment, Operand> {
   return operations::increment(operand);
 }
 
-template <operations::primitive_instance Operand>
+template <meta::primitive_type Operand>
 constexpr auto operator++(Operand &operand, int)
     -> operations::unary_dispatch_result_t<operations::Increment, Operand> {
   auto const before = operand;
@@ -624,13 +625,13 @@ constexpr auto operator++(Operand &operand, int)
   return before;
 }
 
-template <operations::primitive_instance Operand>
+template <meta::primitive_type Operand>
 constexpr auto operator--(Operand &operand)
     -> operations::unary_dispatch_result_t<operations::Decrement, Operand> {
   return operations::decrement(operand);
 }
 
-template <operations::primitive_instance Operand>
+template <meta::primitive_type Operand>
 constexpr auto operator--(Operand &operand, int)
     -> operations::unary_dispatch_result_t<operations::Decrement, Operand> {
   auto const before = operand;
@@ -641,33 +642,33 @@ constexpr auto operator--(Operand &operand, int)
   return before;
 }
 
-template <operations::primitive_instance Operand>
+template <meta::primitive_type Operand>
 constexpr auto operator+(Operand const &operand)
     -> operations::unary_dispatch_result_t<operations::UnaryPlus, Operand> {
   return operations::unary_plus(operand);
 }
 
-template <operations::primitive_instance Operand>
+template <meta::primitive_type Operand>
 constexpr auto operator-(Operand const &operand)
     -> operations::unary_dispatch_result_t<operations::UnaryMinus, Operand> {
   return operations::unary_minus(operand);
 }
 
-template <operations::primitive_instance Operand>
+template <meta::primitive_type Operand>
 constexpr auto operator~(Operand const &operand)
     -> operations::unary_dispatch_result_t<operations::BitwiseNot, Operand> {
   return operations::bit_not(operand);
 }
 
 // Binary arithmetic operators
-template <operations::primitive_instance Lhs,
-          operations::primitive_instance Rhs>
+template <meta::primitive_type Lhs,
+          meta::primitive_type Rhs>
 constexpr auto operator+(Lhs const &lhs, Rhs const &rhs)
     -> operations::primitive_dispatch_result_t<operations::Addition, Lhs, Rhs> {
   return operations::add(lhs, rhs);
 }
 
-template <operations::primitive_instance Lhs,
+template <meta::primitive_type Lhs,
           operations::underlying_operand Rhs>
 constexpr auto operator+(Lhs const &lhs, Rhs const &rhs)
     -> operations::mixed_primitive_dispatch_result_t<operations::Addition, Lhs,
@@ -676,22 +677,22 @@ constexpr auto operator+(Lhs const &lhs, Rhs const &rhs)
 }
 
 template <operations::underlying_operand Lhs,
-          operations::primitive_instance Rhs>
+          meta::primitive_type Rhs>
 constexpr auto operator+(Lhs const &lhs, Rhs const &rhs)
     -> operations::flipped_mixed_primitive_dispatch_result_t<
         operations::Addition, Lhs, Rhs> {
   return operations::add(lhs, rhs);
 }
 
-template <operations::primitive_instance Lhs,
-          operations::primitive_instance Rhs>
+template <meta::primitive_type Lhs,
+          meta::primitive_type Rhs>
 constexpr auto operator-(Lhs const &lhs, Rhs const &rhs)
     -> operations::primitive_dispatch_result_t<operations::Subtraction, Lhs,
                                                Rhs> {
   return operations::sub(lhs, rhs);
 }
 
-template <operations::primitive_instance Lhs,
+template <meta::primitive_type Lhs,
           operations::underlying_operand Rhs>
 constexpr auto operator-(Lhs const &lhs, Rhs const &rhs)
     -> operations::mixed_primitive_dispatch_result_t<operations::Subtraction,
@@ -700,22 +701,22 @@ constexpr auto operator-(Lhs const &lhs, Rhs const &rhs)
 }
 
 template <operations::underlying_operand Lhs,
-          operations::primitive_instance Rhs>
+          meta::primitive_type Rhs>
 constexpr auto operator-(Lhs const &lhs, Rhs const &rhs)
     -> operations::flipped_mixed_primitive_dispatch_result_t<
         operations::Subtraction, Lhs, Rhs> {
   return operations::sub(lhs, rhs);
 }
 
-template <operations::primitive_instance Lhs,
-          operations::primitive_instance Rhs>
+template <meta::primitive_type Lhs,
+          meta::primitive_type Rhs>
 constexpr auto operator*(Lhs const &lhs, Rhs const &rhs)
     -> operations::primitive_dispatch_result_t<operations::Multiplication, Lhs,
                                                Rhs> {
   return operations::mul(lhs, rhs);
 }
 
-template <operations::primitive_instance Lhs,
+template <meta::primitive_type Lhs,
           operations::underlying_operand Rhs>
 constexpr auto operator*(Lhs const &lhs, Rhs const &rhs)
     -> operations::mixed_primitive_dispatch_result_t<operations::Multiplication,
@@ -724,21 +725,21 @@ constexpr auto operator*(Lhs const &lhs, Rhs const &rhs)
 }
 
 template <operations::underlying_operand Lhs,
-          operations::primitive_instance Rhs>
+          meta::primitive_type Rhs>
 constexpr auto operator*(Lhs const &lhs, Rhs const &rhs)
     -> operations::flipped_mixed_primitive_dispatch_result_t<
         operations::Multiplication, Lhs, Rhs> {
   return operations::mul(lhs, rhs);
 }
 
-template <operations::primitive_instance Lhs,
-          operations::primitive_instance Rhs>
+template <meta::primitive_type Lhs,
+          meta::primitive_type Rhs>
 constexpr auto operator/(Lhs const &lhs, Rhs const &rhs)
     -> operations::primitive_dispatch_result_t<operations::Division, Lhs, Rhs> {
   return operations::div(lhs, rhs);
 }
 
-template <operations::primitive_instance Lhs,
+template <meta::primitive_type Lhs,
           operations::underlying_operand Rhs>
 constexpr auto operator/(Lhs const &lhs, Rhs const &rhs)
     -> operations::mixed_primitive_dispatch_result_t<operations::Division, Lhs,
@@ -747,21 +748,21 @@ constexpr auto operator/(Lhs const &lhs, Rhs const &rhs)
 }
 
 template <operations::underlying_operand Lhs,
-          operations::primitive_instance Rhs>
+          meta::primitive_type Rhs>
 constexpr auto operator/(Lhs const &lhs, Rhs const &rhs)
     -> operations::flipped_mixed_primitive_dispatch_result_t<
         operations::Division, Lhs, Rhs> {
   return operations::div(lhs, rhs);
 }
 
-template <operations::primitive_instance Lhs,
-          operations::primitive_instance Rhs>
+template <meta::primitive_type Lhs,
+          meta::primitive_type Rhs>
 constexpr auto operator%(Lhs const &lhs, Rhs const &rhs)
     -> operations::primitive_dispatch_result_t<operations::Modulus, Lhs, Rhs> {
   return operations::mod(lhs, rhs);
 }
 
-template <operations::primitive_instance Lhs,
+template <meta::primitive_type Lhs,
           operations::underlying_operand Rhs>
 constexpr auto operator%(Lhs const &lhs, Rhs const &rhs)
     -> operations::mixed_primitive_dispatch_result_t<operations::Modulus, Lhs,
@@ -770,7 +771,7 @@ constexpr auto operator%(Lhs const &lhs, Rhs const &rhs)
 }
 
 template <operations::underlying_operand Lhs,
-          operations::primitive_instance Rhs>
+          meta::primitive_type Rhs>
 constexpr auto operator%(Lhs const &lhs, Rhs const &rhs)
     -> operations::flipped_mixed_primitive_dispatch_result_t<
         operations::Modulus, Lhs, Rhs> {
@@ -778,14 +779,14 @@ constexpr auto operator%(Lhs const &lhs, Rhs const &rhs)
 }
 
 // Binary bitwise operators
-template <operations::primitive_instance Lhs,
-          operations::primitive_instance Rhs>
+template <meta::primitive_type Lhs,
+          meta::primitive_type Rhs>
 constexpr auto operator<<(Lhs const &lhs, Rhs const &rhs)
     -> operations::primitive_dispatch_result_t<operations::LeftShift, Lhs, Rhs> {
   return operations::shift_left(lhs, rhs);
 }
 
-template <operations::primitive_instance Lhs,
+template <meta::primitive_type Lhs,
           operations::underlying_operand Rhs>
 constexpr auto operator<<(Lhs const &lhs, Rhs const &rhs)
     -> operations::mixed_primitive_dispatch_result_t<operations::LeftShift, Lhs,
@@ -794,21 +795,21 @@ constexpr auto operator<<(Lhs const &lhs, Rhs const &rhs)
 }
 
 template <operations::underlying_operand Lhs,
-          operations::primitive_instance Rhs>
+          meta::primitive_type Rhs>
 constexpr auto operator<<(Lhs const &lhs, Rhs const &rhs)
     -> operations::flipped_mixed_primitive_dispatch_result_t<
         operations::LeftShift, Lhs, Rhs> {
   return operations::shift_left(lhs, rhs);
 }
 
-template <operations::primitive_instance Lhs,
-          operations::primitive_instance Rhs>
+template <meta::primitive_type Lhs,
+          meta::primitive_type Rhs>
 constexpr auto operator>>(Lhs const &lhs, Rhs const &rhs)
     -> operations::primitive_dispatch_result_t<operations::RightShift, Lhs, Rhs> {
   return operations::shift_right(lhs, rhs);
 }
 
-template <operations::primitive_instance Lhs,
+template <meta::primitive_type Lhs,
           operations::underlying_operand Rhs>
 constexpr auto operator>>(Lhs const &lhs, Rhs const &rhs)
     -> operations::mixed_primitive_dispatch_result_t<operations::RightShift, Lhs,
@@ -817,21 +818,21 @@ constexpr auto operator>>(Lhs const &lhs, Rhs const &rhs)
 }
 
 template <operations::underlying_operand Lhs,
-          operations::primitive_instance Rhs>
+          meta::primitive_type Rhs>
 constexpr auto operator>>(Lhs const &lhs, Rhs const &rhs)
     -> operations::flipped_mixed_primitive_dispatch_result_t<
         operations::RightShift, Lhs, Rhs> {
   return operations::shift_right(lhs, rhs);
 }
 
-template <operations::primitive_instance Lhs,
-          operations::primitive_instance Rhs>
+template <meta::primitive_type Lhs,
+          meta::primitive_type Rhs>
 constexpr auto operator&(Lhs const &lhs, Rhs const &rhs)
     -> operations::primitive_dispatch_result_t<operations::BitwiseAnd, Lhs, Rhs> {
   return operations::bit_and(lhs, rhs);
 }
 
-template <operations::primitive_instance Lhs,
+template <meta::primitive_type Lhs,
           operations::underlying_operand Rhs>
 constexpr auto operator&(Lhs const &lhs, Rhs const &rhs)
     -> operations::mixed_primitive_dispatch_result_t<operations::BitwiseAnd, Lhs,
@@ -840,21 +841,21 @@ constexpr auto operator&(Lhs const &lhs, Rhs const &rhs)
 }
 
 template <operations::underlying_operand Lhs,
-          operations::primitive_instance Rhs>
+          meta::primitive_type Rhs>
 constexpr auto operator&(Lhs const &lhs, Rhs const &rhs)
     -> operations::flipped_mixed_primitive_dispatch_result_t<
         operations::BitwiseAnd, Lhs, Rhs> {
   return operations::bit_and(lhs, rhs);
 }
 
-template <operations::primitive_instance Lhs,
-          operations::primitive_instance Rhs>
+template <meta::primitive_type Lhs,
+          meta::primitive_type Rhs>
 constexpr auto operator|(Lhs const &lhs, Rhs const &rhs)
     -> operations::primitive_dispatch_result_t<operations::BitwiseOr, Lhs, Rhs> {
   return operations::bit_or(lhs, rhs);
 }
 
-template <operations::primitive_instance Lhs,
+template <meta::primitive_type Lhs,
           operations::underlying_operand Rhs>
 constexpr auto operator|(Lhs const &lhs, Rhs const &rhs)
     -> operations::mixed_primitive_dispatch_result_t<operations::BitwiseOr, Lhs,
@@ -863,21 +864,21 @@ constexpr auto operator|(Lhs const &lhs, Rhs const &rhs)
 }
 
 template <operations::underlying_operand Lhs,
-          operations::primitive_instance Rhs>
+          meta::primitive_type Rhs>
 constexpr auto operator|(Lhs const &lhs, Rhs const &rhs)
     -> operations::flipped_mixed_primitive_dispatch_result_t<
         operations::BitwiseOr, Lhs, Rhs> {
   return operations::bit_or(lhs, rhs);
 }
 
-template <operations::primitive_instance Lhs,
-          operations::primitive_instance Rhs>
+template <meta::primitive_type Lhs,
+          meta::primitive_type Rhs>
 constexpr auto operator^(Lhs const &lhs, Rhs const &rhs)
     -> operations::primitive_dispatch_result_t<operations::BitwiseXor, Lhs, Rhs> {
   return operations::bit_xor(lhs, rhs);
 }
 
-template <operations::primitive_instance Lhs,
+template <meta::primitive_type Lhs,
           operations::underlying_operand Rhs>
 constexpr auto operator^(Lhs const &lhs, Rhs const &rhs)
     -> operations::mixed_primitive_dispatch_result_t<operations::BitwiseXor, Lhs,
@@ -886,7 +887,7 @@ constexpr auto operator^(Lhs const &lhs, Rhs const &rhs)
 }
 
 template <operations::underlying_operand Lhs,
-          operations::primitive_instance Rhs>
+          meta::primitive_type Rhs>
 constexpr auto operator^(Lhs const &lhs, Rhs const &rhs)
     -> operations::flipped_mixed_primitive_dispatch_result_t<
         operations::BitwiseXor, Lhs, Rhs> {
@@ -895,14 +896,14 @@ constexpr auto operator^(Lhs const &lhs, Rhs const &rhs)
 
 // Binary comparison operators
 
-template <operations::primitive_instance Lhs,
-          operations::primitive_instance Rhs>
+template <meta::primitive_type Lhs,
+          meta::primitive_type Rhs>
 constexpr auto operator==(Lhs const &lhs, Rhs const &rhs)
     -> operations::primitive_dispatch_result_t<operations::Equal, Lhs, Rhs> {
   return operations::equal(lhs, rhs);
 }
 
-template <operations::primitive_instance Lhs,
+template <meta::primitive_type Lhs,
           operations::underlying_operand Rhs>
 constexpr auto operator==(Lhs const &lhs, Rhs const &rhs)
     -> operations::mixed_primitive_dispatch_result_t<operations::Equal, Lhs,
@@ -911,21 +912,21 @@ constexpr auto operator==(Lhs const &lhs, Rhs const &rhs)
 }
 
 template <operations::underlying_operand Lhs,
-          operations::primitive_instance Rhs>
+          meta::primitive_type Rhs>
 constexpr auto operator==(Lhs const &lhs, Rhs const &rhs)
     -> operations::flipped_mixed_primitive_dispatch_result_t<operations::Equal,
                                                              Lhs, Rhs> {
   return operations::equal(lhs, rhs);
 }
 
-template <operations::primitive_instance Lhs,
-          operations::primitive_instance Rhs>
+template <meta::primitive_type Lhs,
+          meta::primitive_type Rhs>
 constexpr auto operator!=(Lhs const &lhs, Rhs const &rhs)
     -> operations::primitive_dispatch_result_t<operations::NotEqual, Lhs, Rhs> {
   return operations::not_equal(lhs, rhs);
 }
 
-template <operations::primitive_instance Lhs,
+template <meta::primitive_type Lhs,
           operations::underlying_operand Rhs>
 constexpr auto operator!=(Lhs const &lhs, Rhs const &rhs)
     -> operations::mixed_primitive_dispatch_result_t<operations::NotEqual, Lhs,
@@ -934,21 +935,21 @@ constexpr auto operator!=(Lhs const &lhs, Rhs const &rhs)
 }
 
 template <operations::underlying_operand Lhs,
-          operations::primitive_instance Rhs>
+          meta::primitive_type Rhs>
 constexpr auto operator!=(Lhs const &lhs, Rhs const &rhs)
     -> operations::flipped_mixed_primitive_dispatch_result_t<
         operations::NotEqual, Lhs, Rhs> {
   return operations::not_equal(lhs, rhs);
 }
 
-template <operations::primitive_instance Lhs,
-          operations::primitive_instance Rhs>
+template <meta::primitive_type Lhs,
+          meta::primitive_type Rhs>
 constexpr auto operator<=>(Lhs const &lhs, Rhs const &rhs)
     -> operations::three_way_dispatch_result_t<Lhs, Rhs> {
   return operations::three_way_compare(lhs, rhs);
 }
 
-template <operations::primitive_instance Lhs,
+template <meta::primitive_type Lhs,
           operations::underlying_operand Rhs>
 constexpr auto operator<=>(Lhs const &lhs, Rhs const &rhs)
     -> operations::mixed_three_way_dispatch_result_t<Lhs, Rhs> {
@@ -956,82 +957,83 @@ constexpr auto operator<=>(Lhs const &lhs, Rhs const &rhs)
 }
 
 template <operations::underlying_operand Lhs,
-          operations::primitive_instance Rhs>
+          meta::primitive_type Rhs>
 constexpr auto operator<=>(Lhs const &lhs, Rhs const &rhs)
     -> operations::flipped_mixed_three_way_dispatch_result_t<Lhs, Rhs> {
   return operations::three_way_compare(lhs, rhs);
 }
 
-template <operations::primitive_instance Lhs,
-          operations::primitive_instance Rhs>
+template <meta::primitive_type Lhs,
+          meta::primitive_type Rhs>
 constexpr auto operator+=(Lhs &lhs, Rhs const &rhs)
     -> operations::primitive_dispatch_result_t<operations::Addition, Lhs, Rhs> {
   return operations::add_assign(lhs, rhs);
 }
 
-template <operations::primitive_instance Lhs,
-          operations::primitive_instance Rhs>
+template <meta::primitive_type Lhs,
+          meta::primitive_type Rhs>
 constexpr auto operator-=(Lhs &lhs, Rhs const &rhs)
     -> operations::primitive_dispatch_result_t<operations::Subtraction, Lhs,
                                                Rhs> {
   return operations::sub_assign(lhs, rhs);
 }
 
-template <operations::primitive_instance Lhs,
-          operations::primitive_instance Rhs>
+template <meta::primitive_type Lhs,
+          meta::primitive_type Rhs>
 constexpr auto operator*=(Lhs &lhs, Rhs const &rhs)
     -> operations::primitive_dispatch_result_t<operations::Multiplication, Lhs,
                                                Rhs> {
   return operations::mul_assign(lhs, rhs);
 }
 
-template <operations::primitive_instance Lhs,
-          operations::primitive_instance Rhs>
+template <meta::primitive_type Lhs,
+          meta::primitive_type Rhs>
 constexpr auto operator/=(Lhs &lhs, Rhs const &rhs)
     -> operations::primitive_dispatch_result_t<operations::Division, Lhs, Rhs> {
   return operations::div_assign(lhs, rhs);
 }
 
-template <operations::primitive_instance Lhs,
-          operations::primitive_instance Rhs>
+template <meta::primitive_type Lhs,
+          meta::primitive_type Rhs>
 constexpr auto operator%=(Lhs &lhs, Rhs const &rhs)
     -> operations::primitive_dispatch_result_t<operations::Modulus, Lhs, Rhs> {
   return operations::mod_assign(lhs, rhs);
 }
 
-template <operations::primitive_instance Lhs,
-          operations::primitive_instance Rhs>
+template <meta::primitive_type Lhs,
+          meta::primitive_type Rhs>
 constexpr auto operator<<=(Lhs &lhs, Rhs const &rhs)
     -> operations::primitive_dispatch_result_t<operations::LeftShift, Lhs, Rhs> {
   return operations::shift_left_assign(lhs, rhs);
 }
 
-template <operations::primitive_instance Lhs,
-          operations::primitive_instance Rhs>
+template <meta::primitive_type Lhs,
+          meta::primitive_type Rhs>
 constexpr auto operator>>=(Lhs &lhs, Rhs const &rhs)
     -> operations::primitive_dispatch_result_t<operations::RightShift, Lhs, Rhs> {
   return operations::shift_right_assign(lhs, rhs);
 }
 
-template <operations::primitive_instance Lhs,
-          operations::primitive_instance Rhs>
+template <meta::primitive_type Lhs,
+          meta::primitive_type Rhs>
 constexpr auto operator&=(Lhs &lhs, Rhs const &rhs)
     -> operations::primitive_dispatch_result_t<operations::BitwiseAnd, Lhs, Rhs> {
   return operations::bit_and_assign(lhs, rhs);
 }
 
-template <operations::primitive_instance Lhs,
-          operations::primitive_instance Rhs>
+template <meta::primitive_type Lhs,
+          meta::primitive_type Rhs>
 constexpr auto operator|=(Lhs &lhs, Rhs const &rhs)
     -> operations::primitive_dispatch_result_t<operations::BitwiseOr, Lhs, Rhs> {
   return operations::bit_or_assign(lhs, rhs);
 }
 
-template <operations::primitive_instance Lhs,
-          operations::primitive_instance Rhs>
+template <meta::primitive_type Lhs,
+          meta::primitive_type Rhs>
 constexpr auto operator^=(Lhs &lhs, Rhs const &rhs)
     -> operations::primitive_dispatch_result_t<operations::BitwiseXor, Lhs, Rhs> {
   return operations::bit_xor_assign(lhs, rhs);
 }
 
 } // namespace mcpplibs::primitives::operators
+
