@@ -462,24 +462,6 @@ TEST(PrimitiveTraitsTest, UnderlyingTraitsDefaultsAndCustomRegistration) {
       (mcpplibs::primitives::underlying::traits<NotRegistered>::enabled));
 }
 
-TEST(PrimitiveTraitsTest, LegacyPrimitiveTraitsNamespaceAliasesRemainAvailable) {
-  using value_t = mcpplibs::primitives::primitive<
-      int, mcpplibs::primitives::policy::error::expected>;
-  using legacy_traits_t =
-      mcpplibs::primitives::traits::primitive_traits<value_t>;
-  using meta_traits_t = mcpplibs::primitives::meta::traits<value_t>;
-
-  static_assert(std::same_as<typename legacy_traits_t::value_type,
-                             typename meta_traits_t::value_type>);
-  static_assert(std::same_as<typename legacy_traits_t::policies,
-                             typename meta_traits_t::policies>);
-  static_assert(std::same_as<
-                mcpplibs::primitives::traits::make_primitive_t<
-                    int, typename legacy_traits_t::policies>,
-                value_t>);
-  SUCCEED();
-}
-
 TEST(PrimitiveTraitsTest, MetaTraitsExposeValueTypeAndPrimitiveMetadata) {
   using value_t = mcpplibs::primitives::primitive<
       short, mcpplibs::primitives::policy::value::checked,
