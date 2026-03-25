@@ -532,6 +532,9 @@ constexpr auto apply_assign(Lhs &lhs, Rhs const &rhs)
   using lhs_value_type = lhs_traits::value_type;
   using lhs_value_policy = lhs_traits::value_policy;
   using lhs_rep = underlying::traits<lhs_value_type>::rep_type;
+  using assign_meta = dispatcher_meta<OpTag, Lhs, Rhs, ErrorPayload>;
+  using common_value_type = assign_meta::common_rep;
+  using common_rep = underlying::traits<common_value_type>::rep_type;
 
   auto out = apply<OpTag, Lhs, Rhs, ErrorPayload>(lhs, rhs);
   if (!out.has_value()) {
@@ -539,11 +542,12 @@ constexpr auto apply_assign(Lhs &lhs, Rhs const &rhs)
   }
 
   auto const assigned_common = out->load();
+  auto const assigned_common_rep =
+      underlying::traits<common_value_type>::to_rep(assigned_common);
   if constexpr (std::same_as<lhs_value_policy, policy::value::checked> &&
-                std::integral<lhs_rep>) {
+                std_integer<lhs_rep> && std_numeric<common_rep>) {
     if (auto const kind =
-            conversion::numeric_risk<lhs_rep>(
-                assigned_common);
+            conversion::numeric_risk<lhs_rep>(assigned_common_rep);
         kind.has_value()) {
       return std::unexpected(
           details::to_error_payload<ErrorPayload>(
@@ -552,7 +556,7 @@ constexpr auto apply_assign(Lhs &lhs, Rhs const &rhs)
   }
 
   auto const assigned_rep =
-      conversion::saturating_cast<lhs_rep>(assigned_common);
+      conversion::saturating_cast<lhs_rep>(assigned_common_rep);
   lhs.store(underlying::traits<lhs_value_type>::from_rep(assigned_rep));
   return out;
 }

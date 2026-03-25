@@ -21,9 +21,9 @@ concept statically_castable = requires(SrcRep value) {
 
 template <typename DestRep, typename SrcRep>
 concept builtin_numeric_pair =
-    numeric_underlying_type<DestRep> && numeric_underlying_type<SrcRep>;
+    std_numeric<DestRep> && std_numeric<SrcRep>;
 
-template <integer_underlying_type DestRep, integer_underlying_type SrcRep>
+template <std_integer DestRep, std_integer SrcRep>
 constexpr auto numeric_risk(SrcRep value)
     -> std::optional<risk::kind> {
   using dest_type = std::remove_cvref_t<DestRep>;
@@ -62,7 +62,7 @@ constexpr auto numeric_risk(SrcRep value)
   }
 }
 
-template <integer_underlying_type DestRep, floating_underlying_type SrcRep>
+template <std_integer DestRep, std_floating SrcRep>
 constexpr auto numeric_risk(SrcRep value)
     -> std::optional<risk::kind> {
   using dest_type = std::remove_cvref_t<DestRep>;
@@ -91,7 +91,7 @@ constexpr auto numeric_risk(SrcRep value)
   return std::nullopt;
 }
 
-template <floating_underlying_type DestRep, integer_underlying_type SrcRep>
+template <std_floating DestRep, std_integer SrcRep>
 constexpr auto numeric_risk(SrcRep value)
     -> std::optional<risk::kind> {
   using dest_type = std::remove_cvref_t<DestRep>;
@@ -111,7 +111,7 @@ constexpr auto numeric_risk(SrcRep value)
   return std::nullopt;
 }
 
-template <floating_underlying_type DestRep, floating_underlying_type SrcRep>
+template <std_floating DestRep, std_floating SrcRep>
 constexpr auto numeric_risk(SrcRep value)
     -> std::optional<risk::kind> {
   using dest_type = std::remove_cvref_t<DestRep>;
@@ -200,8 +200,7 @@ constexpr auto truncating_rep_cast(SrcRep value) noexcept
   using dest_type = std::remove_cvref_t<DestRep>;
   using src_type = std::remove_cvref_t<SrcRep>;
 
-  if constexpr (integer_underlying_type<dest_type> &&
-                floating_underlying_type<src_type>) {
+  if constexpr (std_integer<dest_type> && std_floating<src_type>) {
     if (std::isnan(value)) {
       return dest_type{};
     }
@@ -280,25 +279,25 @@ constexpr auto cast_underlying_result(Src value, RepCaster rep_caster)
 
 export namespace mcpplibs::primitives::conversion {
 
-template <integer_underlying_type DestRep, integer_underlying_type SrcRep>
+template <std_integer DestRep, std_integer SrcRep>
 constexpr auto numeric_risk(SrcRep value)
     -> std::optional<risk::kind> {
   return details::numeric_risk<DestRep>(value);
 }
 
-template <integer_underlying_type DestRep, floating_underlying_type SrcRep>
+template <std_integer DestRep, std_floating SrcRep>
 constexpr auto numeric_risk(SrcRep value)
     -> std::optional<risk::kind> {
   return details::numeric_risk<DestRep>(value);
 }
 
-template <floating_underlying_type DestRep, integer_underlying_type SrcRep>
+template <std_floating DestRep, std_integer SrcRep>
 constexpr auto numeric_risk(SrcRep value)
     -> std::optional<risk::kind> {
   return details::numeric_risk<DestRep>(value);
 }
 
-template <floating_underlying_type DestRep, floating_underlying_type SrcRep>
+template <std_floating DestRep, std_floating SrcRep>
 constexpr auto numeric_risk(SrcRep value)
     -> std::optional<risk::kind> {
   return details::numeric_risk<DestRep>(value);
