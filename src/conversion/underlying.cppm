@@ -348,73 +348,73 @@ template <underlying_type Dest, underlying_type Src>
 constexpr auto unchecked_cast(Src value) noexcept -> Dest {
   using src_type = std::remove_cv_t<Src>;
   using dest_type = std::remove_cv_t<Dest>;
-  using src_rep_type = primitives::underlying::traits<src_type>::rep_type;
-  using dest_rep_type = primitives::underlying::traits<dest_type>::rep_type;
+  using src_rep_type = underlying::traits<src_type>::rep_type;
+  using dest_rep_type = underlying::traits<dest_type>::rep_type;
 
-  auto const source_rep = primitives::underlying::traits<src_type>::to_rep(value);
+  auto const source_rep = underlying::traits<src_type>::to_rep(value);
   auto const target_rep =
       details::unchecked_rep_cast<dest_rep_type>(static_cast<src_rep_type>(source_rep));
-  return primitives::underlying::traits<dest_type>::from_rep(target_rep);
+  return underlying::traits<dest_type>::from_rep(target_rep);
 }
 
 template <underlying_type Dest, underlying_type Src>
 constexpr auto checked_cast(Src value) -> cast_result<Dest> {
   using src_type = std::remove_cv_t<Src>;
   using dest_type = std::remove_cv_t<Dest>;
-  using src_rep_type = primitives::underlying::traits<src_type>::rep_type;
-  using dest_rep_type = primitives::underlying::traits<dest_type>::rep_type;
+  using src_rep_type = underlying::traits<src_type>::rep_type;
+  using dest_rep_type = underlying::traits<dest_type>::rep_type;
 
-  auto const source_rep = primitives::underlying::traits<src_type>::to_rep(value);
+  auto const source_rep = underlying::traits<src_type>::to_rep(value);
   auto const target_rep =
       details::checked_rep_cast<dest_rep_type>(static_cast<src_rep_type>(source_rep));
   if (!target_rep.has_value()) {
     return std::unexpected(target_rep.error());
   }
 
-  return primitives::underlying::traits<dest_type>::from_rep(*target_rep);
+  return underlying::traits<dest_type>::from_rep(*target_rep);
 }
 
 template <underlying_type Dest, underlying_type Src>
 constexpr auto saturating_cast(Src value) noexcept -> Dest {
   using src_type = std::remove_cv_t<Src>;
   using dest_type = std::remove_cv_t<Dest>;
-  using src_rep_type = primitives::underlying::traits<src_type>::rep_type;
-  using dest_rep_type = primitives::underlying::traits<dest_type>::rep_type;
+  using src_rep_type = underlying::traits<src_type>::rep_type;
+  using dest_rep_type = underlying::traits<dest_type>::rep_type;
 
-  auto const source_rep = primitives::underlying::traits<src_type>::to_rep(value);
+  auto const source_rep = underlying::traits<src_type>::to_rep(value);
   auto const target_rep =
       details::saturating_rep_cast<dest_rep_type>(static_cast<src_rep_type>(source_rep));
-  return primitives::underlying::traits<dest_type>::from_rep(target_rep);
+  return underlying::traits<dest_type>::from_rep(target_rep);
 }
 
 template <underlying_type Dest, underlying_type Src>
 constexpr auto truncating_cast(Src value) noexcept -> Dest {
   using src_type = std::remove_cv_t<Src>;
   using dest_type = std::remove_cv_t<Dest>;
-  using src_rep_type = primitives::underlying::traits<src_type>::rep_type;
-  using dest_rep_type = primitives::underlying::traits<dest_type>::rep_type;
+  using src_rep_type = underlying::traits<src_type>::rep_type;
+  using dest_rep_type = underlying::traits<dest_type>::rep_type;
 
-  auto const source_rep = primitives::underlying::traits<src_type>::to_rep(value);
+  auto const source_rep = underlying::traits<src_type>::to_rep(value);
   auto const target_rep =
       details::truncating_rep_cast<dest_rep_type>(static_cast<src_rep_type>(source_rep));
-  return primitives::underlying::traits<dest_type>::from_rep(target_rep);
+  return underlying::traits<dest_type>::from_rep(target_rep);
 }
 
 template <underlying_type Dest, underlying_type Src>
 constexpr auto exact_cast(Src value) -> cast_result<Dest> {
   using src_type = std::remove_cv_t<Src>;
   using dest_type = std::remove_cv_t<Dest>;
-  using src_rep_type = primitives::underlying::traits<src_type>::rep_type;
-  using dest_rep_type = primitives::underlying::traits<dest_type>::rep_type;
+  using src_rep_type = underlying::traits<src_type>::rep_type;
+  using dest_rep_type = underlying::traits<dest_type>::rep_type;
 
-  auto const source_rep = primitives::underlying::traits<src_type>::to_rep(value);
+  auto const source_rep = underlying::traits<src_type>::to_rep(value);
   auto const target_rep =
       details::exact_rep_cast<dest_rep_type>(static_cast<src_rep_type>(source_rep));
   if (!target_rep.has_value()) {
     return std::unexpected(target_rep.error());
   }
 
-  return primitives::underlying::traits<dest_type>::from_rep(*target_rep);
+  return underlying::traits<dest_type>::from_rep(*target_rep);
 }
 
 } // namespace mcpplibs::primitives::conversion::underlying
