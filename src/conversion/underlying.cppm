@@ -46,7 +46,7 @@ template <typename DestRep, typename SrcRep>
 concept builtin_numeric_pair = numeric_like<DestRep> && numeric_like<SrcRep>;
 
 template <integral_like DestRep, integral_like SrcRep>
-constexpr auto integral_to_integral_risk(SrcRep value)
+constexpr auto numeric_risk(SrcRep value)
     -> std::optional<risk::kind> {
   using dest_type = std::remove_cvref_t<DestRep>;
   using src_type = std::remove_cvref_t<SrcRep>;
@@ -85,7 +85,7 @@ constexpr auto integral_to_integral_risk(SrcRep value)
 }
 
 template <integral_like DestRep, floating_like SrcRep>
-constexpr auto floating_to_integral_risk(SrcRep value)
+constexpr auto numeric_risk(SrcRep value)
     -> std::optional<risk::kind> {
   using dest_type = std::remove_cvref_t<DestRep>;
   using src_type = std::remove_cvref_t<SrcRep>;
@@ -114,7 +114,7 @@ constexpr auto floating_to_integral_risk(SrcRep value)
 }
 
 template <floating_like DestRep, integral_like SrcRep>
-constexpr auto integral_to_floating_risk(SrcRep value)
+constexpr auto numeric_risk(SrcRep value)
     -> std::optional<risk::kind> {
   using dest_type = std::remove_cvref_t<DestRep>;
   using src_type = std::remove_cvref_t<SrcRep>;
@@ -134,7 +134,7 @@ constexpr auto integral_to_floating_risk(SrcRep value)
 }
 
 template <floating_like DestRep, floating_like SrcRep>
-constexpr auto floating_to_floating_risk(SrcRep value)
+constexpr auto numeric_risk(SrcRep value)
     -> std::optional<risk::kind> {
   using dest_type = std::remove_cvref_t<DestRep>;
 
@@ -165,19 +165,6 @@ constexpr auto floating_to_floating_risk(SrcRep value)
   }
 
   return std::nullopt;
-}
-
-template <numeric_like DestRep, numeric_like SrcRep>
-constexpr auto numeric_risk(SrcRep value) -> std::optional<risk::kind> {
-  if constexpr (integral_like<DestRep> && integral_like<SrcRep>) {
-    return integral_to_integral_risk<DestRep>(value);
-  } else if constexpr (integral_like<DestRep> && floating_like<SrcRep>) {
-    return floating_to_integral_risk<DestRep>(value);
-  } else if constexpr (floating_like<DestRep> && integral_like<SrcRep>) {
-    return integral_to_floating_risk<DestRep>(value);
-  } else {
-    return floating_to_floating_risk<DestRep>(value);
-  }
 }
 
 template <numeric_cast_operand DestRep, numeric_cast_operand SrcRep>
@@ -284,31 +271,26 @@ constexpr auto exact_rep_cast(SrcRep value)
 export namespace mcpplibs::primitives::conversion::underlying {
 
 template <details::integral_like DestRep, details::integral_like SrcRep>
-constexpr auto integral_to_integral_risk(SrcRep value)
+constexpr auto numeric_risk(SrcRep value)
     -> std::optional<risk::kind> {
-  return details::integral_to_integral_risk<DestRep>(value);
+  return details::numeric_risk<DestRep>(value);
 }
 
 template <details::integral_like DestRep, details::floating_like SrcRep>
-constexpr auto floating_to_integral_risk(SrcRep value)
+constexpr auto numeric_risk(SrcRep value)
     -> std::optional<risk::kind> {
-  return details::floating_to_integral_risk<DestRep>(value);
+  return details::numeric_risk<DestRep>(value);
 }
 
 template <details::floating_like DestRep, details::integral_like SrcRep>
-constexpr auto integral_to_floating_risk(SrcRep value)
+constexpr auto numeric_risk(SrcRep value)
     -> std::optional<risk::kind> {
-  return details::integral_to_floating_risk<DestRep>(value);
+  return details::numeric_risk<DestRep>(value);
 }
 
 template <details::floating_like DestRep, details::floating_like SrcRep>
-constexpr auto floating_to_floating_risk(SrcRep value)
+constexpr auto numeric_risk(SrcRep value)
     -> std::optional<risk::kind> {
-  return details::floating_to_floating_risk<DestRep>(value);
-}
-
-template <details::numeric_like DestRep, details::numeric_like SrcRep>
-constexpr auto numeric_risk(SrcRep value) -> std::optional<risk::kind> {
   return details::numeric_risk<DestRep>(value);
 }
 
