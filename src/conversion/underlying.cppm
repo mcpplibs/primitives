@@ -297,8 +297,8 @@ constexpr auto numeric_risk(SrcRep value)
 template <details::numeric_cast_operand DestRep,
           details::numeric_cast_operand SrcRep>
   requires details::statically_castable<DestRep, SrcRep> &&
-           !(underlying_type<std::remove_cvref_t<DestRep>> &&
-             underlying_type<std::remove_cvref_t<SrcRep>>)
+           (!(underlying_type<std::remove_cvref_t<DestRep>> &&
+              underlying_type<std::remove_cvref_t<SrcRep>>))
 constexpr auto unchecked_cast(SrcRep value) noexcept
     -> std::remove_cvref_t<DestRep> {
   return details::unchecked_rep_cast<DestRep>(value);
@@ -307,8 +307,8 @@ constexpr auto unchecked_cast(SrcRep value) noexcept
 template <details::numeric_cast_operand DestRep,
           details::numeric_cast_operand SrcRep>
   requires details::statically_castable<DestRep, SrcRep> &&
-           !(underlying_type<std::remove_cvref_t<DestRep>> &&
-             underlying_type<std::remove_cvref_t<SrcRep>>)
+           (!(underlying_type<std::remove_cvref_t<DestRep>> &&
+              underlying_type<std::remove_cvref_t<SrcRep>>))
 constexpr auto checked_cast(SrcRep value)
     -> cast_result<std::remove_cvref_t<DestRep>> {
   return details::checked_rep_cast<DestRep>(value);
@@ -317,8 +317,8 @@ constexpr auto checked_cast(SrcRep value)
 template <details::numeric_cast_operand DestRep,
           details::numeric_cast_operand SrcRep>
   requires details::statically_castable<DestRep, SrcRep> &&
-           !(underlying_type<std::remove_cvref_t<DestRep>> &&
-             underlying_type<std::remove_cvref_t<SrcRep>>)
+           (!(underlying_type<std::remove_cvref_t<DestRep>> &&
+              underlying_type<std::remove_cvref_t<SrcRep>>))
 constexpr auto saturating_cast(SrcRep value) noexcept
     -> std::remove_cvref_t<DestRep> {
   return details::saturating_rep_cast<DestRep>(value);
@@ -327,8 +327,8 @@ constexpr auto saturating_cast(SrcRep value) noexcept
 template <details::numeric_cast_operand DestRep,
           details::numeric_cast_operand SrcRep>
   requires details::statically_castable<DestRep, SrcRep> &&
-           !(underlying_type<std::remove_cvref_t<DestRep>> &&
-             underlying_type<std::remove_cvref_t<SrcRep>>)
+           (!(underlying_type<std::remove_cvref_t<DestRep>> &&
+              underlying_type<std::remove_cvref_t<SrcRep>>))
 constexpr auto truncating_cast(SrcRep value) noexcept
     -> std::remove_cvref_t<DestRep> {
   return details::truncating_rep_cast<DestRep>(value);
@@ -337,8 +337,8 @@ constexpr auto truncating_cast(SrcRep value) noexcept
 template <details::numeric_cast_operand DestRep,
           details::numeric_cast_operand SrcRep>
   requires details::statically_castable<DestRep, SrcRep> &&
-           !(underlying_type<std::remove_cvref_t<DestRep>> &&
-             underlying_type<std::remove_cvref_t<SrcRep>>)
+           (!(underlying_type<std::remove_cvref_t<DestRep>> &&
+              underlying_type<std::remove_cvref_t<SrcRep>>))
 constexpr auto exact_cast(SrcRep value)
     -> cast_result<std::remove_cvref_t<DestRep>> {
   return details::exact_rep_cast<DestRep>(value);
