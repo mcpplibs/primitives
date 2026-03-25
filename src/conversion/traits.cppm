@@ -19,7 +19,7 @@ enum class kind : unsigned char {
 
 template <typename Value>
 struct traits {
-  kind kind = kind::none;
+  kind code = kind::none;
   std::optional<Value> source_value{};
   std::optional<Value> converted_value{};
 };
