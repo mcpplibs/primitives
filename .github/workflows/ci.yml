@@ -85,7 +85,7 @@ jobs:
 
   build-windows:
     runs-on: windows-latest
-    timeout-minutes: 20
+    timeout-minutes: 30
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -96,13 +96,17 @@ jobs:
           xmake-version: latest
           package-cache: true
 
-      - name: Build
+      - name: Build core library
         run: |
           xmake f -m release -y -vv
-          xmake -y -vv -j$env:NUMBER_OF_PROCESSORS
+          xmake b -y -vv -j2 mcpplibs-primitives
 
-      - name: Test
-        run: xmake run primitives_test
+      - name: Build and test
+        run: |
+          xmake b -y -vv -j2 primitives_test
+          xmake run primitives_test
 
-      - name: Run examples
-        run: xmake run basic
+      - name: Build and run basic example
+        run: |
+          xmake b -y -vv -j2 basic
+          xmake run basic
