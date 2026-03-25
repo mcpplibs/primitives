@@ -15,37 +15,16 @@ import mcpplibs.primitives.underlying.traits;
 
 namespace mcpplibs::primitives::conversion::details {
 
-template <typename T>
-concept integral_like = std::integral<std::remove_cvref_t<T>>;
-
-template <typename T>
-concept floating_like = std::floating_point<std::remove_cvref_t<T>>;
-
-template <typename T>
-concept numeric_like = integral_like<T> || floating_like<T>;
-
-template <typename T>
-concept custom_numeric_like =
-    requires(std::remove_cvref_t<T> a, std::remove_cvref_t<T> b) {
-      { a + b };
-      { a - b };
-      { a * b };
-      { a / b };
-      { a == b } -> std::convertible_to<bool>;
-    };
-
-template <typename T>
-concept numeric_cast_operand = numeric_like<T> || custom_numeric_like<T>;
-
 template <typename DestRep, typename SrcRep>
 concept statically_castable = requires(SrcRep value) {
   static_cast<std::remove_cvref_t<DestRep>>(value);
 };
 
 template <typename DestRep, typename SrcRep>
-concept builtin_numeric_pair = numeric_like<DestRep> && numeric_like<SrcRep>;
+concept builtin_numeric_pair =
+    numeric_underlying_type<DestRep> && numeric_underlying_type<SrcRep>;
 
-template <integral_like DestRep, integral_like SrcRep>
+template <integer_underlying_type DestRep, integer_underlying_type SrcRep>
 constexpr auto numeric_risk(SrcRep value)
     -> std::optional<risk::kind> {
   using dest_type = std::remove_cvref_t<DestRep>;
@@ -84,7 +63,7 @@ constexpr auto numeric_risk(SrcRep value)
   }
 }
 
-template <integral_like DestRep, floating_like SrcRep>
+template <integer_underlying_type DestRep, floating_underlying_type SrcRep>
 constexpr auto numeric_risk(SrcRep value)
     -> std::optional<risk::kind> {
   using dest_type = std::remove_cvref_t<DestRep>;
@@ -113,7 +92,7 @@ constexpr auto numeric_risk(SrcRep value)
   return std::nullopt;
 }
 
-template <floating_like DestRep, integral_like SrcRep>
+template <floating_underlying_type DestRep, integer_underlying_type SrcRep>
 constexpr auto numeric_risk(SrcRep value)
     -> std::optional<risk::kind> {
   using dest_type = std::remove_cvref_t<DestRep>;
@@ -133,7 +112,7 @@ constexpr auto numeric_risk(SrcRep value)
   return std::nullopt;
 }
 
-template <floating_like DestRep, floating_like SrcRep>
+template <floating_underlying_type DestRep, floating_underlying_type SrcRep>
 constexpr auto numeric_risk(SrcRep value)
     -> std::optional<risk::kind> {
   using dest_type = std::remove_cvref_t<DestRep>;
@@ -167,7 +146,7 @@ constexpr auto numeric_risk(SrcRep value)
   return std::nullopt;
 }
 
-template <numeric_cast_operand DestRep, numeric_cast_operand SrcRep>
+template <numeric_underlying_type DestRep, numeric_underlying_type SrcRep>
   requires statically_castable<DestRep, SrcRep>
 constexpr auto unchecked_rep_cast(SrcRep value) noexcept
     -> std::remove_cvref_t<DestRep> {
@@ -175,7 +154,7 @@ constexpr auto unchecked_rep_cast(SrcRep value) noexcept
   return static_cast<dest_type>(value);
 }
 
-template <numeric_cast_operand DestRep, numeric_cast_operand SrcRep>
+template <numeric_underlying_type DestRep, numeric_underlying_type SrcRep>
   requires statically_castable<DestRep, SrcRep>
 constexpr auto checked_rep_cast(SrcRep value)
     -> cast_result<std::remove_cvref_t<DestRep>> {
@@ -191,7 +170,7 @@ constexpr auto checked_rep_cast(SrcRep value)
   return static_cast<dest_type>(value);
 }
 
-template <numeric_cast_operand DestRep, numeric_cast_operand SrcRep>
+template <numeric_underlying_type DestRep, numeric_underlying_type SrcRep>
   requires statically_castable<DestRep, SrcRep>
 constexpr auto saturating_rep_cast(SrcRep value) noexcept
     -> std::remove_cvref_t<DestRep> {
@@ -215,14 +194,15 @@ constexpr auto saturating_rep_cast(SrcRep value) noexcept
   return static_cast<dest_type>(value);
 }
 
-template <numeric_cast_operand DestRep, numeric_cast_operand SrcRep>
+template <numeric_underlying_type DestRep, numeric_underlying_type SrcRep>
   requires statically_castable<DestRep, SrcRep>
 constexpr auto truncating_rep_cast(SrcRep value) noexcept
     -> std::remove_cvref_t<DestRep> {
   using dest_type = std::remove_cvref_t<DestRep>;
   using src_type = std::remove_cvref_t<SrcRep>;
 
-  if constexpr (integral_like<dest_type> && floating_like<src_type>) {
+  if constexpr (integer_underlying_type<dest_type> &&
+                floating_underlying_type<src_type>) {
     if (std::isnan(value)) {
       return dest_type{};
     }
@@ -249,7 +229,7 @@ constexpr auto truncating_rep_cast(SrcRep value) noexcept
   return static_cast<dest_type>(value);
 }
 
-template <numeric_cast_operand DestRep, numeric_cast_operand SrcRep>
+template <numeric_underlying_type DestRep, numeric_underlying_type SrcRep>
   requires statically_castable<DestRep, SrcRep>
 constexpr auto exact_rep_cast(SrcRep value)
     -> cast_result<std::remove_cvref_t<DestRep>> {
@@ -270,75 +250,60 @@ constexpr auto exact_rep_cast(SrcRep value)
 
 export namespace mcpplibs::primitives::conversion {
 
-template <details::integral_like DestRep, details::integral_like SrcRep>
+template <integer_underlying_type DestRep, integer_underlying_type SrcRep>
 constexpr auto numeric_risk(SrcRep value)
     -> std::optional<risk::kind> {
   return details::numeric_risk<DestRep>(value);
 }
 
-template <details::integral_like DestRep, details::floating_like SrcRep>
+template <integer_underlying_type DestRep, floating_underlying_type SrcRep>
 constexpr auto numeric_risk(SrcRep value)
     -> std::optional<risk::kind> {
   return details::numeric_risk<DestRep>(value);
 }
 
-template <details::floating_like DestRep, details::integral_like SrcRep>
+template <floating_underlying_type DestRep, integer_underlying_type SrcRep>
 constexpr auto numeric_risk(SrcRep value)
     -> std::optional<risk::kind> {
   return details::numeric_risk<DestRep>(value);
 }
 
-template <details::floating_like DestRep, details::floating_like SrcRep>
+template <floating_underlying_type DestRep, floating_underlying_type SrcRep>
 constexpr auto numeric_risk(SrcRep value)
     -> std::optional<risk::kind> {
   return details::numeric_risk<DestRep>(value);
 }
 
-template <details::numeric_cast_operand DestRep,
-          details::numeric_cast_operand SrcRep>
-  requires details::statically_castable<DestRep, SrcRep> &&
-           (!(underlying_type<std::remove_cvref_t<DestRep>> &&
-              underlying_type<std::remove_cvref_t<SrcRep>>))
+template <numeric_underlying_type DestRep, numeric_underlying_type SrcRep>
+  requires details::statically_castable<DestRep, SrcRep>
 constexpr auto unchecked_cast(SrcRep value) noexcept
     -> std::remove_cvref_t<DestRep> {
   return details::unchecked_rep_cast<DestRep>(value);
 }
 
-template <details::numeric_cast_operand DestRep,
-          details::numeric_cast_operand SrcRep>
-  requires details::statically_castable<DestRep, SrcRep> &&
-           (!(underlying_type<std::remove_cvref_t<DestRep>> &&
-              underlying_type<std::remove_cvref_t<SrcRep>>))
+template <numeric_underlying_type DestRep, numeric_underlying_type SrcRep>
+  requires details::statically_castable<DestRep, SrcRep>
 constexpr auto checked_cast(SrcRep value)
     -> cast_result<std::remove_cvref_t<DestRep>> {
   return details::checked_rep_cast<DestRep>(value);
 }
 
-template <details::numeric_cast_operand DestRep,
-          details::numeric_cast_operand SrcRep>
-  requires details::statically_castable<DestRep, SrcRep> &&
-           (!(underlying_type<std::remove_cvref_t<DestRep>> &&
-              underlying_type<std::remove_cvref_t<SrcRep>>))
+template <numeric_underlying_type DestRep, numeric_underlying_type SrcRep>
+  requires details::statically_castable<DestRep, SrcRep>
 constexpr auto saturating_cast(SrcRep value) noexcept
     -> std::remove_cvref_t<DestRep> {
   return details::saturating_rep_cast<DestRep>(value);
 }
 
-template <details::numeric_cast_operand DestRep,
-          details::numeric_cast_operand SrcRep>
-  requires details::statically_castable<DestRep, SrcRep> &&
-           (!(underlying_type<std::remove_cvref_t<DestRep>> &&
-              underlying_type<std::remove_cvref_t<SrcRep>>))
+template <numeric_underlying_type DestRep, numeric_underlying_type SrcRep>
+  requires details::statically_castable<DestRep, SrcRep>
 constexpr auto truncating_cast(SrcRep value) noexcept
     -> std::remove_cvref_t<DestRep> {
   return details::truncating_rep_cast<DestRep>(value);
 }
 
-template <details::numeric_cast_operand DestRep,
-          details::numeric_cast_operand SrcRep>
-  requires details::statically_castable<DestRep, SrcRep> &&
-           (!(underlying_type<std::remove_cvref_t<DestRep>> &&
-              underlying_type<std::remove_cvref_t<SrcRep>>))
+template <numeric_underlying_type DestRep, numeric_underlying_type SrcRep>
+  requires details::statically_castable<DestRep, SrcRep>
 constexpr auto exact_cast(SrcRep value)
     -> cast_result<std::remove_cvref_t<DestRep>> {
   return details::exact_rep_cast<DestRep>(value);
