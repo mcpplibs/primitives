@@ -1,8 +1,11 @@
 #include <atomic>
 #include <gtest/gtest.h>
 #include <type_traits>
+
 import mcpplibs.primitives.policy;
-import mcpplibs.primitives.operations;
+import mcpplibs.primitives.underlying;
+import mcpplibs.primitives.operations.traits;
+import mcpplibs.primitives.operations.impl;
 
 using namespace mcpplibs::primitives;
 

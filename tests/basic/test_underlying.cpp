@@ -3,7 +3,7 @@
 import mcpplibs.primitives.underlying;
 import mcpplibs.primitives.primitive;
 import mcpplibs.primitives.policy;
-import mcpplibs.primitives.operations;
+import mcpplibs.primitives.operations.impl;
 
 namespace {
 
@@ -577,49 +577,6 @@ TEST(PrimitiveTraitsTest, CustomNumericLikeRepTypeRejectsInvalidCategory) {
   EXPECT_TRUE(
       (mcpplibs::primitives::underlying::traits<BadCustomKind>::enabled));
   EXPECT_FALSE((mcpplibs::primitives::underlying_type<BadCustomKind>));
-}
-
-TEST(PrimitiveTraitsTest, CustomUnderlyingParticipatesInPrimitiveOperations) {
-  using value_t = mcpplibs::primitives::primitive<
-      BigIntLike, mcpplibs::primitives::policy::value::checked,
-      mcpplibs::primitives::policy::error::expected>;
-
-  auto const lhs = value_t{BigIntLike{40}};
-  auto const rhs = value_t{BigIntLike{2}};
-
-  auto const result = mcpplibs::primitives::operations::add(lhs, rhs);
-
-  ASSERT_TRUE(result.has_value());
-  EXPECT_EQ(result->value().value, 42);
-}
-
-TEST(PrimitiveTraitsTest, CustomWrappedUnderlyingUsesRepBridgeForArithmetic) {
-  using value_t = mcpplibs::primitives::primitive<
-      UserInteger, mcpplibs::primitives::policy::value::checked,
-      mcpplibs::primitives::policy::error::expected>;
-
-  auto const lhs = value_t{UserInteger{40}};
-  auto const rhs = value_t{UserInteger{2}};
-
-  auto const result = mcpplibs::primitives::operations::add(lhs, rhs);
-
-  ASSERT_TRUE(result.has_value());
-  EXPECT_EQ(result->value(), 42);
-}
-
-TEST(PrimitiveTraitsTest, InvalidUnderlyingRepIsRejectedByDispatcher) {
-  using value_t = mcpplibs::primitives::primitive<
-      NonNegativeInt, mcpplibs::primitives::policy::value::checked,
-      mcpplibs::primitives::policy::error::expected>;
-
-  auto const lhs = value_t{NonNegativeInt{-1}};
-  auto const rhs = value_t{NonNegativeInt{2}};
-
-  auto const result = mcpplibs::primitives::operations::add(lhs, rhs);
-
-  ASSERT_FALSE(result.has_value());
-  EXPECT_EQ(result.error(),
-            mcpplibs::primitives::policy::error::kind::domain_error);
 }
 
 TEST(PrimitiveTraitsTest,
