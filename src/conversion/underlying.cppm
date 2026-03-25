@@ -268,7 +268,7 @@ constexpr auto exact_rep_cast(SrcRep value)
 
 } // namespace mcpplibs::primitives::conversion::details
 
-export namespace mcpplibs::primitives::conversion::underlying {
+export namespace mcpplibs::primitives::conversion {
 
 template <details::integral_like DestRep, details::integral_like SrcRep>
 constexpr auto numeric_risk(SrcRep value)
@@ -417,4 +417,4 @@ constexpr auto exact_cast(Src value) -> cast_result<Dest> {
   return underlying::traits<dest_type>::from_rep(*target_rep);
 }
 
-} // namespace mcpplibs::primitives::conversion::underlying
+} // namespace mcpplibs::primitives::conversion

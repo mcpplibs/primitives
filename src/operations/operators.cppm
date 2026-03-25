@@ -542,7 +542,7 @@ constexpr auto apply_assign(Lhs &lhs, Rhs const &rhs)
   if constexpr (std::same_as<lhs_value_policy, policy::value::checked> &&
                 std::integral<lhs_rep>) {
     if (auto const kind =
-            conversion::underlying::numeric_risk<lhs_rep>(
+            conversion::numeric_risk<lhs_rep>(
                 assigned_common);
         kind.has_value()) {
       return std::unexpected(
@@ -552,7 +552,7 @@ constexpr auto apply_assign(Lhs &lhs, Rhs const &rhs)
   }
 
   auto const assigned_rep =
-      conversion::underlying::saturating_cast<lhs_rep>(assigned_common);
+      conversion::saturating_cast<lhs_rep>(assigned_common);
   lhs.store(underlying::traits<lhs_value_type>::from_rep(assigned_rep));
   return out;
 }
