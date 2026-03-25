@@ -8,7 +8,10 @@
 #include <utility>
 #include <vector>
 
-import mcpplibs.primitives;
+import mcpplibs.primitives.underlying;
+import mcpplibs.primitives.operations;
+import mcpplibs.primitives.primitive;
+import mcpplibs.primitives.policy;
 
 using namespace mcpplibs::primitives;
 

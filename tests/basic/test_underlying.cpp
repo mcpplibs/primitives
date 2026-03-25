@@ -1,6 +1,9 @@
 #include <gtest/gtest.h>
 
-import mcpplibs.primitives;
+import mcpplibs.primitives.underlying;
+import mcpplibs.primitives.primitive;
+import mcpplibs.primitives.policy;
+import mcpplibs.primitives.operations;
 
 namespace {
 

@@ -1,9 +1,9 @@
 #include <cstdint>
 #include <gtest/gtest.h>
 #include <limits>
-#include <type_traits>
 
-import mcpplibs.primitives;
+import mcpplibs.primitives.underlying;
+import mcpplibs.primitives.conversion;
 
 using namespace mcpplibs::primitives;
 
