@@ -1,7 +1,6 @@
 module;
 
 #include <cmath>
-#include <concepts>
 #include <cstdint>
 #include <expected>
 #include <limits>
