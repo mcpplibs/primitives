@@ -171,6 +171,9 @@ concept underlying_type =
     underlying::details::has_consistent_category<T>;
 
 template <typename T>
+concept underlying_operand = underlying_type<std::remove_cvref_t<T>>;
+
+template <typename T>
 concept boolean_underlying_type =
     underlying_type<T> && (underlying::traits<std::remove_cv_t<T>>::kind ==
                            underlying::category::boolean);

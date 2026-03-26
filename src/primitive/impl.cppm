@@ -5,6 +5,7 @@ module;
 
 export module mcpplibs.primitives.primitive.impl;
 
+import mcpplibs.primitives.conversion.underlying;
 import mcpplibs.primitives.underlying.traits;
 import mcpplibs.primitives.policy.traits;
 import mcpplibs.primitives.policy.handler;
@@ -63,7 +64,7 @@ private:
 
     auto const source_rep = underlying::traits<source_value_type>::to_rep(source);
     auto const target_rep =
-        policy::details::safe_numeric_cast<target_rep_type>(
+        conversion::saturating_cast<target_rep_type>(
             static_cast<source_rep_type>(source_rep));
     return underlying::traits<std::remove_cv_t<Target>>::from_rep(target_rep);
   }

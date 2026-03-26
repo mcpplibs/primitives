@@ -6,7 +6,6 @@ export module mcpplibs.primitives.primitive.traits;
 
 import mcpplibs.primitives.primitive.impl;
 import mcpplibs.primitives.policy.traits;
-import mcpplibs.primitives.policy.impl;
 import mcpplibs.primitives.policy.utility;
 import mcpplibs.primitives.underlying.traits;
 
@@ -45,8 +44,10 @@ template <underlying_type T, typename PoliciesTuple>
 using make_primitive_t = make_primitive<T, PoliciesTuple>::type;
 
 using default_policies =
-    std::tuple<policy::defaults::value, policy::defaults::type,
-               policy::defaults::error, policy::defaults::concurrency>;
+    std::tuple<policy::resolve_policy_t<policy::category::value>,
+               policy::resolve_policy_t<policy::category::type>,
+               policy::resolve_policy_t<policy::category::error>,
+               policy::resolve_policy_t<policy::category::concurrency>>;
 
 template <typename T>
 using traits = details::primitive_traits_impl<std::remove_cvref_t<T>>;
@@ -60,6 +61,9 @@ concept primitive_type = requires {
   typename traits<T>::error_policy;
   typename traits<T>::concurrency_policy;
 };
+
+template <typename T>
+concept primitive_operand = primitive_type<std::remove_cvref_t<T>>;
 
 template <typename T>
 concept boolean =
@@ -88,20 +92,28 @@ concept floating =
 template <typename T>
 concept numeric = integer<T> || floating<T>;
 
-} // namespace mcpplibs::primitives::meta
-
-// Backward-compatible aliases for existing downstream users.
-export namespace mcpplibs::primitives::traits {
-using policy_category [[deprecated]] = meta::policy_category;
-
-template <typename T, typename PoliciesTuple>
-using make_primitive [[deprecated]] = meta::make_primitive<T, PoliciesTuple>;
-
-template <underlying_type T, typename PoliciesTuple>
-using make_primitive_t [[deprecated]] = meta::make_primitive_t<T, PoliciesTuple>;
-
-using default_policies [[deprecated]] = meta::default_policies;
+template <typename T>
+concept primitive_like =
+    primitive_type<T> || underlying_type<std::remove_cvref_t<T>>;
 
 template <typename T>
-using primitive_traits [[deprecated]] = meta::traits<T>;
-} // namespace mcpplibs::primitives::traits
+concept boolean_like =
+    boolean<T> || boolean_underlying_type<std::remove_cvref_t<T>>;
+
+template <typename T>
+concept character_like =
+    character<T> || character_underlying_type<std::remove_cvref_t<T>>;
+
+template <typename T>
+concept integer_like =
+    integer<T> || integer_underlying_type<std::remove_cvref_t<T>>;
+
+template <typename T>
+concept floating_like =
+    floating<T> || floating_underlying_type<std::remove_cvref_t<T>>;
+
+template <typename T>
+concept numeric_like =
+    numeric<T> || numeric_underlying_type<std::remove_cvref_t<T>>;
+
+} // namespace mcpplibs::primitives::meta
