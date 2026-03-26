@@ -8,9 +8,6 @@ import mcpplibs.primitives.underlying;
 
 using namespace mcpplibs::primitives;
 
-#if defined(_MSC_VER)
-TEST(ConversionCastTest, SaturatingCastSmokeOnMSVC) { SUCCEED(); }
-#else
 TEST(ConversionCastTest, SaturatingCastClampsAndHandlesNaN) {
   EXPECT_EQ(conversion::saturating_cast<std::int16_t>(100000),
             std::numeric_limits<std::int16_t>::max());
@@ -18,4 +15,3 @@ TEST(ConversionCastTest, SaturatingCastClampsAndHandlesNaN) {
                 std::numeric_limits<double>::quiet_NaN()),
             0);
 }
-#endif

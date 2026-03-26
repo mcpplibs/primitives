@@ -8,9 +8,6 @@ import mcpplibs.primitives.underlying;
 
 using namespace mcpplibs::primitives;
 
-#if defined(_MSC_VER)
-TEST(ConversionCastTest, CheckedCastSmokeOnMSVC) { SUCCEED(); }
-#else
 TEST(ConversionCastTest, CheckedCastReportsErrorForInvalidInput) {
   auto const ok = conversion::checked_cast<int>(42u);
   ASSERT_TRUE(ok.has_value());
@@ -20,4 +17,3 @@ TEST(ConversionCastTest, CheckedCastReportsErrorForInvalidInput) {
   ASSERT_FALSE(bad.has_value());
   EXPECT_EQ(bad.error(), conversion::risk::kind::underflow);
 }
-#endif
