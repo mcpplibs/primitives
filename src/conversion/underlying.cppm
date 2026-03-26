@@ -10,7 +10,7 @@ module;
 export module mcpplibs.primitives.conversion.underlying;
 
 import mcpplibs.primitives.conversion.traits;
-import mcpplibs.primitives.underlying.traits;
+import mcpplibs.primitives.underlying;
 
 namespace mcpplibs::primitives::conversion::details {
 

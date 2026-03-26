@@ -15,7 +15,7 @@ import mcpplibs.primitives.operations.traits;
 import mcpplibs.primitives.operations.impl;
 import mcpplibs.primitives.policy.traits;
 import mcpplibs.primitives.policy.handler;
-import mcpplibs.primitives.underlying.traits;
+import mcpplibs.primitives.underlying;
 
 namespace mcpplibs::primitives::policy::details {
 
