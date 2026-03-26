@@ -28,6 +28,7 @@ function(add_basic_suite target_name suite_pattern)
 endfunction()
 
 add_basic_suite(basic_conversion_tests "conversion/**/test_*.cpp")
+add_basic_suite(basic_algorithms_tests "algorithms/**/test_*.cpp")
 add_basic_suite(basic_operations_tests "operations/**/test_*.cpp")
 add_basic_suite(basic_policy_tests "policy/**/test_*.cpp")
 add_basic_suite(basic_primitive_tests "primitive/**/test_*.cpp")
@@ -36,6 +37,7 @@ add_basic_suite(basic_underlying_tests "underlying/**/test_*.cpp")
 add_custom_target(basic_tests)
 add_dependencies(basic_tests
     basic_conversion_tests
+    basic_algorithms_tests
     basic_operations_tests
     basic_policy_tests
     basic_primitive_tests
