@@ -29,47 +29,30 @@ concept builtin_numeric_proxy_candidate =
     std::same_as<common_rep_t<Rep, Candidate>, std::remove_cv_t<Candidate>> &&
     statically_castable<Candidate, Rep>;
 
+template <typename Rep, typename... Candidates>
+struct builtin_numeric_proxy;
+
 template <typename Rep>
-struct integer_builtin_proxy {
+struct builtin_numeric_proxy<Rep> {
+  using type = void;
+};
+
+template <typename Rep, typename Candidate, typename... Candidates>
+struct builtin_numeric_proxy<Rep, Candidate, Candidates...> {
   using type = std::conditional_t<
-      builtin_numeric_proxy_candidate<Rep, short>, short,
-      std::conditional_t<
-          builtin_numeric_proxy_candidate<Rep, unsigned short>, unsigned short,
-          std::conditional_t<
-              builtin_numeric_proxy_candidate<Rep, int>, int,
-              std::conditional_t<
-                  builtin_numeric_proxy_candidate<Rep, unsigned int>,
-                  unsigned int,
-                  std::conditional_t<
-                      builtin_numeric_proxy_candidate<Rep, long>, long,
-                      std::conditional_t<
-                          builtin_numeric_proxy_candidate<Rep, unsigned long>,
-                          unsigned long,
-                          std::conditional_t<
-                              builtin_numeric_proxy_candidate<Rep, long long>,
-                              long long,
-                              std::conditional_t<
-                                  builtin_numeric_proxy_candidate<
-                                      Rep, unsigned long long>,
-                                  unsigned long long, void>>>>>>>>;
+      builtin_numeric_proxy_candidate<Rep, Candidate>, Candidate,
+      typename builtin_numeric_proxy<Rep, Candidates...>::type>;
 };
 
 template <typename Rep>
-using integer_builtin_proxy_t = integer_builtin_proxy<Rep>::type;
+using integer_builtin_proxy_t =
+  builtin_numeric_proxy<Rep, short, unsigned short, int,
+                                   unsigned int, long, unsigned long,
+                                   long long, unsigned long long>::type;
 
 template <typename Rep>
-struct floating_builtin_proxy {
-  using type = std::conditional_t<
-      builtin_numeric_proxy_candidate<Rep, float>, float,
-      std::conditional_t<
-          builtin_numeric_proxy_candidate<Rep, double>, double,
-          std::conditional_t<
-              builtin_numeric_proxy_candidate<Rep, long double>, long double,
-              void>>>;
-};
-
-template <typename Rep>
-using floating_builtin_proxy_t = floating_builtin_proxy<Rep>::type;
+using floating_builtin_proxy_t =
+  builtin_numeric_proxy<Rep, float, double, long double>::type;
 
 template <std_numeric DestRep, std_numeric SrcRep>
 constexpr auto numeric_risk(SrcRep value)
