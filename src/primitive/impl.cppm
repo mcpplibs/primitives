@@ -1,13 +1,12 @@
 module;
-#include <cmath>
 #include <cstdint>
-#include <limits>
 #include <tuple>
 #include <type_traits>
 
 export module mcpplibs.primitives.primitive.impl;
 
-import mcpplibs.primitives.underlying;
+import mcpplibs.primitives.conversion.underlying;
+import mcpplibs.primitives.underlying.traits;
 import mcpplibs.primitives.policy.traits;
 import mcpplibs.primitives.policy.handler;
 import mcpplibs.primitives.policy.impl;
@@ -56,73 +55,6 @@ private:
       cross_underlying_constructible_v<U> &&
       policy_allows_underlying_bridge_v<value_type, U>;
 
-  template <typename TargetRep, typename SourceRep>
-  static constexpr auto saturating_rep_cast_(SourceRep value) noexcept
-      -> std::remove_cvref_t<TargetRep> {
-    using target_rep_type = std::remove_cvref_t<TargetRep>;
-    using source_rep_type = std::remove_cvref_t<SourceRep>;
-
-    if constexpr (std_integer<target_rep_type> && std_integer<source_rep_type>) {
-      if constexpr (std::is_signed_v<source_rep_type>) {
-        auto const signed_value = static_cast<std::intmax_t>(value);
-        if constexpr (std::is_signed_v<target_rep_type>) {
-          if (signed_value < static_cast<std::intmax_t>(
-                                 std::numeric_limits<target_rep_type>::min())) {
-            return std::numeric_limits<target_rep_type>::lowest();
-          }
-          if (signed_value > static_cast<std::intmax_t>(
-                                 std::numeric_limits<target_rep_type>::max())) {
-            return std::numeric_limits<target_rep_type>::max();
-          }
-          return static_cast<target_rep_type>(value);
-        } else {
-          if (signed_value < 0) {
-            return std::numeric_limits<target_rep_type>::lowest();
-          }
-          if (static_cast<std::uintmax_t>(signed_value) >
-              static_cast<std::uintmax_t>(
-                  std::numeric_limits<target_rep_type>::max())) {
-            return std::numeric_limits<target_rep_type>::max();
-          }
-          return static_cast<target_rep_type>(value);
-        }
-      } else {
-        auto const unsigned_value = static_cast<std::uintmax_t>(value);
-        if (unsigned_value >
-            static_cast<std::uintmax_t>(
-                std::numeric_limits<target_rep_type>::max())) {
-          return std::numeric_limits<target_rep_type>::max();
-        }
-        return static_cast<target_rep_type>(value);
-      }
-    } else if constexpr (std_integer<target_rep_type> &&
-                         std_floating<source_rep_type>) {
-      if (std::isnan(value)) {
-        return target_rep_type{};
-      }
-      if (std::isinf(value)) {
-        return value < static_cast<source_rep_type>(0)
-                   ? std::numeric_limits<target_rep_type>::lowest()
-                   : std::numeric_limits<target_rep_type>::max();
-      }
-
-      auto const normalized = static_cast<long double>(value);
-      auto const min_value = static_cast<long double>(
-          std::numeric_limits<target_rep_type>::lowest());
-      auto const max_value = static_cast<long double>(
-          std::numeric_limits<target_rep_type>::max());
-      if (normalized < min_value) {
-        return std::numeric_limits<target_rep_type>::lowest();
-      }
-      if (normalized > max_value) {
-        return std::numeric_limits<target_rep_type>::max();
-      }
-      return static_cast<target_rep_type>(value);
-    } else {
-      return static_cast<target_rep_type>(value);
-    }
-  }
-
   template <underlying_type Target, underlying_type Source>
   static constexpr auto convert_underlying_(Source source) noexcept -> Target {
     using source_value_type = std::remove_cv_t<Source>;
@@ -131,8 +63,9 @@ private:
         underlying::traits<std::remove_cv_t<Target>>::rep_type;
 
     auto const source_rep = underlying::traits<source_value_type>::to_rep(source);
-    auto const target_rep = saturating_rep_cast_<target_rep_type>(
-        static_cast<source_rep_type>(source_rep));
+    auto const target_rep =
+        conversion::saturating_cast<target_rep_type>(
+            static_cast<source_rep_type>(source_rep));
     return underlying::traits<std::remove_cv_t<Target>>::from_rep(target_rep);
   }
 
