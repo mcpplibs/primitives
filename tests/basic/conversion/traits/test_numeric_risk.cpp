@@ -7,7 +7,6 @@ import mcpplibs.primitives.conversion.underlying;
 import mcpplibs.primitives.underlying;
 
 #include "../../support/conversion_box_types.hpp"
-
 using namespace mcpplibs::primitives;
 using namespace mcpplibs::primitives::test_support::conversion;
 

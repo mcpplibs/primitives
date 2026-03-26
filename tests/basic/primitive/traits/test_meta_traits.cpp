@@ -5,7 +5,6 @@ import mcpplibs.primitives.primitive;
 import mcpplibs.primitives.policy;
 
 #include "../../support/underlying_custom_types.hpp"
-
 using namespace mcpplibs::primitives;
 
 TEST(PrimitiveTraitsTest, MetaTraitsExposeValueTypeAndPrimitiveMetadata) {
