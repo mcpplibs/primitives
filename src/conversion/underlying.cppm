@@ -23,6 +23,58 @@ template <typename DestRep, typename SrcRep>
 concept builtin_numeric_pair =
     std_numeric<DestRep> && std_numeric<SrcRep>;
 
+template <underlying_type T>
+using underlying_rep_t = underlying::traits<std::remove_cv_t<T>>::rep_type;
+
+template <typename Rep, typename Candidate>
+concept builtin_numeric_proxy_candidate =
+    std_numeric<Candidate> && has_common_rep<Rep, Candidate> &&
+    !std::same_as<common_rep_t<Rep, Candidate>, void> &&
+    std::same_as<common_rep_t<Rep, Candidate>, std::remove_cv_t<Candidate>> &&
+    statically_castable<Candidate, Rep>;
+
+template <typename Rep>
+struct integer_builtin_proxy {
+  using type = std::conditional_t<
+      builtin_numeric_proxy_candidate<Rep, short>, short,
+      std::conditional_t<
+          builtin_numeric_proxy_candidate<Rep, unsigned short>, unsigned short,
+          std::conditional_t<
+              builtin_numeric_proxy_candidate<Rep, int>, int,
+              std::conditional_t<
+                  builtin_numeric_proxy_candidate<Rep, unsigned int>,
+                  unsigned int,
+                  std::conditional_t<
+                      builtin_numeric_proxy_candidate<Rep, long>, long,
+                      std::conditional_t<
+                          builtin_numeric_proxy_candidate<Rep, unsigned long>,
+                          unsigned long,
+                          std::conditional_t<
+                              builtin_numeric_proxy_candidate<Rep, long long>,
+                              long long,
+                              std::conditional_t<
+                                  builtin_numeric_proxy_candidate<
+                                      Rep, unsigned long long>,
+                                  unsigned long long, void>>>>>>>>;
+};
+
+template <typename Rep>
+using integer_builtin_proxy_t = integer_builtin_proxy<Rep>::type;
+
+template <typename Rep>
+struct floating_builtin_proxy {
+  using type = std::conditional_t<
+      builtin_numeric_proxy_candidate<Rep, float>, float,
+      std::conditional_t<
+          builtin_numeric_proxy_candidate<Rep, double>, double,
+          std::conditional_t<
+              builtin_numeric_proxy_candidate<Rep, long double>, long double,
+              void>>>;
+};
+
+template <typename Rep>
+using floating_builtin_proxy_t = floating_builtin_proxy<Rep>::type;
+
 template <std_integer DestRep, std_integer SrcRep>
 constexpr auto numeric_risk(SrcRep value)
     -> std::optional<risk::kind> {
@@ -143,6 +195,32 @@ constexpr auto numeric_risk(SrcRep value)
   }
 
   return std::nullopt;
+}
+
+template <numeric_underlying_type Dest, numeric_underlying_type Src>
+constexpr auto numeric_underlying_risk(Src value)
+    -> std::optional<risk::kind> {
+  using src_type = std::remove_cv_t<Src>;
+  using dest_type = std::remove_cv_t<Dest>;
+  using src_rep_type = underlying_rep_t<src_type>;
+  using dest_rep_type = underlying_rep_t<dest_type>;
+  using src_builtin_rep_type = std::conditional_t<
+      integer_underlying_type<src_type>, integer_builtin_proxy_t<src_rep_type>,
+      floating_builtin_proxy_t<src_rep_type>>;
+  using dest_builtin_rep_type = std::conditional_t<
+      integer_underlying_type<dest_type>,
+      integer_builtin_proxy_t<dest_rep_type>,
+      floating_builtin_proxy_t<dest_rep_type>>;
+
+  if constexpr (std::same_as<src_builtin_rep_type, void> ||
+                std::same_as<dest_builtin_rep_type, void>) {
+    static_cast<void>(value);
+    return risk::kind::invalid_type_combination;
+  } else {
+    auto const source_rep = underlying::traits<src_type>::to_rep(value);
+    return numeric_risk<dest_builtin_rep_type>(
+        static_cast<src_builtin_rep_type>(source_rep));
+  }
 }
 
 template <numeric_underlying_type DestRep, numeric_underlying_type SrcRep>
@@ -279,28 +357,28 @@ constexpr auto cast_underlying_result(Src value, RepCaster rep_caster)
 
 export namespace mcpplibs::primitives::conversion {
 
-template <std_integer DestRep, std_integer SrcRep>
+template <integer_underlying_type DestRep, integer_underlying_type SrcRep>
 constexpr auto numeric_risk(SrcRep value)
     -> std::optional<risk::kind> {
-  return details::numeric_risk<DestRep>(value);
+  return details::numeric_underlying_risk<DestRep>(value);
 }
 
-template <std_integer DestRep, std_floating SrcRep>
+template <integer_underlying_type DestRep, floating_underlying_type SrcRep>
 constexpr auto numeric_risk(SrcRep value)
     -> std::optional<risk::kind> {
-  return details::numeric_risk<DestRep>(value);
+  return details::numeric_underlying_risk<DestRep>(value);
 }
 
-template <std_floating DestRep, std_integer SrcRep>
+template <floating_underlying_type DestRep, integer_underlying_type SrcRep>
 constexpr auto numeric_risk(SrcRep value)
     -> std::optional<risk::kind> {
-  return details::numeric_risk<DestRep>(value);
+  return details::numeric_underlying_risk<DestRep>(value);
 }
 
-template <std_floating DestRep, std_floating SrcRep>
+template <floating_underlying_type DestRep, floating_underlying_type SrcRep>
 constexpr auto numeric_risk(SrcRep value)
     -> std::optional<risk::kind> {
-  return details::numeric_risk<DestRep>(value);
+  return details::numeric_underlying_risk<DestRep>(value);
 }
 
 template <underlying_type Dest, underlying_type Src>
