@@ -4,13 +4,13 @@ module;
 #include <compare>
 #include <concepts>
 #include <expected>
-#include <limits>
 #include <optional>
 #include <type_traits>
 #include <utility>
 
 export module mcpplibs.primitives.operations.invoker;
 
+import mcpplibs.primitives.algorithms.limits;
 import mcpplibs.primitives.operations.traits;
 import mcpplibs.primitives.operations.impl;
 import mcpplibs.primitives.policy.handler;
@@ -42,7 +42,7 @@ constexpr auto checked_add(T lhs, T rhs) -> policy::value::decision<T> {
     out.value = static_cast<T>(lhs + rhs);
     return out;
   } else if constexpr (std::is_unsigned_v<T>) {
-    auto const maxv = std::numeric_limits<T>::max();
+    auto const maxv = algorithms::max_value<T>();
     if (lhs > maxv - rhs) {
       return make_error<T>(policy::error::kind::overflow,
                            "checked addition overflow", lhs, rhs);
@@ -52,8 +52,8 @@ constexpr auto checked_add(T lhs, T rhs) -> policy::value::decision<T> {
     out.value = static_cast<T>(lhs + rhs);
     return out;
   } else {
-    auto const maxv = std::numeric_limits<T>::max();
-    auto const minv = std::numeric_limits<T>::min();
+    auto const maxv = algorithms::max_value<T>();
+    auto const minv = algorithms::min_value<T>();
     if ((rhs > 0) && (lhs > maxv - rhs)) {
       return make_error<T>(policy::error::kind::overflow,
                            "checked addition overflow", lhs, rhs);
@@ -86,8 +86,8 @@ constexpr auto checked_sub(T lhs, T rhs) -> policy::value::decision<T> {
     out.value = static_cast<T>(lhs - rhs);
     return out;
   } else {
-    auto const maxv = std::numeric_limits<T>::max();
-    auto const minv = std::numeric_limits<T>::min();
+    auto const maxv = algorithms::max_value<T>();
+    auto const minv = algorithms::min_value<T>();
     if ((rhs < 0) && (lhs > maxv + rhs)) {
       return make_error<T>(policy::error::kind::overflow,
                            "checked subtraction overflow", lhs, rhs);
@@ -119,7 +119,7 @@ constexpr auto checked_mul(T lhs, T rhs) -> policy::value::decision<T> {
     }
 
     if constexpr (std::is_unsigned_v<T>) {
-      auto const maxv = std::numeric_limits<T>::max();
+      auto const maxv = algorithms::max_value<T>();
       if (lhs > maxv / rhs) {
         return make_error<T>(policy::error::kind::overflow,
                              "checked multiplication overflow", lhs, rhs);
@@ -129,8 +129,8 @@ constexpr auto checked_mul(T lhs, T rhs) -> policy::value::decision<T> {
       out.value = static_cast<T>(lhs * rhs);
       return out;
     } else {
-      auto const maxv = std::numeric_limits<T>::max();
-      auto const minv = std::numeric_limits<T>::min();
+      auto const maxv = algorithms::max_value<T>();
+      auto const minv = algorithms::min_value<T>();
 
       if (lhs > 0) {
         if (rhs > 0) {
@@ -174,7 +174,7 @@ constexpr auto checked_div(T lhs, T rhs) -> policy::value::decision<T> {
   }
 
   if constexpr (std::is_integral_v<T> && std::is_signed_v<T>) {
-    auto const minv = std::numeric_limits<T>::min();
+    auto const minv = algorithms::min_value<T>();
     if (lhs == minv && rhs == static_cast<T>(-1)) {
       return make_error<T>(policy::error::kind::overflow,
                            "checked division overflow", lhs, rhs);
@@ -212,7 +212,7 @@ constexpr auto checked_mod(T lhs, T rhs) -> policy::value::decision<T> {
     }
 
     if constexpr (std::is_signed_v<T>) {
-      auto const minv = std::numeric_limits<T>::min();
+      auto const minv = algorithms::min_value<T>();
       if (lhs == minv && rhs == static_cast<T>(-1)) {
         return make_error<T>(policy::error::kind::overflow,
                              "checked modulus overflow", lhs, rhs);
@@ -242,7 +242,7 @@ constexpr auto checked_unary_plus(T lhs) -> policy::value::decision<T> {
 template <typename T>
 constexpr auto checked_unary_minus(T lhs) -> policy::value::decision<T> {
   if constexpr (std::is_integral_v<T> && std::is_signed_v<T>) {
-    auto const minv = std::numeric_limits<T>::min();
+    auto const minv = algorithms::min_value<T>();
     if (lhs == minv) {
       return make_error<T>(policy::error::kind::overflow,
                            "checked unary minus overflow", lhs);
@@ -269,7 +269,7 @@ constexpr auto checked_shift_left(T lhs, T rhs) -> policy::value::decision<T> {
         rhs);
   } else {
     using unsigned_t = std::make_unsigned_t<T>;
-    constexpr auto bit_width = std::numeric_limits<unsigned_t>::digits;
+    constexpr auto bit_width = algorithms::limits<unsigned_t>::digits;
 
     if constexpr (std::is_signed_v<T>) {
       if (rhs < T{}) {
@@ -290,7 +290,7 @@ constexpr auto checked_shift_left(T lhs, T rhs) -> policy::value::decision<T> {
                              "checked left shift negative lhs", lhs, rhs);
       }
 
-      auto const maxv = std::numeric_limits<T>::max();
+      auto const maxv = algorithms::max_value<T>();
       if (lhs > static_cast<T>(maxv >> shift)) {
         return make_error<T>(policy::error::kind::overflow,
                              "checked left shift overflow", lhs, rhs);
@@ -314,7 +314,7 @@ constexpr auto checked_shift_right(T lhs, T rhs)
         rhs);
   } else {
     using unsigned_t = std::make_unsigned_t<T>;
-    constexpr auto bit_width = std::numeric_limits<unsigned_t>::digits;
+    constexpr auto bit_width = algorithms::limits<unsigned_t>::digits;
 
     if constexpr (std::is_signed_v<T>) {
       if (rhs < T{}) {
@@ -681,11 +681,11 @@ template <typename T> constexpr auto saturating_add(T lhs, T rhs) -> T {
   if constexpr (!std::is_integral_v<T> || std::is_same_v<T, bool>) {
     return static_cast<T>(lhs + rhs);
   } else if constexpr (std::is_unsigned_v<T>) {
-    auto const maxv = std::numeric_limits<T>::max();
+    auto const maxv = algorithms::max_value<T>();
     return (lhs > maxv - rhs) ? maxv : static_cast<T>(lhs + rhs);
   } else {
-    auto const maxv = std::numeric_limits<T>::max();
-    auto const minv = std::numeric_limits<T>::min();
+    auto const maxv = algorithms::max_value<T>();
+    auto const minv = algorithms::min_value<T>();
     if ((rhs > 0) && (lhs > maxv - rhs)) {
       return maxv;
     }
@@ -702,8 +702,8 @@ template <typename T> constexpr auto saturating_sub(T lhs, T rhs) -> T {
   } else if constexpr (std::is_unsigned_v<T>) {
     return (lhs < rhs) ? T{} : static_cast<T>(lhs - rhs);
   } else {
-    auto const maxv = std::numeric_limits<T>::max();
-    auto const minv = std::numeric_limits<T>::min();
+    auto const maxv = algorithms::max_value<T>();
+    auto const minv = algorithms::min_value<T>();
     if ((rhs < 0) && (lhs > maxv + rhs)) {
       return maxv;
     }
@@ -723,11 +723,11 @@ template <typename T> constexpr auto saturating_mul(T lhs, T rhs) -> T {
     }
 
     if constexpr (std::is_unsigned_v<T>) {
-      auto const maxv = std::numeric_limits<T>::max();
+      auto const maxv = algorithms::max_value<T>();
       return (lhs > maxv / rhs) ? maxv : static_cast<T>(lhs * rhs);
     } else {
-      auto const maxv = std::numeric_limits<T>::max();
-      auto const minv = std::numeric_limits<T>::min();
+      auto const maxv = algorithms::max_value<T>();
+      auto const minv = algorithms::min_value<T>();
 
       if (lhs > 0) {
         if (rhs > 0) {

@@ -3,12 +3,12 @@ module;
 #include <cmath>
 #include <cstdint>
 #include <expected>
-#include <limits>
 #include <optional>
 #include <type_traits>
 
 export module mcpplibs.primitives.conversion.underlying;
 
+import mcpplibs.primitives.algorithms.limits;
 import mcpplibs.primitives.conversion.traits;
 import mcpplibs.primitives.underlying;
 
@@ -65,11 +65,11 @@ constexpr auto numeric_risk(SrcRep value)
       auto const signed_value = static_cast<std::intmax_t>(value);
       if constexpr (std::is_signed_v<dest_type>) {
         if (signed_value <
-            static_cast<std::intmax_t>(std::numeric_limits<dest_type>::min())) {
+            static_cast<std::intmax_t>(algorithms::min_value<dest_type>())) {
           return risk::kind::underflow;
         }
         if (signed_value >
-            static_cast<std::intmax_t>(std::numeric_limits<dest_type>::max())) {
+            static_cast<std::intmax_t>(algorithms::max_value<dest_type>())) {
           return risk::kind::overflow;
         }
         return std::nullopt;
@@ -80,7 +80,7 @@ constexpr auto numeric_risk(SrcRep value)
 
         if (static_cast<std::uintmax_t>(signed_value) >
             static_cast<std::uintmax_t>(
-                std::numeric_limits<dest_type>::max())) {
+                algorithms::max_value<dest_type>())) {
           return risk::kind::overflow;
         }
         return std::nullopt;
@@ -88,7 +88,7 @@ constexpr auto numeric_risk(SrcRep value)
     } else {
       auto const unsigned_value = static_cast<std::uintmax_t>(value);
       if (unsigned_value >
-          static_cast<std::uintmax_t>(std::numeric_limits<dest_type>::max())) {
+          static_cast<std::uintmax_t>(algorithms::max_value<dest_type>())) {
         return risk::kind::overflow;
       }
       return std::nullopt;
@@ -104,9 +104,9 @@ constexpr auto numeric_risk(SrcRep value)
 
     auto const normalized = static_cast<long double>(value);
     auto const min_value =
-        static_cast<long double>(std::numeric_limits<dest_type>::lowest());
+        static_cast<long double>(algorithms::lowest_value<dest_type>());
     auto const max_value =
-        static_cast<long double>(std::numeric_limits<dest_type>::max());
+        static_cast<long double>(algorithms::max_value<dest_type>());
 
     if (normalized < min_value) {
       return risk::kind::underflow;
@@ -135,9 +135,9 @@ constexpr auto numeric_risk(SrcRep value)
 
     auto const normalized = static_cast<long double>(value);
     auto const min_value =
-        static_cast<long double>(std::numeric_limits<dest_type>::lowest());
+        static_cast<long double>(algorithms::lowest_value<dest_type>());
     auto const max_value =
-        static_cast<long double>(std::numeric_limits<dest_type>::max());
+        static_cast<long double>(algorithms::max_value<dest_type>());
 
     if (normalized < min_value) {
       return risk::kind::underflow;
@@ -216,10 +216,10 @@ constexpr auto saturating_rep_cast(SrcRep value) noexcept
   if constexpr (std_numeric<dest_type> && std_numeric<src_type>) {
     if (auto const kind = numeric_risk<dest_type>(value); kind.has_value()) {
       if (*kind == risk::kind::overflow) {
-        return std::numeric_limits<dest_type>::max();
+        return algorithms::max_value<dest_type>();
       }
       if (*kind == risk::kind::underflow) {
-        return std::numeric_limits<dest_type>::lowest();
+        return algorithms::lowest_value<dest_type>();
       }
       if (*kind == risk::kind::domain_error) {
         return dest_type{};
@@ -243,21 +243,21 @@ constexpr auto truncating_rep_cast(SrcRep value) noexcept
     }
     if (std::isinf(value)) {
       return value < static_cast<src_type>(0)
-                 ? std::numeric_limits<dest_type>::lowest()
-                 : std::numeric_limits<dest_type>::max();
+                 ? algorithms::lowest_value<dest_type>()
+                 : algorithms::max_value<dest_type>();
     }
 
     auto const normalized = static_cast<long double>(value);
     auto const min_value =
-        static_cast<long double>(std::numeric_limits<dest_type>::lowest());
+        static_cast<long double>(algorithms::lowest_value<dest_type>());
     auto const max_value =
-        static_cast<long double>(std::numeric_limits<dest_type>::max());
+        static_cast<long double>(algorithms::max_value<dest_type>());
 
     if (normalized < min_value) {
-      return std::numeric_limits<dest_type>::lowest();
+      return algorithms::lowest_value<dest_type>();
     }
     if (normalized > max_value) {
-      return std::numeric_limits<dest_type>::max();
+      return algorithms::max_value<dest_type>();
     }
   }
 
