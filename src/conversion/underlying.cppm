@@ -19,10 +19,6 @@ concept statically_castable = requires(SrcRep value) {
   static_cast<std::remove_cvref_t<DestRep>>(value);
 };
 
-template <typename DestRep, typename SrcRep>
-concept builtin_numeric_pair =
-    std_numeric<DestRep> && std_numeric<SrcRep>;
-
 template <underlying_type T>
 using underlying_rep_t = underlying::traits<std::remove_cv_t<T>>::rep_type;
 
@@ -75,123 +71,103 @@ struct floating_builtin_proxy {
 template <typename Rep>
 using floating_builtin_proxy_t = floating_builtin_proxy<Rep>::type;
 
-template <std_integer DestRep, std_integer SrcRep>
+template <std_numeric DestRep, std_numeric SrcRep>
 constexpr auto numeric_risk(SrcRep value)
     -> std::optional<risk::kind> {
   using dest_type = std::remove_cvref_t<DestRep>;
   using src_type = std::remove_cvref_t<SrcRep>;
 
-  if constexpr (std::is_signed_v<src_type>) {
-    auto const signed_value = static_cast<std::intmax_t>(value);
-    if constexpr (std::is_signed_v<dest_type>) {
-      if (signed_value <
-          static_cast<std::intmax_t>(std::numeric_limits<dest_type>::min())) {
-        return risk::kind::underflow;
-      }
-      if (signed_value >
-          static_cast<std::intmax_t>(std::numeric_limits<dest_type>::max())) {
-        return risk::kind::overflow;
-      }
-      return std::nullopt;
-    } else {
-      if (signed_value < 0) {
-        return risk::kind::underflow;
-      }
+  if constexpr (std_integer<dest_type> && std_integer<src_type>) {
+    if constexpr (std::is_signed_v<src_type>) {
+      auto const signed_value = static_cast<std::intmax_t>(value);
+      if constexpr (std::is_signed_v<dest_type>) {
+        if (signed_value <
+            static_cast<std::intmax_t>(std::numeric_limits<dest_type>::min())) {
+          return risk::kind::underflow;
+        }
+        if (signed_value >
+            static_cast<std::intmax_t>(std::numeric_limits<dest_type>::max())) {
+          return risk::kind::overflow;
+        }
+        return std::nullopt;
+      } else {
+        if (signed_value < 0) {
+          return risk::kind::underflow;
+        }
 
-      if (static_cast<std::uintmax_t>(signed_value) >
+        if (static_cast<std::uintmax_t>(signed_value) >
+            static_cast<std::uintmax_t>(
+                std::numeric_limits<dest_type>::max())) {
+          return risk::kind::overflow;
+        }
+        return std::nullopt;
+      }
+    } else {
+      auto const unsigned_value = static_cast<std::uintmax_t>(value);
+      if (unsigned_value >
           static_cast<std::uintmax_t>(std::numeric_limits<dest_type>::max())) {
         return risk::kind::overflow;
       }
       return std::nullopt;
     }
-  } else {
-    auto const unsigned_value = static_cast<std::uintmax_t>(value);
-    if (unsigned_value >
-        static_cast<std::uintmax_t>(std::numeric_limits<dest_type>::max())) {
+  } else if constexpr (std_integer<dest_type> && std_floating<src_type>) {
+    if (std::isnan(value)) {
+      return risk::kind::domain_error;
+    }
+    if (std::isinf(value)) {
+      return value < static_cast<src_type>(0) ? risk::kind::underflow
+                                              : risk::kind::overflow;
+    }
+
+    auto const normalized = static_cast<long double>(value);
+    auto const min_value =
+        static_cast<long double>(std::numeric_limits<dest_type>::lowest());
+    auto const max_value =
+        static_cast<long double>(std::numeric_limits<dest_type>::max());
+
+    if (normalized < min_value) {
+      return risk::kind::underflow;
+    }
+    if (normalized > max_value) {
       return risk::kind::overflow;
     }
-    return std::nullopt;
-  }
-}
+  } else if constexpr (std_floating<dest_type> && std_integer<src_type>) {
+    auto const converted = static_cast<dest_type>(value);
+    if (std::isinf(converted)) {
+      return value < static_cast<src_type>(0) ? risk::kind::underflow
+                                              : risk::kind::overflow;
+    }
 
-template <std_integer DestRep, std_floating SrcRep>
-constexpr auto numeric_risk(SrcRep value)
-    -> std::optional<risk::kind> {
-  using dest_type = std::remove_cvref_t<DestRep>;
-  using src_type = std::remove_cvref_t<SrcRep>;
+    auto const roundtrip = static_cast<src_type>(converted);
+    if (roundtrip != value) {
+      return risk::kind::precision_loss;
+    }
+  } else {
+    if (std::isnan(value)) {
+      return std::nullopt;
+    }
+    if (std::isinf(value)) {
+      return std::nullopt;
+    }
 
-  if (std::isnan(value)) {
-    return risk::kind::domain_error;
-  }
-  if (std::isinf(value)) {
-    return value < static_cast<src_type>(0) ? risk::kind::underflow
-                                            : risk::kind::overflow;
-  }
+    auto const normalized = static_cast<long double>(value);
+    auto const min_value =
+        static_cast<long double>(std::numeric_limits<dest_type>::lowest());
+    auto const max_value =
+        static_cast<long double>(std::numeric_limits<dest_type>::max());
 
-  auto const normalized = static_cast<long double>(value);
-  auto const min_value =
-      static_cast<long double>(std::numeric_limits<dest_type>::lowest());
-  auto const max_value =
-      static_cast<long double>(std::numeric_limits<dest_type>::max());
+    if (normalized < min_value) {
+      return risk::kind::underflow;
+    }
+    if (normalized > max_value) {
+      return risk::kind::overflow;
+    }
 
-  if (normalized < min_value) {
-    return risk::kind::underflow;
-  }
-  if (normalized > max_value) {
-    return risk::kind::overflow;
-  }
-  return std::nullopt;
-}
-
-template <std_floating DestRep, std_integer SrcRep>
-constexpr auto numeric_risk(SrcRep value)
-    -> std::optional<risk::kind> {
-  using dest_type = std::remove_cvref_t<DestRep>;
-  using src_type = std::remove_cvref_t<SrcRep>;
-
-  auto const converted = static_cast<dest_type>(value);
-  if (std::isinf(converted)) {
-    return value < static_cast<src_type>(0) ? risk::kind::underflow
-                                            : risk::kind::overflow;
-  }
-
-  auto const roundtrip = static_cast<src_type>(converted);
-  if (roundtrip != value) {
-    return risk::kind::precision_loss;
-  }
-
-  return std::nullopt;
-}
-
-template <std_floating DestRep, std_floating SrcRep>
-constexpr auto numeric_risk(SrcRep value)
-    -> std::optional<risk::kind> {
-  using dest_type = std::remove_cvref_t<DestRep>;
-
-  if (std::isnan(value)) {
-    return std::nullopt;
-  }
-  if (std::isinf(value)) {
-    return std::nullopt;
-  }
-
-  auto const normalized = static_cast<long double>(value);
-  auto const min_value =
-      static_cast<long double>(std::numeric_limits<dest_type>::lowest());
-  auto const max_value =
-      static_cast<long double>(std::numeric_limits<dest_type>::max());
-
-  if (normalized < min_value) {
-    return risk::kind::underflow;
-  }
-  if (normalized > max_value) {
-    return risk::kind::overflow;
-  }
-
-  auto const converted = static_cast<dest_type>(value);
-  auto const roundtrip = static_cast<std::remove_cvref_t<SrcRep>>(converted);
-  if (roundtrip != value) {
-    return risk::kind::precision_loss;
+    auto const converted = static_cast<dest_type>(value);
+    auto const roundtrip = static_cast<std::remove_cvref_t<SrcRep>>(converted);
+    if (roundtrip != value) {
+      return risk::kind::precision_loss;
+    }
   }
 
   return std::nullopt;
@@ -238,7 +214,7 @@ constexpr auto checked_rep_cast(SrcRep value)
   using dest_type = std::remove_cvref_t<DestRep>;
   using src_type = std::remove_cvref_t<SrcRep>;
 
-  if constexpr (builtin_numeric_pair<dest_type, src_type>) {
+  if constexpr (std_numeric<dest_type> && std_numeric<src_type>) {
     if (auto const kind = numeric_risk<dest_type>(value); kind.has_value()) {
       return std::unexpected(*kind);
     }
@@ -254,7 +230,7 @@ constexpr auto saturating_rep_cast(SrcRep value) noexcept
   using dest_type = std::remove_cvref_t<DestRep>;
   using src_type = std::remove_cvref_t<SrcRep>;
 
-  if constexpr (builtin_numeric_pair<dest_type, src_type>) {
+  if constexpr (std_numeric<dest_type> && std_numeric<src_type>) {
     if (auto const kind = numeric_risk<dest_type>(value); kind.has_value()) {
       if (*kind == risk::kind::overflow) {
         return std::numeric_limits<dest_type>::max();
@@ -312,7 +288,7 @@ constexpr auto exact_rep_cast(SrcRep value)
   using dest_type = std::remove_cvref_t<DestRep>;
   using src_type = std::remove_cvref_t<SrcRep>;
 
-  if constexpr (!builtin_numeric_pair<dest_type, src_type>) {
+  if constexpr (!(std_numeric<dest_type> && std_numeric<src_type>)) {
     return std::unexpected(risk::kind::invalid_type_combination);
   } else {
     if (auto const kind = numeric_risk<dest_type>(value); kind.has_value()) {
@@ -357,25 +333,7 @@ constexpr auto cast_underlying_result(Src value, RepCaster rep_caster)
 
 export namespace mcpplibs::primitives::conversion {
 
-template <integer_underlying_type DestRep, integer_underlying_type SrcRep>
-constexpr auto numeric_risk(SrcRep value)
-    -> std::optional<risk::kind> {
-  return details::numeric_underlying_risk<DestRep>(value);
-}
-
-template <integer_underlying_type DestRep, floating_underlying_type SrcRep>
-constexpr auto numeric_risk(SrcRep value)
-    -> std::optional<risk::kind> {
-  return details::numeric_underlying_risk<DestRep>(value);
-}
-
-template <floating_underlying_type DestRep, integer_underlying_type SrcRep>
-constexpr auto numeric_risk(SrcRep value)
-    -> std::optional<risk::kind> {
-  return details::numeric_underlying_risk<DestRep>(value);
-}
-
-template <floating_underlying_type DestRep, floating_underlying_type SrcRep>
+template <numeric_underlying_type DestRep, numeric_underlying_type SrcRep>
 constexpr auto numeric_risk(SrcRep value)
     -> std::optional<risk::kind> {
   return details::numeric_underlying_risk<DestRep>(value);
