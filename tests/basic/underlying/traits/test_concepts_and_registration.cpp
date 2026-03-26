@@ -3,7 +3,6 @@
 import mcpplibs.primitives.underlying;
 
 #include "../../support/underlying_custom_types.hpp"
-
 using namespace mcpplibs::primitives;
 using namespace mcpplibs::primitives::test_support::underlying;
 
