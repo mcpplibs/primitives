@@ -96,13 +96,9 @@ jobs:
           xmake-version: latest
           package-cache: true
 
-      - name: Build core library
-        run: |
-          xmake f -m release -y -vv
-          xmake b -y -vv -j2 mcpplibs-primitives
-
       - name: Build and test
         run: |
+          xmake f -m release --ccache=n -y -vv
           xmake b -y -vv -j2 primitives_test
           xmake run primitives_test
 

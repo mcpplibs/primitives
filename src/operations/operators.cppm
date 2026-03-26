@@ -1,8 +1,12 @@
 module;
 
+#include <cmath>
 #include <compare>
 #include <concepts>
+#include <cstdint>
 #include <expected>
+#include <limits>
+#include <optional>
 #include <type_traits>
 #include <utility>
 
@@ -13,11 +17,9 @@ import mcpplibs.primitives.operations.dispatcher;
 import mcpplibs.primitives.operations.impl;
 import mcpplibs.primitives.primitive.impl;
 import mcpplibs.primitives.primitive.traits;
-import mcpplibs.primitives.conversion.traits;
-import mcpplibs.primitives.conversion.underlying;
 import mcpplibs.primitives.policy.handler;
 import mcpplibs.primitives.policy.impl;
-import mcpplibs.primitives.underlying.traits;
+import mcpplibs.primitives.underlying;
 
 
 namespace mcpplibs::primitives::operations::details {
@@ -60,14 +62,128 @@ constexpr auto decode_three_way_code(CommonRep const &code) -> Ordering {
   return Ordering::equivalent;
 }
 
-constexpr auto to_policy_error_kind(const conversion::risk::kind kind)
+enum class assign_risk : unsigned char {
+  overflow,
+  underflow,
+  domain_error,
+  precision_loss,
+};
+
+template <typename DestRep, typename SrcRep>
+concept statically_castable = requires(SrcRep value) {
+  static_cast<std::remove_cvref_t<DestRep>>(value);
+};
+
+template <std_integer DestRep, std_integer SrcRep>
+constexpr auto numeric_risk(SrcRep value) -> std::optional<assign_risk> {
+  using dest_type = std::remove_cvref_t<DestRep>;
+  using src_type = std::remove_cvref_t<SrcRep>;
+
+  if constexpr (std::is_signed_v<src_type>) {
+    auto const signed_value = static_cast<std::intmax_t>(value);
+    if constexpr (std::is_signed_v<dest_type>) {
+      if (signed_value <
+          static_cast<std::intmax_t>(std::numeric_limits<dest_type>::min())) {
+        return assign_risk::underflow;
+      }
+      if (signed_value >
+          static_cast<std::intmax_t>(std::numeric_limits<dest_type>::max())) {
+        return assign_risk::overflow;
+      }
+    } else {
+      if (signed_value < 0) {
+        return assign_risk::underflow;
+      }
+      if (static_cast<std::uintmax_t>(signed_value) >
+          static_cast<std::uintmax_t>(std::numeric_limits<dest_type>::max())) {
+        return assign_risk::overflow;
+      }
+    }
+  } else {
+    auto const unsigned_value = static_cast<std::uintmax_t>(value);
+    if (unsigned_value >
+        static_cast<std::uintmax_t>(std::numeric_limits<dest_type>::max())) {
+      return assign_risk::overflow;
+    }
+  }
+
+  return std::nullopt;
+}
+
+template <std_integer DestRep, std_floating SrcRep>
+constexpr auto numeric_risk(SrcRep value) -> std::optional<assign_risk> {
+  using dest_type = std::remove_cvref_t<DestRep>;
+  using src_type = std::remove_cvref_t<SrcRep>;
+
+  if (std::isnan(value)) {
+    return assign_risk::domain_error;
+  }
+  if (std::isinf(value)) {
+    return value < static_cast<src_type>(0) ? assign_risk::underflow
+                                            : assign_risk::overflow;
+  }
+
+  auto const normalized = static_cast<long double>(value);
+  auto const min_value =
+      static_cast<long double>(std::numeric_limits<dest_type>::lowest());
+  auto const max_value =
+      static_cast<long double>(std::numeric_limits<dest_type>::max());
+
+  if (normalized < min_value) {
+    return assign_risk::underflow;
+  }
+  if (normalized > max_value) {
+    return assign_risk::overflow;
+  }
+  return std::nullopt;
+}
+
+template <typename DestRep, typename SrcRep>
+constexpr auto numeric_risk(SrcRep value) -> std::optional<assign_risk> {
+  using dest_type = std::remove_cvref_t<DestRep>;
+  using src_type = std::remove_cvref_t<SrcRep>;
+
+  if constexpr (std_integer<dest_type> && std_integer<src_type>) {
+    return numeric_risk<dest_type, src_type>(value);
+  } else if constexpr (std_integer<dest_type> && std_floating<src_type>) {
+    return numeric_risk<dest_type, src_type>(value);
+  } else {
+    return std::nullopt;
+  }
+}
+
+template <typename DestRep, typename SrcRep>
+  requires statically_castable<DestRep, SrcRep>
+constexpr auto saturating_rep_cast(SrcRep value) noexcept
+    -> std::remove_cvref_t<DestRep> {
+  using dest_type = std::remove_cvref_t<DestRep>;
+  using src_type = std::remove_cvref_t<SrcRep>;
+
+  if constexpr (std_integer<dest_type> && std_numeric<src_type>) {
+    if (auto const kind = numeric_risk<dest_type>(value); kind.has_value()) {
+      if (*kind == assign_risk::overflow) {
+        return std::numeric_limits<dest_type>::max();
+      }
+      if (*kind == assign_risk::underflow) {
+        return std::numeric_limits<dest_type>::lowest();
+      }
+      if (*kind == assign_risk::domain_error) {
+        return dest_type{};
+      }
+    }
+  }
+
+  return static_cast<dest_type>(value);
+}
+
+constexpr auto to_policy_error_kind(assign_risk kind)
     -> policy::error::kind {
   switch (kind) {
-  case conversion::risk::kind::overflow:
+  case assign_risk::overflow:
     return policy::error::kind::overflow;
-  case conversion::risk::kind::underflow:
+  case assign_risk::underflow:
     return policy::error::kind::underflow;
-  case conversion::risk::kind::domain_error:
+  case assign_risk::domain_error:
     return policy::error::kind::domain_error;
   default:
     return policy::error::kind::unspecified;
@@ -547,7 +663,7 @@ constexpr auto apply_assign(Lhs &lhs, Rhs const &rhs)
   if constexpr (std::same_as<lhs_value_policy, policy::value::checked> &&
                 std_integer<lhs_rep> && std_numeric<common_rep>) {
     if (auto const kind =
-            conversion::numeric_risk<lhs_rep>(assigned_common_rep);
+            details::numeric_risk<lhs_rep>(assigned_common_rep);
         kind.has_value()) {
       return std::unexpected(
           details::to_error_payload<ErrorPayload>(
@@ -556,7 +672,7 @@ constexpr auto apply_assign(Lhs &lhs, Rhs const &rhs)
   }
 
   auto const assigned_rep =
-      conversion::saturating_cast<lhs_rep>(assigned_common_rep);
+      details::saturating_rep_cast<lhs_rep>(assigned_common_rep);
   lhs.store(underlying::traits<lhs_value_type>::from_rep(assigned_rep));
   return out;
 }
