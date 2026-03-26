@@ -303,44 +303,7 @@ constexpr auto numeric_risk(SrcRep value)
   return details::numeric_risk<DestRep>(value);
 }
 
-template <std_numeric DestRep, std_numeric SrcRep>
-  requires details::statically_castable<DestRep, SrcRep>
-constexpr auto unchecked_cast(SrcRep value) noexcept
-    -> std::remove_cvref_t<DestRep> {
-  return details::unchecked_rep_cast<DestRep>(value);
-}
-
-template <std_numeric DestRep, std_numeric SrcRep>
-  requires details::statically_castable<DestRep, SrcRep>
-constexpr auto checked_cast(SrcRep value)
-    -> cast_result<std::remove_cvref_t<DestRep>> {
-  return details::checked_rep_cast<DestRep>(value);
-}
-
-template <std_numeric DestRep, std_numeric SrcRep>
-  requires details::statically_castable<DestRep, SrcRep>
-constexpr auto saturating_cast(SrcRep value) noexcept
-    -> std::remove_cvref_t<DestRep> {
-  return details::saturating_rep_cast<DestRep>(value);
-}
-
-template <std_numeric DestRep, std_numeric SrcRep>
-  requires details::statically_castable<DestRep, SrcRep>
-constexpr auto truncating_cast(SrcRep value) noexcept
-    -> std::remove_cvref_t<DestRep> {
-  return details::truncating_rep_cast<DestRep>(value);
-}
-
-template <std_numeric DestRep, std_numeric SrcRep>
-  requires details::statically_castable<DestRep, SrcRep>
-constexpr auto exact_cast(SrcRep value)
-    -> cast_result<std::remove_cvref_t<DestRep>> {
-  return details::exact_rep_cast<DestRep>(value);
-}
-
 template <underlying_type Dest, underlying_type Src>
-  requires(!details::builtin_numeric_pair<std::remove_cv_t<Dest>,
-                                          std::remove_cv_t<Src>>)
 constexpr auto unchecked_cast(Src value) noexcept -> Dest {
   return details::cast_underlying_value<Dest>(
       value, []<typename DestRep, typename SrcRep>(SrcRep rep) {
@@ -349,8 +312,6 @@ constexpr auto unchecked_cast(Src value) noexcept -> Dest {
 }
 
 template <underlying_type Dest, underlying_type Src>
-  requires(!details::builtin_numeric_pair<std::remove_cv_t<Dest>,
-                                          std::remove_cv_t<Src>>)
 constexpr auto checked_cast(Src value) -> cast_result<Dest> {
   return details::cast_underlying_result<Dest>(
       value, []<typename DestRep, typename SrcRep>(SrcRep rep) {
@@ -359,8 +320,6 @@ constexpr auto checked_cast(Src value) -> cast_result<Dest> {
 }
 
 template <underlying_type Dest, underlying_type Src>
-  requires(!details::builtin_numeric_pair<std::remove_cv_t<Dest>,
-                                          std::remove_cv_t<Src>>)
 constexpr auto saturating_cast(Src value) noexcept -> Dest {
   return details::cast_underlying_value<Dest>(
       value, []<typename DestRep, typename SrcRep>(SrcRep rep) {
@@ -369,8 +328,6 @@ constexpr auto saturating_cast(Src value) noexcept -> Dest {
 }
 
 template <underlying_type Dest, underlying_type Src>
-  requires(!details::builtin_numeric_pair<std::remove_cv_t<Dest>,
-                                          std::remove_cv_t<Src>>)
 constexpr auto truncating_cast(Src value) noexcept -> Dest {
   return details::cast_underlying_value<Dest>(
       value, []<typename DestRep, typename SrcRep>(SrcRep rep) {
@@ -379,8 +336,6 @@ constexpr auto truncating_cast(Src value) noexcept -> Dest {
 }
 
 template <underlying_type Dest, underlying_type Src>
-  requires(!details::builtin_numeric_pair<std::remove_cv_t<Dest>,
-                                          std::remove_cv_t<Src>>)
 constexpr auto exact_cast(Src value) -> cast_result<Dest> {
   return details::cast_underlying_result<Dest>(
       value, []<typename DestRep, typename SrcRep>(SrcRep rep) {
