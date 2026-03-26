@@ -55,6 +55,8 @@ struct hash<T> {
 
 template <underlying_type T>
   requires (!details::std_hashable<T> &&
+            !std::same_as<std::remove_cv_t<T>,
+                          typename underlying::traits<std::remove_cv_t<T>>::rep_type> &&
             hash<typename underlying::traits<std::remove_cv_t<T>>::rep_type>::enabled)
 struct hash<T> {
   using value_type = std::remove_cv_t<T>;
