@@ -1,5 +1,6 @@
 module;
 #include <concepts>
+#include <cstddef>
 #include <cstdint>
 #include <stdexcept>
 #include <limits>
@@ -96,6 +97,15 @@ consteval auto operator""_u64(const unsigned long long value) -> std::uint64_t {
   return underlying::details::cast_integer_literal<std::uint64_t>(value);
 }
 
+consteval auto operator""_size(const unsigned long long value) -> std::size_t {
+  return underlying::details::cast_integer_literal<std::size_t>(value);
+}
+
+consteval auto operator""_diff(const unsigned long long value)
+    -> std::ptrdiff_t {
+  return underlying::details::cast_integer_literal<std::ptrdiff_t>(value);
+}
+
 consteval auto operator""_i8(const unsigned long long value) -> std::int8_t {
   return underlying::details::cast_integer_literal<std::int8_t>(value);
 }
@@ -140,4 +150,3 @@ consteval auto operator""_f80(const long double value) -> long double {
 }
 
 } // namespace mcpplibs::primitives::literals
-
