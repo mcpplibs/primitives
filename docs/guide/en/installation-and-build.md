@@ -8,7 +8,7 @@
   - MSVC >= 19.34 (MSVC version >= 1934)
 - Build tools
   - xmake (recommended)
-  - or CMake + Ninja
+  - or CMake >= 3.31 + Ninja
 
 ## Build with xmake
 

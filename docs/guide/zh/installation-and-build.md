@@ -8,7 +8,7 @@
   - MSVC >= 19.34（MSVC 版本号 >= 1934）
 - 构建工具
   - 推荐：xmake
-  - 或：CMake + Ninja
+  - 或：CMake >= 3.31 + Ninja
 
 ## 使用 xmake 构建
 

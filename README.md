@@ -9,7 +9,7 @@
 | [中文](README.zh.md) - [English](README.md) - [Forum](https://mcpp.d2learn.org/forum) |
 |---------------------------------------------------------------------------------|
 | [用户文档](docs/guide/zh/README.md) - [User Documentation](docs/guide/en/README.md) |
-| [API文档](docs/guide/api/README.md) - [API Documentation](docs/api/en/README.md)  |
+| [API文档](docs/api/zh/README.md) - [API Documentation](docs/api/en/README.md)  |
 
 This repository provides configurable `primitive` infrastructure (`underlying traits`, `policy`, and `operations/dispatcher`) to unify numeric behavior, error handling, and concurrency access semantics.
 
@@ -161,7 +161,7 @@ xmake run ex05_concurrency_policy
 xmake run primitives_test
 ```
 
-**Using CMake**
+**Using CMake** (`CMake >= 3.31`)
 
 ```bash
 cmake -B build -G Ninja

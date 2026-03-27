@@ -16,6 +16,8 @@ import mcpplibs.primitives;
 - `mcpplibs.primitives.policy`
 - `mcpplibs.primitives.primitive`
 - `mcpplibs.primitives.operations`
+- `mcpplibs.primitives.algorithms`
+- `mcpplibs.primitives.conversion`
 
 ## 命名空间总览
 
@@ -23,7 +25,10 @@ import mcpplibs.primitives;
 - `mcpplibs::primitives::underlying`: underlying traits 与类别。
 - `mcpplibs::primitives::policy`: policy 标签、默认值与协议。
 - `mcpplibs::primitives::operations`: 分发函数 API。
+- `mcpplibs::primitives::conversion`: 数值风险检查与转换辅助接口。
+- `mcpplibs::primitives::algorithms`: limits 与 hash 辅助接口。
 - `mcpplibs::primitives::operators`: 运算符重载入口。
+- `mcpplibs::primitives::literals`: 带范围校验的 underlying 字面量后缀。
 - `mcpplibs::primitives::meta`: primitive 元信息 traits。
 - `mcpplibs::primitives::types`: 常用 underlying 的 primitive 别名。
 
@@ -96,7 +101,7 @@ class primitive;
 
 ### 预定义别名（`types`）
 
-- 整型：`U8/U16/U32/U64`、`I8/I16/I32/I64`
+- 整型：`U8/U16/U32/U64`、`Size`、`Diff`、`I8/I16/I32/I64`
 - 浮点：`F32/F64/F80`
 - 布尔/字符：`Bool/UChar/Char8/Char16/Char32/WChar`
 
@@ -106,6 +111,25 @@ class primitive;
 using value_t = mcpplibs::primitives::types::I32<
     mcpplibs::primitives::policy::value::checked,
     mcpplibs::primitives::policy::error::expected>;
+```
+
+### 工厂函数与 literals
+
+- `with(value)`：从 underlying 值按默认策略构造 `primitive`
+- `with<Policies...>(value)`：构造时显式指定策略集合
+- `with(policies_tuple, value)`：复用已有策略元组
+- `mcpplibs::primitives::literals` 提供带校验的后缀，例如
+  `_u8/_u16/_u32/_u64/_size/_diff`、`_i8/_i16/_i32/_i64`、
+  `_f32/_f32e/_f64/_f64e/_f80/_f80e`，以及
+  `_uchar/_char8/_char16/_char32/_wchar`
+
+示例：
+
+```cpp
+using namespace mcpplibs::primitives;
+using namespace mcpplibs::primitives::literals;
+
+auto value = with<policy::value::checked, policy::error::expected>(42_i32);
 ```
 
 ## `operations` API
@@ -171,6 +195,56 @@ using namespace mcpplibs::primitives::operators;
 ```
 
 重载结果同样是 `std::expected<...>`，不是裸值。
+
+## `conversion` API
+
+`conversion` 命名空间提供 underlying、primitive 以及混合路径之间的统一转换接口。
+
+### 常用结果类型与风险模型
+
+- `cast_result<T> = std::expected<T, conversion::risk::kind>`
+- `conversion::risk::kind`：
+  `none`、`overflow`、`underflow`、`domain_error`、`precision_loss`、
+  `sign_loss`、`invalid_type_combination`
+
+### 转换函数
+
+- `numeric_risk<Dest>(value)`
+- `unchecked_cast<Dest>(value)`
+- `checked_cast<Dest>(value)`
+- `saturating_cast<Dest>(value)`
+- `truncating_cast<Dest>(value)`
+- `exact_cast<Dest>(value)`
+
+说明：
+
+- `checked_cast` 与 `exact_cast` 返回 `cast_result<T>`
+- `saturating_cast` 会对数值溢出/下溢执行钳制
+- `truncating_cast` 适合浮点到整数的截断场景
+- 提供 underlying -> underlying、primitive -> primitive、
+  primitive -> underlying、underlying -> primitive 四类重载
+
+## `algorithms` API
+
+`algorithms` 命名空间提供 limits 元信息与 hash 辅助接口，适用于内置类型和受支持的自定义 underlying。
+
+### Limits
+
+- `limits<T>`
+- `limited_type<T>`
+- `min_value<T>()`
+- `lowest_value<T>()`
+- `max_value<T>()`
+- `epsilon_value<T>()`
+- `infinity_value<T>()`
+- `quiet_nan_value<T>()`
+
+### Hash
+
+- `hash<T>`
+- `hash_result_t<T>`
+- `hashable<T>`
+- `hash_value(value)`
 
 ## policy API
 
