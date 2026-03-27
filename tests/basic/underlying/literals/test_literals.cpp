@@ -22,28 +22,33 @@ struct I8OverflowProbe {
   static consteval auto value() { return 128_i8; }
 };
 
-struct F32PrecisionLossProbe {
-  static consteval auto value() { return 16777217_f32; }
+struct F32ExactPrecisionLossProbe {
+  static consteval auto value() { return 16777217_f32e; }
 };
 
-struct F64PrecisionLossProbe {
-  static consteval auto value() { return 9007199254740993_f64; }
+struct F64ExactPrecisionLossProbe {
+  static consteval auto value() { return 9007199254740993_f64e; }
 };
 
 struct F32OverflowProbe {
   static consteval auto value() { return 1.0e39_f32; }
 };
 
-struct F32UnderflowProbe {
-  static consteval auto value() { return 1.0e-50_f32; }
+struct F32ExactOverflowProbe {
+  static consteval auto value() { return 1.0e39_f32e; }
+};
+
+struct F32ExactUnderflowProbe {
+  static consteval auto value() { return 1.0e-50_f32e; }
 };
 
 static_assert(!literal_available<U8OverflowProbe>);
 static_assert(!literal_available<I8OverflowProbe>);
-static_assert(!literal_available<F32PrecisionLossProbe>);
-static_assert(!literal_available<F64PrecisionLossProbe>);
+static_assert(!literal_available<F32ExactPrecisionLossProbe>);
+static_assert(!literal_available<F64ExactPrecisionLossProbe>);
 static_assert(!literal_available<F32OverflowProbe>);
-static_assert(!literal_available<F32UnderflowProbe>);
+static_assert(!literal_available<F32ExactOverflowProbe>);
+static_assert(!literal_available<F32ExactUnderflowProbe>);
 
 } // namespace
 
@@ -73,19 +78,40 @@ TEST(UnderlyingLiteralsTest, IntegerLiteralsReturnExpectedUnderlyingTypes) {
 
 TEST(UnderlyingLiteralsTest, FloatingLiteralsReturnExpectedUnderlyingTypes) {
   static_assert(std::same_as<decltype(1.25_f32), float>);
+  static_assert(std::same_as<decltype(1.25_f32e), float>);
   static_assert(std::same_as<decltype(1.25_f64), double>);
+  static_assert(std::same_as<decltype(1.25_f64e), double>);
   static_assert(std::same_as<decltype(1.25_f80), long double>);
+  static_assert(std::same_as<decltype(1.25_f80e), long double>);
   static_assert(std::same_as<decltype(16777216_f32), float>);
+  static_assert(std::same_as<decltype(16777216_f32e), float>);
+  static_assert(std::same_as<decltype(16777217_f32), float>);
   static_assert(std::same_as<decltype(9007199254740992_f64), double>);
+  static_assert(std::same_as<decltype(9007199254740992_f64e), double>);
+  static_assert(std::same_as<decltype(9007199254740993_f64), double>);
+  static_assert(std::same_as<decltype(0.1_f32), float>);
+  static_assert(std::same_as<decltype(0.1_f64), double>);
 
   EXPECT_FLOAT_EQ(1.25_f32, 1.25f);
+  EXPECT_FLOAT_EQ(1.25_f32e, 1.25f);
   EXPECT_DOUBLE_EQ(1.25_f64, 1.25);
+  EXPECT_DOUBLE_EQ(1.25_f64e, 1.25);
   EXPECT_EQ(1.25_f80, static_cast<long double>(1.25));
+  EXPECT_EQ(1.25_f80e, static_cast<long double>(1.25));
   EXPECT_FLOAT_EQ(16777216_f32, 16777216.0f);
+  EXPECT_FLOAT_EQ(16777216_f32e, 16777216.0f);
+  EXPECT_FLOAT_EQ(16777217_f32, static_cast<float>(16777217.0L));
   EXPECT_DOUBLE_EQ(9007199254740992_f64, 9007199254740992.0);
+  EXPECT_DOUBLE_EQ(9007199254740992_f64e, 9007199254740992.0);
+  EXPECT_DOUBLE_EQ(9007199254740993_f64, static_cast<double>(9007199254740993.0L));
+  EXPECT_FLOAT_EQ(0.1_f32, static_cast<float>(0.1L));
   EXPECT_FLOAT_EQ(2_f32, 2.0f);
+  EXPECT_FLOAT_EQ(2_f32e, 2.0f);
+  EXPECT_DOUBLE_EQ(0.1_f64, static_cast<double>(0.1L));
   EXPECT_DOUBLE_EQ(2_f64, 2.0);
+  EXPECT_DOUBLE_EQ(2_f64e, 2.0);
   EXPECT_EQ(2_f80, static_cast<long double>(2.0));
+  EXPECT_EQ(2_f80e, static_cast<long double>(2.0));
 }
 
 TEST(UnderlyingLiteralsTest, CharacterLiteralsReturnExpectedUnderlyingTypes) {
