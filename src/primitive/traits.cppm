@@ -13,6 +13,8 @@ namespace mcpplibs::primitives::meta::details {
 
 template <typename T> struct primitive_traits_impl;
 
+template <typename T, typename PoliciesTuple> struct make_primitive;
+
 template <underlying_type T, policy::policy_type... Policies>
 struct primitive_traits_impl<primitive<T, Policies...>> {
   using value_type = T;
@@ -27,21 +29,19 @@ struct primitive_traits_impl<primitive<T, Policies...>> {
       policy::resolve_policy_t<policy::category::concurrency, Policies...>;
 };
 
+template <underlying_type T, policy::policy_type... Policies>
+struct make_primitive<T, std::tuple<Policies...>> {
+  using type = primitive<T, Policies...>;
+};
+
 } // namespace mcpplibs::primitives::meta::details
 
 // Public API exported from this module.
 export namespace mcpplibs::primitives::meta {
 using policy_category = policy::category;
 
-template <typename T, typename PoliciesTuple> struct make_primitive;
-
-template <underlying_type T, policy::policy_type... Policies>
-struct make_primitive<T, std::tuple<Policies...>> {
-  using type = primitive<T, Policies...>;
-};
-
 template <underlying_type T, typename PoliciesTuple>
-using make_primitive_t = make_primitive<T, PoliciesTuple>::type;
+using make_primitive_t = details::make_primitive<T, PoliciesTuple>::type;
 
 using default_policies =
     std::tuple<policy::resolve_policy_t<policy::category::value>,
