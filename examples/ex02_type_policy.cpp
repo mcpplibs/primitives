@@ -54,8 +54,7 @@ int main() {
       operations::Addition,
       primitive<int, policy::value::checked, policy::type::compatible,
                 policy::error::expected>,
-      compatible_i64,
-      policy::error::kind>;
+      compatible_i64>;
 
   static_assert(
       std::is_same_v<typename compatible_meta::common_rep, long long>);

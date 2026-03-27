@@ -9,7 +9,7 @@
 | [中文](README.zh.md) - [English](README.md) - [Forum](https://mcpp.d2learn.org/forum) |
 |---------------------------------------------------------------------------------|
 | [用户文档](docs/guide/zh/README.md) - [User Documentation](docs/guide/en/README.md) |
-| [API文档](docs/guide/api/README.md) - [API Documentation](docs/api/en/README.md)  |
+| [API文档](docs/api/zh/README.md) - [API Documentation](docs/api/en/README.md)  |
 
 This repository provides configurable `primitive` infrastructure (`underlying traits`, `policy`, and `operations/dispatcher`) to unify numeric behavior, error handling, and concurrency access semantics.
 
@@ -98,14 +98,16 @@ Default policies are available under `policy::defaults`:
 
 ## Examples
 
-- `ex01_default_arithmetic`: Basic arithmetic under default policies.
+- `ex01_basic_usage`: Literals + primitive factory helpers with the built-in operator set.
 - `ex02_type_policy`: Type negotiation with `strict/compatible`, including how type policy affects construction from `underlying`.
 - `ex03_value_policy`: `checked/unchecked/saturating` behavior, including mixed binary operations with `underlying`.
 - `ex04_error_policy`: Error-handling behavior across different error policies.
 - `ex05_concurrency_policy`: Representative mixed read/write concurrency workload (writer `store` + reader `add/sub` + `CAS`).
-- `ex06_custom_underlying`: Custom underlying traits, rep validation, and common-rep extension.
-- `ex07_custom_policy`: Custom policy protocol implementation.
-- `ex08_custom_operation`: Custom operation extension.
+- `ex06_conversion`: Checked/saturating/truncating/exact conversion helpers across underlying values and primitives.
+- `ex07_algorithms`: Limits metadata, special numeric values, and hashing helpers.
+- `ex08_custom_underlying`: Custom underlying traits, rep validation, and common-rep extension.
+- `ex09_custom_policy`: Custom policy protocol implementation.
+- `ex10_custom_operation`: Custom operation extension.
 
 ## Project Layout
 
@@ -117,7 +119,7 @@ mcpplibs-primitives/
 │   ├── policy/                 # policy tags and protocol implementations
 │   ├── operations/             # operation tags / dispatcher / operators
 │   └── underlying/             # underlying traits and common_rep
-├── examples/                   # ex01 ~ ex08 examples
+├── examples/                   # example programs
 ├── tests/                      # test entry and basic test suite
 ├── xmake.lua                   # xmake build script
 ├── CMakeLists.txt              # CMake build script
@@ -151,17 +153,22 @@ xlings install
 
 ```bash
 xmake build mcpplibs-primitives
-xmake run basic                    # equivalent to ex01_default_arithmetic
+xmake run basic                    # compatibility alias for ex01_basic_usage
+xmake run ex01_basic_usage
+xmake run ex06_conversion
+xmake run ex07_algorithms
 xmake run ex05_concurrency_policy
 xmake run primitives_test
 ```
 
-**Using CMake**
+**Using CMake** (`CMake >= 3.31`)
 
 ```bash
 cmake -B build -G Ninja
 cmake --build build --target mcpplibs-primitives
-cmake --build build --target ex01_default_arithmetic
+cmake --build build --target ex01_basic_usage
+cmake --build build --target ex06_conversion
+cmake --build build --target ex07_algorithms
 cmake --build build --target basic_tests
 ctest --test-dir build --output-on-failure
 ```

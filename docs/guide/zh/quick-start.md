@@ -38,14 +38,16 @@ int main() {
 
 建议按以下顺序运行示例：
 
-1. `ex01_default_arithmetic`
+1. `ex01_basic_usage`
 2. `ex02_type_policy`
 3. `ex03_value_policy`
 4. `ex04_error_policy`
 5. `ex05_concurrency_policy`
-6. `ex06_custom_underlying`
-7. `ex07_custom_policy`
-8. `ex08_custom_operation`
+6. `ex06_conversion`
+7. `ex07_algorithms`
+8. `ex08_custom_underlying`
+9. `ex09_custom_policy`
+10. `ex10_custom_operation`
 
 运行示例：
 

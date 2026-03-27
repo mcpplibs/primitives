@@ -3,20 +3,22 @@ add_rules("mode.debug", "mode.release")
 set_languages("c++23")
 
 local examples = {
-    "ex01_default_arithmetic",
+    "ex01_basic_usage",
     "ex02_type_policy",
     "ex03_value_policy",
     "ex04_error_policy",
     "ex05_concurrency_policy",
-    "ex06_custom_underlying",
-    "ex07_custom_policy",
-    "ex08_custom_operation"
+    "ex06_conversion",
+    "ex07_algorithms",
+    "ex08_custom_underlying",
+    "ex09_custom_policy",
+    "ex10_custom_operation"
 }
 
--- CI compatibility alias: keep `xmake run basic` working.
+-- CI compatibility alias: keep `xmake run basic` working for ex01_basic_usage.
 target("basic")
     set_kind("binary")
-    add_files("ex01_default_arithmetic.cpp")
+    add_files("ex01_basic_usage.cpp")
     add_deps("mcpplibs-primitives")
     set_policy("build.c++.modules", true)
 

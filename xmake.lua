@@ -1,5 +1,5 @@
 set_project("mcpplibs-primitives")
-set_version("0.3.0")
+set_version("0.4.0")
 
 add_rules("mode.release", "mode.debug")
 

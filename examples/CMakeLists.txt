@@ -1,12 +1,14 @@
 set(PRIMITIVES_EXAMPLE_SOURCES
-    ex01_default_arithmetic.cpp
+    ex01_basic_usage.cpp
     ex02_type_policy.cpp
     ex03_value_policy.cpp
     ex04_error_policy.cpp
     ex05_concurrency_policy.cpp
-    ex06_custom_underlying.cpp
-    ex07_custom_policy.cpp
-    ex08_custom_operation.cpp
+    ex06_conversion.cpp
+    ex07_algorithms.cpp
+    ex08_custom_underlying.cpp
+    ex09_custom_policy.cpp
+    ex10_custom_operation.cpp
 )
 
 foreach(example_source IN LISTS PRIMITIVES_EXAMPLE_SOURCES)

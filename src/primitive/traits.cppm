@@ -7,7 +7,7 @@ export module mcpplibs.primitives.primitive.traits;
 import mcpplibs.primitives.primitive.impl;
 import mcpplibs.primitives.policy.traits;
 import mcpplibs.primitives.policy.utility;
-import mcpplibs.primitives.underlying.traits;
+import mcpplibs.primitives.underlying;
 
 namespace mcpplibs::primitives::meta::details {
 

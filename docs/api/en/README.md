@@ -13,9 +13,12 @@ import mcpplibs.primitives;
 This module exports:
 
 - `mcpplibs.primitives.underlying`
+- `mcpplibs.primitives.literals`
 - `mcpplibs.primitives.policy`
 - `mcpplibs.primitives.primitive`
 - `mcpplibs.primitives.operations`
+- `mcpplibs.primitives.algorithms`
+- `mcpplibs.primitives.conversion`
 
 ## Namespace Overview
 
@@ -23,7 +26,10 @@ This module exports:
 - `mcpplibs::primitives::underlying`: underlying traits and categories.
 - `mcpplibs::primitives::policy`: policy tags, defaults, and protocols.
 - `mcpplibs::primitives::operations`: functional dispatch API.
+- `mcpplibs::primitives::conversion`: numeric risk checks and cast helpers.
+- `mcpplibs::primitives::algorithms`: limits and hash helpers.
 - `mcpplibs::primitives::operators`: operator overload entry.
+- `mcpplibs::primitives::literals`: checked underlying literal suffixes.
 - `mcpplibs::primitives::meta`: primitive metadata traits.
 - `mcpplibs::primitives::types`: convenience aliases for common underlying types.
 
@@ -96,7 +102,7 @@ Notes:
 
 ### Convenience aliases (`types`)
 
-- Integers: `U8/U16/U32/U64`, `I8/I16/I32/I64`
+- Integers: `U8/U16/U32/U64`, `Size`, `Diff`, `I8/I16/I32/I64`
 - Floating-point: `F32/F64/F80`
 - Bool/chars: `Bool/UChar/Char8/Char16/Char32/WChar`
 
@@ -106,6 +112,28 @@ Example:
 using value_t = mcpplibs::primitives::types::I32<
     mcpplibs::primitives::policy::value::checked,
     mcpplibs::primitives::policy::error::expected>;
+```
+
+### Factory helpers and literals
+
+- `with(value)` builds a `primitive` with default policies from an underlying value.
+- `with<Policies...>(value)` applies an explicit policy set during construction.
+- `with(policies_tuple, value)` reuses an existing policies tuple.
+- `mcpplibs::primitives::literals` provides checked suffixes such as
+  `_u8/_u16/_u32/_u64/_size/_diff`, `_i8/_i16/_i32/_i64`,
+  `_f32/_f32e/_f64/_f64e/_f80/_f80e`, and character suffixes
+  `_uchar/_char8/_char16/_char32/_wchar`.
+
+Example:
+
+```cpp
+import mcpplibs.primitives;
+import mcpplibs.primitives.literals;
+
+using namespace mcpplibs::primitives;
+using namespace mcpplibs::primitives::literals;
+
+auto value = with<policy::value::checked, policy::error::expected>(42_i32);
 ```
 
 ## `operations` API
@@ -171,6 +199,58 @@ using namespace mcpplibs::primitives::operators;
 ```
 
 Operator results are still `std::expected<...>`, not raw values.
+
+## `conversion` API
+
+The `conversion` namespace provides reusable casts for underlying values,
+primitives, and mixed source/destination pairs.
+
+### Common result aliases and risk model
+
+- `cast_result<T> = std::expected<T, conversion::risk::kind>`
+- `conversion::risk::kind`:
+  `none`, `overflow`, `underflow`, `domain_error`, `precision_loss`,
+  `sign_loss`, `invalid_type_combination`
+
+### Conversion helpers
+
+- `numeric_risk<Dest>(value)`
+- `unchecked_cast<Dest>(value)`
+- `checked_cast<Dest>(value)`
+- `saturating_cast<Dest>(value)`
+- `truncating_cast<Dest>(value)`
+- `exact_cast<Dest>(value)`
+
+Notes:
+
+- `checked_cast` and `exact_cast` return `cast_result<T>`.
+- `saturating_cast` clamps overflow/underflow for numeric destinations.
+- `truncating_cast` is useful for floating-to-integral conversions.
+- Overloads exist for underlying -> underlying, primitive -> primitive,
+  primitive -> underlying, and underlying -> primitive paths.
+
+## `algorithms` API
+
+The `algorithms` namespace provides reusable limits metadata and hashing helpers
+for built-in and supported custom underlyings.
+
+### Limits
+
+- `limits<T>`
+- `limited_type<T>`
+- `min_value<T>()`
+- `lowest_value<T>()`
+- `max_value<T>()`
+- `epsilon_value<T>()`
+- `infinity_value<T>()`
+- `quiet_nan_value<T>()`
+
+### Hashing
+
+- `hash<T>`
+- `hash_result_t<T>`
+- `hashable<T>`
+- `hash_value(value)`
 
 ## policy API
 

@@ -7,13 +7,13 @@ module;
 #include <stdexcept>
 #include <type_traits>
 
-export module mcpplibs.primitives.underlying.literals;
+export module mcpplibs.primitives.literals;
 
 import mcpplibs.primitives.algorithms.limits;
 import mcpplibs.primitives.conversion.traits;
-import mcpplibs.primitives.underlying;
+import mcpplibs.primitives.underlying.traits;
 
-namespace mcpplibs::primitives::underlying::details {
+namespace mcpplibs::primitives::literals::details {
 
 template <conversion::risk::kind Kind>
 consteval auto throw_literal_risk() -> void {
@@ -161,7 +161,7 @@ consteval auto literal_integral() -> To {
   return checked_integral_literal<To>(parse_unsigned_decimal_literal<Cs...>());
 }
 
-} // namespace mcpplibs::primitives::underlying::details
+} // namespace mcpplibs::primitives::literals::details
 
 export namespace mcpplibs::primitives::literals {
 
@@ -179,100 +179,100 @@ consteval auto operator""_wchar(const wchar_t value) -> wchar_t { return value; 
 
 template <char... Cs>
 consteval auto operator""_u8() -> std::uint8_t {
-  return underlying::details::literal_integral<std::uint8_t, Cs...>();
+  return details::literal_integral<std::uint8_t, Cs...>();
 }
 
 template <char... Cs>
 consteval auto operator""_u16() -> std::uint16_t {
-  return underlying::details::literal_integral<std::uint16_t, Cs...>();
+  return details::literal_integral<std::uint16_t, Cs...>();
 }
 
 template <char... Cs>
 consteval auto operator""_u32() -> std::uint32_t {
-  return underlying::details::literal_integral<std::uint32_t, Cs...>();
+  return details::literal_integral<std::uint32_t, Cs...>();
 }
 
 template <char... Cs>
 consteval auto operator""_u64() -> std::uint64_t {
-  return underlying::details::literal_integral<std::uint64_t, Cs...>();
+  return details::literal_integral<std::uint64_t, Cs...>();
 }
 
 template <char... Cs>
 consteval auto operator""_size() -> std::size_t {
-  return underlying::details::literal_integral<std::size_t, Cs...>();
+  return details::literal_integral<std::size_t, Cs...>();
 }
 
 template <char... Cs>
 consteval auto operator""_diff() -> std::ptrdiff_t {
-  return underlying::details::literal_integral<std::ptrdiff_t, Cs...>();
+  return details::literal_integral<std::ptrdiff_t, Cs...>();
 }
 
 template <char... Cs>
 consteval auto operator""_i8() -> std::int8_t {
-  return underlying::details::literal_integral<std::int8_t, Cs...>();
+  return details::literal_integral<std::int8_t, Cs...>();
 }
 
 template <char... Cs>
 consteval auto operator""_i16() -> std::int16_t {
-  return underlying::details::literal_integral<std::int16_t, Cs...>();
+  return details::literal_integral<std::int16_t, Cs...>();
 }
 
 template <char... Cs>
 consteval auto operator""_i32() -> std::int32_t {
-  return underlying::details::literal_integral<std::int32_t, Cs...>();
+  return details::literal_integral<std::int32_t, Cs...>();
 }
 
 template <char... Cs>
 consteval auto operator""_i64() -> std::int64_t {
-  return underlying::details::literal_integral<std::int64_t, Cs...>();
+  return details::literal_integral<std::int64_t, Cs...>();
 }
 
 consteval auto operator""_f32(const unsigned long long value) -> float {
-  return underlying::details::checked_floating_literal<float>(value);
+  return details::checked_floating_literal<float>(value);
 }
 
 consteval auto operator""_f32(const long double value) -> float {
-  return underlying::details::checked_floating_literal<float>(value);
+  return details::checked_floating_literal<float>(value);
 }
 
 consteval auto operator""_f32e(const unsigned long long value) -> float {
-  return underlying::details::exact_floating_literal<float>(value);
+  return details::exact_floating_literal<float>(value);
 }
 
 consteval auto operator""_f32e(const long double value) -> float {
-  return underlying::details::exact_floating_literal<float>(value);
+  return details::exact_floating_literal<float>(value);
 }
 
 consteval auto operator""_f64(const unsigned long long value) -> double {
-  return underlying::details::checked_floating_literal<double>(value);
+  return details::checked_floating_literal<double>(value);
 }
 
 consteval auto operator""_f64(const long double value) -> double {
-  return underlying::details::checked_floating_literal<double>(value);
+  return details::checked_floating_literal<double>(value);
 }
 
 consteval auto operator""_f64e(const unsigned long long value) -> double {
-  return underlying::details::exact_floating_literal<double>(value);
+  return details::exact_floating_literal<double>(value);
 }
 
 consteval auto operator""_f64e(const long double value) -> double {
-  return underlying::details::exact_floating_literal<double>(value);
+  return details::exact_floating_literal<double>(value);
 }
 
 consteval auto operator""_f80(const unsigned long long value) -> long double {
-  return underlying::details::checked_floating_literal<long double>(value);
+  return details::checked_floating_literal<long double>(value);
 }
 
 consteval auto operator""_f80(const long double value) -> long double {
-  return underlying::details::checked_floating_literal<long double>(value);
+  return details::checked_floating_literal<long double>(value);
 }
 
 consteval auto operator""_f80e(const unsigned long long value) -> long double {
-  return underlying::details::exact_floating_literal<long double>(value);
+  return details::exact_floating_literal<long double>(value);
 }
 
 consteval auto operator""_f80e(const long double value) -> long double {
-  return underlying::details::exact_floating_literal<long double>(value);
+  return details::exact_floating_literal<long double>(value);
 }
 
 } // namespace mcpplibs::primitives::literals

@@ -3,7 +3,7 @@
 #include <gtest/gtest.h>
 #include <type_traits>
 
-import mcpplibs.primitives.underlying.literals;
+import mcpplibs.primitives.literals;
 
 using namespace mcpplibs::primitives::literals;
 
@@ -52,7 +52,7 @@ static_assert(!literal_available<F32ExactUnderflowProbe>);
 
 } // namespace
 
-TEST(UnderlyingLiteralsTest, IntegerLiteralsReturnExpectedUnderlyingTypes) {
+TEST(LiteralsTest, IntegerLiteralsReturnExpectedUnderlyingTypes) {
   static_assert(std::same_as<decltype(42_u8), std::uint8_t>);
   static_assert(std::same_as<decltype(42_u16), std::uint16_t>);
   static_assert(std::same_as<decltype(42_u32), std::uint32_t>);
@@ -76,7 +76,7 @@ TEST(UnderlyingLiteralsTest, IntegerLiteralsReturnExpectedUnderlyingTypes) {
   EXPECT_EQ(42_i64, static_cast<std::int64_t>(42));
 }
 
-TEST(UnderlyingLiteralsTest, FloatingLiteralsReturnExpectedUnderlyingTypes) {
+TEST(LiteralsTest, FloatingLiteralsReturnExpectedUnderlyingTypes) {
   static_assert(std::same_as<decltype(1.25_f32), float>);
   static_assert(std::same_as<decltype(1.25_f32e), float>);
   static_assert(std::same_as<decltype(1.25_f64), double>);
@@ -114,7 +114,7 @@ TEST(UnderlyingLiteralsTest, FloatingLiteralsReturnExpectedUnderlyingTypes) {
   EXPECT_EQ(2_f80e, static_cast<long double>(2.0));
 }
 
-TEST(UnderlyingLiteralsTest, CharacterLiteralsReturnExpectedUnderlyingTypes) {
+TEST(LiteralsTest, CharacterLiteralsReturnExpectedUnderlyingTypes) {
   static_assert(std::same_as<decltype('A'_uchar), unsigned char>);
   static_assert(std::same_as<decltype(u8'A'_char8), char8_t>);
   static_assert(std::same_as<decltype(u'A'_char16), char16_t>);

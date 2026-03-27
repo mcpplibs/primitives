@@ -8,7 +8,7 @@
   - MSVC >= 19.34（MSVC 版本号 >= 1934）
 - 构建工具
   - 推荐：xmake
-  - 或：CMake + Ninja
+  - 或：CMake >= 3.31 + Ninja
 
 ## 使用 xmake 构建
 
@@ -21,7 +21,7 @@ xmake build mcpplibs-primitives
 运行示例：
 
 ```bash
-xmake run ex01_default_arithmetic
+xmake run ex01_basic_usage
 ```
 
 运行测试：
@@ -36,7 +36,7 @@ xmake run primitives_test
 xmake run basic
 ```
 
-`basic` 对应 `ex01_default_arithmetic`。
+`basic` 对应 `ex01_basic_usage`。
 
 ## 使用 CMake 构建
 
@@ -50,7 +50,9 @@ cmake --build build --target mcpplibs-primitives
 构建示例与测试：
 
 ```bash
-cmake --build build --target ex01_default_arithmetic
+cmake --build build --target ex01_basic_usage
+cmake --build build --target ex06_conversion
+cmake --build build --target ex07_algorithms
 cmake --build build --target basic_tests
 ctest --test-dir build --output-on-failure
 ```
@@ -59,14 +61,16 @@ ctest --test-dir build --output-on-failure
 
 可独立构建/运行的示例目标：
 
-- `ex01_default_arithmetic`
+- `ex01_basic_usage`
 - `ex02_type_policy`
 - `ex03_value_policy`
 - `ex04_error_policy`
 - `ex05_concurrency_policy`
-- `ex06_custom_underlying`
-- `ex07_custom_policy`
-- `ex08_custom_operation`
+- `ex06_conversion`
+- `ex07_algorithms`
+- `ex08_custom_underlying`
+- `ex09_custom_policy`
+- `ex10_custom_operation`
 
 ## 常见构建问题
 

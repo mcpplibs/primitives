@@ -1,5 +1,5 @@
 /*
- * Example: ex07_custom_policy
+ * Example: ex09_custom_policy
  *
  * Purpose:
  * Show end-to-end customization of all policy dimensions (type, value,
@@ -24,14 +24,14 @@ import mcpplibs.primitives.operations.invoker;
 using namespace mcpplibs::primitives;
 
 namespace demo {
-// Point 7 / Step 1: Define one custom tag for each policy dimension.
+// Point 9 / Step 1: Define one custom tag for each policy dimension.
 struct custom_value {};
 struct custom_type {};
 struct custom_error {};
 struct custom_concurrency {};
 } // namespace demo
 
-// Point 7 / Step 2: Register tags into policy::traits.
+// Point 9 / Step 2: Register tags into policy::traits.
 template <> struct mcpplibs::primitives::policy::traits<demo::custom_value> {
   using policy_type = demo::custom_value;
   static constexpr bool enabled = true;
@@ -57,7 +57,7 @@ struct mcpplibs::primitives::policy::traits<demo::custom_concurrency> {
   static constexpr auto kind = category::concurrency;
 };
 
-// Point 7 / Step 3A: Implement custom type handler.
+// Point 9 / Step 3A: Implement custom type handler.
 // Always allow and negotiate through std::common_type_t.
 template <operations::operation OpTag, typename LhsRep, typename RhsRep>
 struct mcpplibs::primitives::policy::type::handler<demo::custom_type, OpTag,
@@ -68,7 +68,7 @@ struct mcpplibs::primitives::policy::type::handler<demo::custom_type, OpTag,
   using common_rep = std::common_type_t<LhsRep, RhsRep>;
 };
 
-// Point 7 / Step 3B: Implement custom concurrency handler.
+// Point 9 / Step 3B: Implement custom concurrency handler.
 template <operations::operation OpTag, typename CommonRep,
           typename ErrorPayload>
 struct mcpplibs::primitives::policy::concurrency::handler<
@@ -115,7 +115,7 @@ struct mcpplibs::primitives::policy::concurrency::handler<
   }
 };
 
-// Point 7 / Step 3C: Implement custom value handler.
+// Point 9 / Step 3C: Implement custom value handler.
 // Complex point: finalize() post-processes decision and adjusts output.
 template <operations::operation OpTag, typename CommonRep,
           typename ErrorPayload>
@@ -138,7 +138,7 @@ struct mcpplibs::primitives::policy::value::handler<demo::custom_value, OpTag,
   }
 };
 
-// Point 7 / Step 3D: Provide binding for custom value policy + Addition.
+// Point 9 / Step 3D: Provide binding for custom value policy + Addition.
 // Without this specialization, runtime::run_value static_assert will fail.
 template <typename CommonRep>
 struct mcpplibs::primitives::operations::runtime::op_binding<
@@ -154,7 +154,7 @@ struct mcpplibs::primitives::operations::runtime::op_binding<
   }
 };
 
-// Point 7 / Step 3E: Implement custom error handler.
+// Point 9 / Step 3E: Implement custom error handler.
 template <operations::operation OpTag, typename CommonRep,
           typename ErrorPayload>
 struct mcpplibs::primitives::policy::error::handler<demo::custom_error, OpTag,
@@ -169,7 +169,7 @@ struct mcpplibs::primitives::policy::error::handler<demo::custom_error, OpTag,
 };
 
 int main() {
-  // Point 7 / Step 4: Compose all custom tags and execute a call path.
+  // Point 9 / Step 4: Compose all custom tags and execute a call path.
   using custom_t = primitive<int, demo::custom_value, demo::custom_type,
                              demo::custom_error, demo::custom_concurrency>;
 

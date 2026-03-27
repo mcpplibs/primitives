@@ -7,7 +7,7 @@ module;
 export module mcpplibs.primitives.primitive.impl;
 
 import mcpplibs.primitives.conversion.underlying;
-import mcpplibs.primitives.underlying.traits;
+import mcpplibs.primitives.underlying;
 import mcpplibs.primitives.policy.traits;
 import mcpplibs.primitives.policy.handler;
 import mcpplibs.primitives.policy.impl;
