@@ -12,6 +12,7 @@
  * - Program prints a success message and exits with code 0.
  */
 
+#include <cmath>
 #include <cstdint>
 #include <iostream>
 #include <limits>
