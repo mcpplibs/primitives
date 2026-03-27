@@ -33,5 +33,3 @@ struct mcpplibs::primitives::underlying::traits<T> {
 
   static constexpr bool is_valid_rep(rep_type) noexcept { return true; }
 };
-
-

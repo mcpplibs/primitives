@@ -1,4 +1,5 @@
 module;
+#include <cstddef>
 #include <cstdint>
 #include <tuple>
 #include <type_traits>
@@ -234,6 +235,20 @@ private:
   value_type value_;
 };
 
+template <policy::policy_type... Policies, underlying_type T>
+constexpr auto with(T value) noexcept(
+    noexcept(primitive<std::remove_cv_t<T>, Policies...>{value}))
+    -> primitive<std::remove_cv_t<T>, Policies...> {
+  return primitive<std::remove_cv_t<T>, Policies...>{value};
+}
+
+template <policy::policy_type... Policies, underlying_type T>
+constexpr auto with(std::tuple<Policies...>, T value) noexcept(
+    noexcept(primitive<std::remove_cv_t<T>, Policies...>{value}))
+    -> primitive<std::remove_cv_t<T>, Policies...> {
+  return primitive<std::remove_cv_t<T>, Policies...>{value};
+}
+
 namespace types {
 template <policy::policy_type... Policies>
 using Bool = primitive<bool, Policies...>;
@@ -257,6 +272,10 @@ template <policy::policy_type... Policies>
 using U32 = primitive<std::uint32_t, Policies...>;
 template <policy::policy_type... Policies>
 using U64 = primitive<std::uint64_t, Policies...>;
+template <policy::policy_type... Policies>
+using Size = primitive<std::size_t, Policies...>;
+template <policy::policy_type... Policies>
+using Diff = primitive<std::ptrdiff_t, Policies...>;
 template <policy::policy_type... Policies>
 using I8 = primitive<std::int8_t, Policies...>;
 template <policy::policy_type... Policies>
