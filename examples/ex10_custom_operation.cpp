@@ -1,5 +1,5 @@
 /*
- * Example: ex08_custom_operation
+ * Example: ex10_custom_operation
  *
  * Purpose:
  * Demonstrate how to register new operation tags, declare operation traits,
@@ -19,13 +19,13 @@ import mcpplibs.primitives.operations.invoker;
 using namespace mcpplibs::primitives;
 
 namespace demo_ops {
-// Point 8 / Step 1: Define custom operation tags.
+// Point 10 / Step 1: Define custom operation tags.
 struct Average {};
 struct GreaterThan {};
 struct BitAnd {};
 } // namespace demo_ops
 
-// Point 8 / Step 2: Register operation traits for
+// Point 10 / Step 2: Register operation traits for
 // arithmetic/comparison/bitwise.
 template <> struct mcpplibs::primitives::operations::traits<demo_ops::Average> {
   using op_tag = demo_ops::Average;
@@ -49,7 +49,7 @@ template <> struct mcpplibs::primitives::operations::traits<demo_ops::BitAnd> {
   static constexpr auto capability_mask = capability::bitwise;
 };
 
-// Point 8 / Step 3: Provide runtime op_binding for each new operation.
+// Point 10 / Step 3: Provide runtime op_binding for each new operation.
 // Complex point: these specializations plug directly into run_value dispatch.
 template <typename CommonRep>
 struct mcpplibs::primitives::operations::runtime::op_binding<
@@ -94,7 +94,7 @@ struct mcpplibs::primitives::operations::runtime::op_binding<
 };
 
 int main() {
-  // Point 8 / Step 4: Invoke each custom operation through operations::apply.
+  // Point 10 / Step 4: Invoke each custom operation through operations::apply.
   using value_t =
       primitive<int, policy::value::checked, policy::error::expected>;
 

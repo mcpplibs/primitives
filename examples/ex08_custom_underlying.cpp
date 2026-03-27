@@ -1,5 +1,5 @@
 /*
- * Example: ex06_custom_underlying
+ * Example: ex08_custom_underlying
  *
  * Purpose:
  * Demonstrate custom underlying integration, including rep bridge,
@@ -20,7 +20,7 @@ import mcpplibs.primitives;
 
 using namespace mcpplibs::primitives;
 
-// Point 6 / Step 1: Define custom domain value types.
+// Point 8 / Step 1: Define custom domain value types.
 struct UserInteger {
   int value;
 };
