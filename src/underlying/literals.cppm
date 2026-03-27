@@ -45,6 +45,16 @@ consteval auto finite(T value) -> bool {
          value <= algorithms::max_value<T>();
 }
 
+template <typename To, typename From>
+consteval auto out_of_floating_range(From value) -> bool {
+  using value_type = std::remove_cv_t<To>;
+  auto const normalized = static_cast<long double>(value);
+  auto const lowest =
+      static_cast<long double>(algorithms::lowest_value<value_type>());
+  auto const max = static_cast<long double>(algorithms::max_value<value_type>());
+  return normalized < lowest || normalized > max;
+}
+
 template <std::integral To>
 consteval auto checked_integral_literal(unsigned long long value) -> To {
   using value_type = std::remove_cv_t<To>;
@@ -69,14 +79,12 @@ consteval auto checked_floating_literal(From value) -> To {
     }
   }
 
-  auto const normalized = static_cast<long double>(value);
-  auto const lowest = static_cast<long double>(algorithms::lowest_value<value_type>());
-  auto const max = static_cast<long double>(algorithms::max_value<value_type>());
-
-  if (normalized < lowest) {
-    throw_literal_risk<conversion::risk::kind::underflow>();
-  }
-  if (normalized > max) {
+  if (out_of_floating_range<value_type>(value)) {
+    if constexpr (std::signed_integral<source_type> || std_floating<source_type>) {
+      if (value < static_cast<source_type>(0)) {
+        throw_literal_risk<conversion::risk::kind::underflow>();
+      }
+    }
     throw_literal_risk<conversion::risk::kind::overflow>();
   }
 
@@ -92,6 +100,16 @@ consteval auto checked_floating_literal(From value) -> To {
       throw_literal_risk<conversion::risk::kind::overflow>();
     }
   }
+
+  return converted;
+}
+
+template <std::floating_point To, std_numeric From>
+consteval auto exact_floating_literal(From value) -> To {
+  using source_type = std::remove_cv_t<From>;
+  using value_type = std::remove_cv_t<To>;
+
+  auto const converted = checked_floating_literal<value_type>(value);
 
   if constexpr (std::integral<source_type>) {
     if (static_cast<source_type>(converted) != value) {
@@ -217,6 +235,14 @@ consteval auto operator""_f32(const long double value) -> float {
   return underlying::details::checked_floating_literal<float>(value);
 }
 
+consteval auto operator""_f32e(const unsigned long long value) -> float {
+  return underlying::details::exact_floating_literal<float>(value);
+}
+
+consteval auto operator""_f32e(const long double value) -> float {
+  return underlying::details::exact_floating_literal<float>(value);
+}
+
 consteval auto operator""_f64(const unsigned long long value) -> double {
   return underlying::details::checked_floating_literal<double>(value);
 }
@@ -225,12 +251,28 @@ consteval auto operator""_f64(const long double value) -> double {
   return underlying::details::checked_floating_literal<double>(value);
 }
 
+consteval auto operator""_f64e(const unsigned long long value) -> double {
+  return underlying::details::exact_floating_literal<double>(value);
+}
+
+consteval auto operator""_f64e(const long double value) -> double {
+  return underlying::details::exact_floating_literal<double>(value);
+}
+
 consteval auto operator""_f80(const unsigned long long value) -> long double {
   return underlying::details::checked_floating_literal<long double>(value);
 }
 
 consteval auto operator""_f80(const long double value) -> long double {
   return underlying::details::checked_floating_literal<long double>(value);
+}
+
+consteval auto operator""_f80e(const unsigned long long value) -> long double {
+  return underlying::details::exact_floating_literal<long double>(value);
+}
+
+consteval auto operator""_f80e(const long double value) -> long double {
+  return underlying::details::exact_floating_literal<long double>(value);
 }
 
 } // namespace mcpplibs::primitives::literals
