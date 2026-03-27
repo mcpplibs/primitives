@@ -3,9 +3,49 @@
 #include <gtest/gtest.h>
 #include <type_traits>
 
-import mcpplibs.primitives.underlying;
+import mcpplibs.primitives.underlying.literals;
 
 using namespace mcpplibs::primitives::literals;
+
+namespace {
+
+template <auto Value> struct literal_value_tag;
+
+template <typename Probe>
+concept literal_available = requires { typename literal_value_tag<Probe::value()>; };
+
+struct U8OverflowProbe {
+  static consteval auto value() { return 256_u8; }
+};
+
+struct I8OverflowProbe {
+  static consteval auto value() { return 128_i8; }
+};
+
+struct F32PrecisionLossProbe {
+  static consteval auto value() { return 16777217_f32; }
+};
+
+struct F64PrecisionLossProbe {
+  static consteval auto value() { return 9007199254740993_f64; }
+};
+
+struct F32OverflowProbe {
+  static consteval auto value() { return 1.0e39_f32; }
+};
+
+struct F32UnderflowProbe {
+  static consteval auto value() { return 1.0e-50_f32; }
+};
+
+static_assert(!literal_available<U8OverflowProbe>);
+static_assert(!literal_available<I8OverflowProbe>);
+static_assert(!literal_available<F32PrecisionLossProbe>);
+static_assert(!literal_available<F64PrecisionLossProbe>);
+static_assert(!literal_available<F32OverflowProbe>);
+static_assert(!literal_available<F32UnderflowProbe>);
+
+} // namespace
 
 TEST(UnderlyingLiteralsTest, IntegerLiteralsReturnExpectedUnderlyingTypes) {
   static_assert(std::same_as<decltype(42_u8), std::uint8_t>);
@@ -35,10 +75,14 @@ TEST(UnderlyingLiteralsTest, FloatingLiteralsReturnExpectedUnderlyingTypes) {
   static_assert(std::same_as<decltype(1.25_f32), float>);
   static_assert(std::same_as<decltype(1.25_f64), double>);
   static_assert(std::same_as<decltype(1.25_f80), long double>);
+  static_assert(std::same_as<decltype(16777216_f32), float>);
+  static_assert(std::same_as<decltype(9007199254740992_f64), double>);
 
   EXPECT_FLOAT_EQ(1.25_f32, 1.25f);
   EXPECT_DOUBLE_EQ(1.25_f64, 1.25);
   EXPECT_EQ(1.25_f80, static_cast<long double>(1.25));
+  EXPECT_FLOAT_EQ(16777216_f32, 16777216.0f);
+  EXPECT_DOUBLE_EQ(9007199254740992_f64, 9007199254740992.0);
   EXPECT_FLOAT_EQ(2_f32, 2.0f);
   EXPECT_DOUBLE_EQ(2_f64, 2.0);
   EXPECT_EQ(2_f80, static_cast<long double>(2.0));
