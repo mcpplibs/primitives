@@ -242,6 +242,13 @@ constexpr auto with(T value) noexcept(
   return primitive<std::remove_cv_t<T>, Policies...>{value};
 }
 
+template <policy::policy_type... Policies, underlying_type T>
+constexpr auto with(std::tuple<Policies...>, T value) noexcept(
+    noexcept(primitive<std::remove_cv_t<T>, Policies...>{value}))
+    -> primitive<std::remove_cv_t<T>, Policies...> {
+  return primitive<std::remove_cv_t<T>, Policies...>{value};
+}
+
 namespace types {
 template <policy::policy_type... Policies>
 using Bool = primitive<bool, Policies...>;
