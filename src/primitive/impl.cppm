@@ -1,4 +1,5 @@
 module;
+#include <cstddef>
 #include <cstdint>
 #include <tuple>
 #include <type_traits>
@@ -264,6 +265,10 @@ template <policy::policy_type... Policies>
 using U32 = primitive<std::uint32_t, Policies...>;
 template <policy::policy_type... Policies>
 using U64 = primitive<std::uint64_t, Policies...>;
+template <policy::policy_type... Policies>
+using Size = primitive<std::size_t, Policies...>;
+template <policy::policy_type... Policies>
+using Diff = primitive<std::ptrdiff_t, Policies...>;
 template <policy::policy_type... Policies>
 using I8 = primitive<std::int8_t, Policies...>;
 template <policy::policy_type... Policies>
