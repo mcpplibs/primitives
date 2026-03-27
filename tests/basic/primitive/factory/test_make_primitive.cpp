@@ -37,6 +37,16 @@ TEST(PrimitiveFactoryTest, UsesDefaultPoliciesWhenNoPolicyIsSpecified) {
   EXPECT_EQ(value.load(), 42);
 }
 
+TEST(PrimitiveFactoryTest, DeducesSizeAndDiffPrimitiveAliases) {
+  auto sizeValue = with(42_size);
+  auto diffValue = with(42_diff);
+
+  static_assert(std::same_as<decltype(sizeValue), types::Size<>>);
+  static_assert(std::same_as<decltype(diffValue), types::Diff<>>);
+  EXPECT_EQ(sizeValue.load(), static_cast<std::size_t>(42));
+  EXPECT_EQ(diffValue.load(), static_cast<std::ptrdiff_t>(42));
+}
+
 TEST(PrimitiveFactoryTest, MakesPrimitiveFromDeducedCustomUnderlying) {
   using expected_t =
       primitive<UserInteger, policy::value::checked, policy::type::compatible>;

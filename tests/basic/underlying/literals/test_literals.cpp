@@ -1,3 +1,4 @@
+#include <cstddef>
 #include <cstdint>
 #include <gtest/gtest.h>
 #include <type_traits>
@@ -11,6 +12,8 @@ TEST(UnderlyingLiteralsTest, IntegerLiteralsReturnExpectedUnderlyingTypes) {
   static_assert(std::same_as<decltype(42_u16), std::uint16_t>);
   static_assert(std::same_as<decltype(42_u32), std::uint32_t>);
   static_assert(std::same_as<decltype(42_u64), std::uint64_t>);
+  static_assert(std::same_as<decltype(42_size), std::size_t>);
+  static_assert(std::same_as<decltype(42_diff), std::ptrdiff_t>);
   static_assert(std::same_as<decltype(42_i8), std::int8_t>);
   static_assert(std::same_as<decltype(42_i16), std::int16_t>);
   static_assert(std::same_as<decltype(42_i32), std::int32_t>);
@@ -20,6 +23,8 @@ TEST(UnderlyingLiteralsTest, IntegerLiteralsReturnExpectedUnderlyingTypes) {
   EXPECT_EQ(42_u16, static_cast<std::uint16_t>(42));
   EXPECT_EQ(42_u32, static_cast<std::uint32_t>(42));
   EXPECT_EQ(42_u64, static_cast<std::uint64_t>(42));
+  EXPECT_EQ(42_size, static_cast<std::size_t>(42));
+  EXPECT_EQ(42_diff, static_cast<std::ptrdiff_t>(42));
   EXPECT_EQ(42_i8, static_cast<std::int8_t>(42));
   EXPECT_EQ(42_i16, static_cast<std::int16_t>(42));
   EXPECT_EQ(42_i32, static_cast<std::int32_t>(42));
