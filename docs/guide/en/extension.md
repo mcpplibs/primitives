@@ -18,7 +18,7 @@ Required members:
 
 After registration, your type can be used as `primitive<YourType, ...>` if it satisfies `underlying_type`.
 
-Reference example: `examples/ex06_custom_underlying.cpp`.
+Reference example: `examples/ex08_custom_underlying.cpp`.
 
 ## 2) Custom Common Rep Negotiation
 
@@ -47,7 +47,7 @@ Custom policies require:
 
 If your value policy needs operation runtime behavior, also provide `operations::runtime::op_binding` specializations.
 
-Reference example: `examples/ex07_custom_policy.cpp`.
+Reference example: `examples/ex09_custom_policy.cpp`.
 
 ## 4) Custom Operation Tags
 
@@ -61,7 +61,7 @@ To add new operation tags:
 3. Provide `operations::runtime::op_binding<OpTag, ValuePolicy, CommonRep>`.
 4. Invoke via `operations::apply<OpTag>(lhs, rhs)`.
 
-Reference example: `examples/ex08_custom_operation.cpp`.
+Reference example: `examples/ex10_custom_operation.cpp`.
 
 ## Extension Checklist
 

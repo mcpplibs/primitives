@@ -18,7 +18,7 @@
 
 完成后，只要满足 `underlying_type`，即可用于 `primitive<YourType, ...>`。
 
-参考：`examples/ex06_custom_underlying.cpp`
+参考：`examples/ex08_custom_underlying.cpp`
 
 ## 2) 自定义 common rep 协商
 
@@ -47,7 +47,7 @@ struct mcpplibs::primitives::underlying::common_rep_traits<LhsRep, RhsRep> {
 
 如果 value policy 需要参与运行期运算逻辑，还要补充 `operations::runtime::op_binding` 特化。
 
-参考：`examples/ex07_custom_policy.cpp`
+参考：`examples/ex09_custom_policy.cpp`
 
 ## 4) 自定义 operation 标签
 
@@ -61,7 +61,7 @@ struct mcpplibs::primitives::underlying::common_rep_traits<LhsRep, RhsRep> {
 3. 提供 `operations::runtime::op_binding<OpTag, ValuePolicy, CommonRep>`。
 4. 通过 `operations::apply<OpTag>(lhs, rhs)` 调用。
 
-参考：`examples/ex08_custom_operation.cpp`
+参考：`examples/ex10_custom_operation.cpp`
 
 ## 扩展检查清单
 

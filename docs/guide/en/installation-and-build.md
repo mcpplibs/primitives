@@ -21,7 +21,7 @@ xmake build mcpplibs-primitives
 Run an example:
 
 ```bash
-xmake run ex01_default_arithmetic
+xmake run ex01_basic_usage
 ```
 
 Run tests:
@@ -36,7 +36,7 @@ Compatibility alias:
 xmake run basic
 ```
 
-`basic` runs `ex01_default_arithmetic`.
+`basic` runs `ex01_basic_usage`.
 
 ## Build with CMake
 
@@ -50,7 +50,9 @@ cmake --build build --target mcpplibs-primitives
 Build an example and tests:
 
 ```bash
-cmake --build build --target ex01_default_arithmetic
+cmake --build build --target ex01_basic_usage
+cmake --build build --target ex06_conversion
+cmake --build build --target ex07_algorithms
 cmake --build build --target basic_tests
 ctest --test-dir build --output-on-failure
 ```
@@ -59,14 +61,16 @@ ctest --test-dir build --output-on-failure
 
 Examples are available as independent targets:
 
-- `ex01_default_arithmetic`
+- `ex01_basic_usage`
 - `ex02_type_policy`
 - `ex03_value_policy`
 - `ex04_error_policy`
 - `ex05_concurrency_policy`
-- `ex06_custom_underlying`
-- `ex07_custom_policy`
-- `ex08_custom_operation`
+- `ex06_conversion`
+- `ex07_algorithms`
+- `ex08_custom_underlying`
+- `ex09_custom_policy`
+- `ex10_custom_operation`
 
 ## Common Build Issues
 

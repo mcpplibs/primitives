@@ -98,14 +98,16 @@ if (v.compare_exchange(expected, 3)) {
 
 ## 示例程序
 
-- `ex01_default_arithmetic`: 默认策略下的基础算术运算示例。
+- `ex01_basic_usage`: 演示 literal 与 primitive 工厂函数联合使用，并覆盖更多内置操作符。
 - `ex02_type_policy`: 展示 `strict/compatible` 的类型协商差异，并包含 `underlying` 构造路径对 type 策略的影响。
 - `ex03_value_policy`: 展示 `checked/unchecked/saturating`，并包含与 `underlying` 的混合二元运算行为。
 - `ex04_error_policy`: 展示不同 error 策略的处理方式。
 - `ex05_concurrency_policy`: 读写组合并发场景（writer `store` + reader `add/sub` + `CAS`）示例。
-- `ex06_custom_underlying`: 自定义 underlying traits、rep 校验与 common rep 扩展。
-- `ex07_custom_policy`: 自定义策略协议实现示例。
-- `ex08_custom_operation`: 自定义 operation 扩展示例。
+- `ex06_conversion`: 展示 underlying 与 primitive 之间的 checked/saturating/truncating/exact 转换。
+- `ex07_algorithms`: 展示 limits、特殊数值与 hash 等 algorithms 辅助接口。
+- `ex08_custom_underlying`: 自定义 underlying traits、rep 校验与 common rep 扩展。
+- `ex09_custom_policy`: 自定义策略协议实现示例。
+- `ex10_custom_operation`: 自定义 operation 扩展示例。
 
 ## 项目结构
 
@@ -117,7 +119,7 @@ mcpplibs-primitives/
 │   ├── policy/                 # policy 标签与协议实现
 │   ├── operations/             # operation tags / dispatcher / operators
 │   └── underlying/             # underlying traits 与 common_rep
-├── examples/                   # ex01 ~ ex08 示例
+├── examples/                   # 示例程序
 ├── tests/                      # 测试入口与 basic 测试集
 ├── xmake.lua                   # xmake 构建脚本
 ├── CMakeLists.txt              # CMake 构建脚本
@@ -151,7 +153,10 @@ xlings install
 
 ```bash
 xmake build mcpplibs-primitives
-xmake run basic                    # 等价于 ex01_default_arithmetic
+xmake run basic                    # 等价于 ex01_basic_usage
+xmake run ex01_basic_usage
+xmake run ex06_conversion
+xmake run ex07_algorithms
 xmake run ex05_concurrency_policy
 xmake run primitives_test
 ```
@@ -161,7 +166,9 @@ xmake run primitives_test
 ```bash
 cmake -B build -G Ninja
 cmake --build build --target mcpplibs-primitives
-cmake --build build --target ex01_default_arithmetic
+cmake --build build --target ex01_basic_usage
+cmake --build build --target ex06_conversion
+cmake --build build --target ex07_algorithms
 cmake --build build --target basic_tests
 ctest --test-dir build --output-on-failure
 ```
