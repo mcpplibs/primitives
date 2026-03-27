@@ -13,6 +13,7 @@ import mcpplibs.primitives;
 This module exports:
 
 - `mcpplibs.primitives.underlying`
+- `mcpplibs.primitives.literals`
 - `mcpplibs.primitives.policy`
 - `mcpplibs.primitives.primitive`
 - `mcpplibs.primitives.operations`
@@ -126,6 +127,9 @@ using value_t = mcpplibs::primitives::types::I32<
 Example:
 
 ```cpp
+import mcpplibs.primitives;
+import mcpplibs.primitives.literals;
+
 using namespace mcpplibs::primitives;
 using namespace mcpplibs::primitives::literals;
 

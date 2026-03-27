@@ -17,7 +17,7 @@ import mcpplibs.primitives.conversion.traits;
 import mcpplibs.primitives.conversion.underlying;
 import mcpplibs.primitives.policy.handler;
 import mcpplibs.primitives.policy.impl;
-import mcpplibs.primitives.underlying.traits;
+import mcpplibs.primitives.underlying;
 
 
 namespace mcpplibs::primitives::operations::details {
