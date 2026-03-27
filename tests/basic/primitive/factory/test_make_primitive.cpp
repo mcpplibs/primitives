@@ -47,6 +47,21 @@ TEST(PrimitiveFactoryTest, DeducesSizeAndDiffPrimitiveAliases) {
   EXPECT_EQ(diffValue.load(), static_cast<std::ptrdiff_t>(42));
 }
 
+TEST(PrimitiveFactoryTest, AcceptsPoliciesTupleInput) {
+  using policies_t =
+      meta::traits<types::I32<policy::value::checked,
+                              policy::error::expected>>::policies;
+  using expected_t = meta::make_primitive_t<std::int32_t, policies_t>;
+
+  auto value1 = with(policies_t{}, 42_i32);
+  auto value2 = with(meta::traits<decltype(value1)>::policies{}, 42_i32);
+
+  static_assert(std::same_as<decltype(value1), expected_t>);
+  static_assert(std::same_as<decltype(value2), expected_t>);
+  EXPECT_EQ(value1.load(), 42);
+  EXPECT_EQ(value2.load(), 42_i32);
+}
+
 TEST(PrimitiveFactoryTest, MakesPrimitiveFromDeducedCustomUnderlying) {
   using expected_t =
       primitive<UserInteger, policy::value::checked, policy::type::compatible>;
