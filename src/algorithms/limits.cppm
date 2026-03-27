@@ -6,7 +6,7 @@ module;
 
 export module mcpplibs.primitives.algorithms.limits;
 
-import mcpplibs.primitives.underlying.traits;
+import mcpplibs.primitives.underlying;
 
 namespace mcpplibs::primitives::algorithms::details {
 
