@@ -488,6 +488,120 @@ constexpr auto compare_three_way(T lhs, T rhs) -> policy::value::decision<T> {
 }
 
 template <typename T>
+constexpr auto compare_less_than(T lhs, T rhs) -> policy::value::decision<T> {
+  policy::value::decision<T> out{};
+  if constexpr (!(requires { T{0}; T{1}; T{2}; T{3}; })) {
+    return make_error<T>(
+        policy::error::kind::unspecified,
+        "less than comparison codes are not representable for common type");
+  }
+
+  if constexpr (std::same_as<std::remove_cv_t<T>, bool>) {
+    return make_error<T>(
+        policy::error::kind::unspecified,
+        "less than comparison is not representable for bool common type");
+  } else if constexpr (requires { lhs < rhs; }) {
+    out.has_value = true;
+    out.value = T{lhs < rhs};
+    return out;
+  } else if constexpr (requires { lhs <=> rhs; }) {
+    auto const cmp = lhs <=> rhs;
+    out.has_value = true;
+    out.value = T{cmp < 0};
+    return out;
+  }
+
+  return make_error<T>(policy::error::kind::unspecified,
+                       "less than not supported for negotiated common type");
+}
+
+template <typename T>
+constexpr auto compare_greater_than(T lhs, T rhs) -> policy::value::decision<T> {
+  policy::value::decision<T> out{};
+  if constexpr (!(requires { T{0}; T{1}; T{2}; T{3}; })) {
+    return make_error<T>(
+        policy::error::kind::unspecified,
+        "greater than comparison codes are not representable for common type");
+  }
+
+  if constexpr (std::same_as<std::remove_cv_t<T>, bool>) {
+    return make_error<T>(
+        policy::error::kind::unspecified,
+        "greater than comparison is not representable for bool common type");
+  } else if constexpr (requires { lhs > rhs; }) {
+    out.has_value = true;
+    out.value = T{lhs > rhs};
+    return out;
+  } else if constexpr (requires { lhs <=> rhs; }) {
+    auto const cmp = lhs <=> rhs;
+    out.has_value = true;
+    out.value = T{cmp > 0};
+    return out;
+  }
+
+  return make_error<T>(policy::error::kind::unspecified,
+                       "greater than not supported for negotiated common type");
+}
+
+template <typename T>
+constexpr auto compare_less_than_or_equal(T lhs, T rhs)
+    -> policy::value::decision<T> {
+  policy::value::decision<T> out{};
+  if constexpr (!(requires { T{0}; T{1}; T{2}; T{3}; })) {
+    return make_error<T>(
+        policy::error::kind::unspecified,
+        "less than or equal comparison codes are not representable for common type");
+  }
+
+  if constexpr (std::same_as<std::remove_cv_t<T>, bool>) {
+    return make_error<T>(
+        policy::error::kind::unspecified,
+        "less than or equal comparison is not representable for bool common type");
+  } else if constexpr (requires { lhs <= rhs; }) {
+    out.has_value = true;
+    out.value = T{lhs <= rhs};
+    return out;
+  } else if constexpr (requires { lhs <=> rhs; }) {
+    auto const cmp = lhs <=> rhs;
+    out.has_value = true;
+    out.value = T{cmp <= 0};
+    return out;
+  }
+
+  return make_error<T>(policy::error::kind::unspecified,
+                       "less than or equal not supported for negotiated common type");
+}
+
+template <typename T>
+constexpr auto compare_greater_than_or_equal(T lhs, T rhs)
+    -> policy::value::decision<T> {
+  policy::value::decision<T> out{};
+  if constexpr (!(requires { T{0}; T{1}; T{2}; T{3}; })) {
+    return make_error<T>(
+        policy::error::kind::unspecified,
+        "greater than or equal comparison codes are not representable for common type");
+  }
+
+  if constexpr (std::same_as<std::remove_cv_t<T>, bool>) {
+    return make_error<T>(
+        policy::error::kind::unspecified,
+        "greater than or equal comparison is not representable for bool common type");
+  } else if constexpr (requires { lhs >= rhs; }) {
+    out.has_value = true;
+    out.value = T{lhs >= rhs};
+    return out;
+  } else if constexpr (requires { lhs <=> rhs; }) {
+    auto const cmp = lhs <=> rhs;
+    out.has_value = true;
+    out.value = T{cmp >= 0};
+    return out;
+  }
+
+  return make_error<T>(policy::error::kind::unspecified,
+                       "greater than or equal not supported for negotiated common type");
+}
+
+template <typename T>
 constexpr auto unchecked_add(T lhs, T rhs) -> policy::value::decision<T> {
   policy::value::decision<T> out{};
   out.has_value = true;
@@ -1441,6 +1555,126 @@ struct op_binding<ThreeWayCompare, policy::value::saturating, CommonRep> {
   static constexpr auto apply(CommonRep lhs, CommonRep rhs)
       -> policy::value::decision<CommonRep> {
     return details::compare_three_way(lhs, rhs);
+  }
+};
+
+template <typename CommonRep>
+struct op_binding<LessThan, policy::value::checked, CommonRep> {
+  static constexpr bool enabled = true;
+
+  static constexpr auto apply(CommonRep lhs, CommonRep rhs)
+      -> policy::value::decision<CommonRep> {
+    return details::compare_less_than(lhs, rhs);
+  }
+};
+
+template <typename CommonRep>
+struct op_binding<LessThan, policy::value::unchecked, CommonRep> {
+  static constexpr bool enabled = true;
+
+  static constexpr auto apply(CommonRep lhs, CommonRep rhs)
+      -> policy::value::decision<CommonRep> {
+    return details::compare_less_than(lhs, rhs);
+  }
+};
+
+template <typename CommonRep>
+struct op_binding<LessThan, policy::value::saturating, CommonRep> {
+  static constexpr bool enabled = true;
+
+  static constexpr auto apply(CommonRep lhs, CommonRep rhs)
+      -> policy::value::decision<CommonRep> {
+    return details::compare_less_than(lhs, rhs);
+  }
+};
+
+template <typename CommonRep>
+struct op_binding<GreaterThan, policy::value::checked, CommonRep> {
+  static constexpr bool enabled = true;
+
+  static constexpr auto apply(CommonRep lhs, CommonRep rhs)
+      -> policy::value::decision<CommonRep> {
+    return details::compare_greater_than(lhs, rhs);
+  }
+};
+
+template <typename CommonRep>
+struct op_binding<GreaterThan, policy::value::unchecked, CommonRep> {
+  static constexpr bool enabled = true;
+
+  static constexpr auto apply(CommonRep lhs, CommonRep rhs)
+      -> policy::value::decision<CommonRep> {
+    return details::compare_greater_than(lhs, rhs);
+  }
+};
+
+template <typename CommonRep>
+struct op_binding<GreaterThan, policy::value::saturating, CommonRep> {
+  static constexpr bool enabled = true;
+
+  static constexpr auto apply(CommonRep lhs, CommonRep rhs)
+      -> policy::value::decision<CommonRep> {
+    return details::compare_greater_than(lhs, rhs);
+  }
+};
+
+template <typename CommonRep>
+struct op_binding<LessThanOrEqual, policy::value::checked, CommonRep> {
+  static constexpr bool enabled = true;
+
+  static constexpr auto apply(CommonRep lhs, CommonRep rhs)
+      -> policy::value::decision<CommonRep> {
+    return details::compare_less_than_or_equal(lhs, rhs);
+  }
+};
+
+template <typename CommonRep>
+struct op_binding<LessThanOrEqual, policy::value::unchecked, CommonRep> {
+  static constexpr bool enabled = true;
+
+  static constexpr auto apply(CommonRep lhs, CommonRep rhs)
+      -> policy::value::decision<CommonRep> {
+    return details::compare_less_than_or_equal(lhs, rhs);
+  }
+};
+
+template <typename CommonRep>
+struct op_binding<LessThanOrEqual, policy::value::saturating, CommonRep> {
+  static constexpr bool enabled = true;
+
+  static constexpr auto apply(CommonRep lhs, CommonRep rhs)
+      -> policy::value::decision<CommonRep> {
+    return details::compare_less_than_or_equal(lhs, rhs);
+  }
+};
+
+template <typename CommonRep>
+struct op_binding<GreaterThanOrEqual, policy::value::checked, CommonRep> {
+  static constexpr bool enabled = true;
+
+  static constexpr auto apply(CommonRep lhs, CommonRep rhs)
+      -> policy::value::decision<CommonRep> {
+    return details::compare_greater_than_or_equal(lhs, rhs);
+  }
+};
+
+template <typename CommonRep>
+struct op_binding<GreaterThanOrEqual, policy::value::unchecked, CommonRep> {
+  static constexpr bool enabled = true;
+
+  static constexpr auto apply(CommonRep lhs, CommonRep rhs)
+      -> policy::value::decision<CommonRep> {
+    return details::compare_greater_than_or_equal(lhs, rhs);
+  }
+};
+
+template <typename CommonRep>
+struct op_binding<GreaterThanOrEqual, policy::value::saturating, CommonRep> {
+  static constexpr bool enabled = true;
+
+  static constexpr auto apply(CommonRep lhs, CommonRep rhs)
+      -> policy::value::decision<CommonRep> {
+    return details::compare_greater_than_or_equal(lhs, rhs);
   }
 };
 
