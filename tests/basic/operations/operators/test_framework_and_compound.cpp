@@ -280,6 +280,26 @@ TEST(OperationsTest, ThreeWayCompareOnBoolReturnsError) {
   EXPECT_EQ(result.error(), policy::error::kind::unspecified);
 }
 
+TEST(OperationsTest, OrderedComparisonOnBoolReturnsError) {
+  using namespace mcpplibs::primitives::operators;
+  using value_t =
+      primitive<bool, policy::value::checked, policy::error::expected>;
+
+  auto const less_result = (value_t{false} < value_t{true});
+  auto const greater_result = (value_t{true} > value_t{false});
+  auto const less_or_equal_result = (value_t{false} <= value_t{true});
+  auto const greater_or_equal_result = (value_t{true} >= value_t{false});
+
+  ASSERT_FALSE(less_result.has_value());
+  ASSERT_FALSE(greater_result.has_value());
+  ASSERT_FALSE(less_or_equal_result.has_value());
+  ASSERT_FALSE(greater_or_equal_result.has_value());
+  EXPECT_EQ(less_result.error(), policy::error::kind::unspecified);
+  EXPECT_EQ(greater_result.error(), policy::error::kind::unspecified);
+  EXPECT_EQ(less_or_equal_result.error(), policy::error::kind::unspecified);
+  EXPECT_EQ(greater_or_equal_result.error(), policy::error::kind::unspecified);
+}
+
 TEST(OperationsTest, CompoundAssignmentOperatorsMutateLhsOnSuccess) {
   using namespace mcpplibs::primitives::operators;
   using value_t =
