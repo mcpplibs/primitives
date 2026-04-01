@@ -490,10 +490,10 @@ constexpr auto compare_three_way(T lhs, T rhs) -> policy::value::decision<T> {
 template <typename T>
 constexpr auto compare_less_than(T lhs, T rhs) -> policy::value::decision<T> {
   policy::value::decision<T> out{};
-  if constexpr (!(requires { T{0}; T{1}; T{2}; T{3}; })) {
+  if constexpr (!(requires { T{0}; T{1}; })) {
     return make_error<T>(
         policy::error::kind::unspecified,
-        "less than comparison codes are not representable for common type");
+        "less than comparison result is not representable for common type");
   }
 
   if constexpr (std::same_as<std::remove_cv_t<T>, bool>) {
@@ -518,10 +518,10 @@ constexpr auto compare_less_than(T lhs, T rhs) -> policy::value::decision<T> {
 template <typename T>
 constexpr auto compare_greater_than(T lhs, T rhs) -> policy::value::decision<T> {
   policy::value::decision<T> out{};
-  if constexpr (!(requires { T{0}; T{1}; T{2}; T{3}; })) {
+  if constexpr (!(requires { T{0}; T{1}; })) {
     return make_error<T>(
         policy::error::kind::unspecified,
-        "greater than comparison codes are not representable for common type");
+        "greater than comparison result is not representable for common type");
   }
 
   if constexpr (std::same_as<std::remove_cv_t<T>, bool>) {
@@ -547,10 +547,10 @@ template <typename T>
 constexpr auto compare_less_than_or_equal(T lhs, T rhs)
     -> policy::value::decision<T> {
   policy::value::decision<T> out{};
-  if constexpr (!(requires { T{0}; T{1}; T{2}; T{3}; })) {
+  if constexpr (!(requires { T{0}; T{1}; })) {
     return make_error<T>(
         policy::error::kind::unspecified,
-        "less than or equal comparison codes are not representable for common type");
+        "less than or equal comparison result is not representable for common type");
   }
 
   if constexpr (std::same_as<std::remove_cv_t<T>, bool>) {
@@ -576,10 +576,10 @@ template <typename T>
 constexpr auto compare_greater_than_or_equal(T lhs, T rhs)
     -> policy::value::decision<T> {
   policy::value::decision<T> out{};
-  if constexpr (!(requires { T{0}; T{1}; T{2}; T{3}; })) {
+  if constexpr (!(requires { T{0}; T{1}; })) {
     return make_error<T>(
         policy::error::kind::unspecified,
-        "greater than or equal comparison codes are not representable for common type");
+        "greater than or equal comparison result is not representable for common type");
   }
 
   if constexpr (std::same_as<std::remove_cv_t<T>, bool>) {
