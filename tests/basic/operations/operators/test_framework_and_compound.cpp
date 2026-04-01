@@ -280,6 +280,26 @@ TEST(OperationsTest, ThreeWayCompareOnBoolReturnsError) {
   EXPECT_EQ(result.error(), policy::error::kind::unspecified);
 }
 
+TEST(OperationsTest, OrderedComparisonOnBoolReturnsError) {
+  using namespace mcpplibs::primitives::operators;
+  using value_t =
+      primitive<bool, policy::value::checked, policy::error::expected>;
+
+  auto const less_result = (value_t{false} < value_t{true});
+  auto const greater_result = (value_t{true} > value_t{false});
+  auto const less_or_equal_result = (value_t{false} <= value_t{true});
+  auto const greater_or_equal_result = (value_t{true} >= value_t{false});
+
+  ASSERT_FALSE(less_result.has_value());
+  ASSERT_FALSE(greater_result.has_value());
+  ASSERT_FALSE(less_or_equal_result.has_value());
+  ASSERT_FALSE(greater_or_equal_result.has_value());
+  EXPECT_EQ(less_result.error(), policy::error::kind::unspecified);
+  EXPECT_EQ(greater_result.error(), policy::error::kind::unspecified);
+  EXPECT_EQ(less_or_equal_result.error(), policy::error::kind::unspecified);
+  EXPECT_EQ(greater_or_equal_result.error(), policy::error::kind::unspecified);
+}
+
 TEST(OperationsTest, CompoundAssignmentOperatorsMutateLhsOnSuccess) {
   using namespace mcpplibs::primitives::operators;
   using value_t =
@@ -379,4 +399,195 @@ TEST(OperationsTest,
   ASSERT_FALSE(add_result.has_value());
   EXPECT_EQ(add_result.error(), policy::error::kind::overflow);
   EXPECT_EQ(value.load(), static_cast<std::int16_t>(32000));
+}
+
+TEST(OperationsTest, LessThanReturnsCorrectResultForIntegers) {
+  using namespace mcpplibs::primitives::operators;
+  using value_t =
+      primitive<int, policy::value::checked, policy::error::expected>;
+
+  auto const less_result = operations::less_than(value_t{3}, value_t{7});
+  auto const greater_result = operations::less_than(value_t{9}, value_t{1});
+  auto const equal_result = operations::less_than(value_t{5}, value_t{5});
+
+  ASSERT_TRUE(less_result.has_value());
+  ASSERT_TRUE(greater_result.has_value());
+  ASSERT_TRUE(equal_result.has_value());
+  EXPECT_EQ(less_result->value(), 1);
+  EXPECT_EQ(greater_result->value(), 0);
+  EXPECT_EQ(equal_result->value(), 0);
+}
+
+TEST(OperationsTest, GreaterThanReturnsCorrectResultForIntegers) {
+  using namespace mcpplibs::primitives::operators;
+  using value_t =
+      primitive<int, policy::value::checked, policy::error::expected>;
+
+  auto const less_result = operations::greater_than(value_t{3}, value_t{7});
+  auto const greater_result = operations::greater_than(value_t{9}, value_t{1});
+  auto const equal_result = operations::greater_than(value_t{5}, value_t{5});
+
+  ASSERT_TRUE(less_result.has_value());
+  ASSERT_TRUE(greater_result.has_value());
+  ASSERT_TRUE(equal_result.has_value());
+  EXPECT_EQ(less_result->value(), 0);
+  EXPECT_EQ(greater_result->value(), 1);
+  EXPECT_EQ(equal_result->value(), 0);
+}
+
+TEST(OperationsTest, LessThanOrEqualReturnsCorrectResultForIntegers) {
+  using namespace mcpplibs::primitives::operators;
+  using value_t =
+      primitive<int, policy::value::checked, policy::error::expected>;
+
+  auto const less_result = operations::less_than_or_equal(value_t{3}, value_t{7});
+  auto const greater_result = operations::less_than_or_equal(value_t{9}, value_t{1});
+  auto const equal_result = operations::less_than_or_equal(value_t{5}, value_t{5});
+
+  ASSERT_TRUE(less_result.has_value());
+  ASSERT_TRUE(greater_result.has_value());
+  ASSERT_TRUE(equal_result.has_value());
+  EXPECT_EQ(less_result->value(), 1);
+  EXPECT_EQ(greater_result->value(), 0);
+  EXPECT_EQ(equal_result->value(), 1);
+}
+
+TEST(OperationsTest, GreaterThanOrEqualReturnsCorrectResultForIntegers) {
+  using namespace mcpplibs::primitives::operators;
+  using value_t =
+      primitive<int, policy::value::checked, policy::error::expected>;
+
+  auto const less_result = operations::greater_than_or_equal(value_t{3}, value_t{7});
+  auto const greater_result = operations::greater_than_or_equal(value_t{9}, value_t{1});
+  auto const equal_result = operations::greater_than_or_equal(value_t{5}, value_t{5});
+
+  ASSERT_TRUE(less_result.has_value());
+  ASSERT_TRUE(greater_result.has_value());
+  ASSERT_TRUE(equal_result.has_value());
+  EXPECT_EQ(less_result->value(), 0);
+  EXPECT_EQ(greater_result->value(), 1);
+  EXPECT_EQ(equal_result->value(), 1);
+}
+
+TEST(OperationsTest, OperatorLessThanDelegatesToDispatcher) {
+  using namespace mcpplibs::primitives::operators;
+  using value_t =
+      primitive<int, policy::value::checked, policy::error::expected>;
+
+  auto const result = (value_t{3} < value_t{7});
+
+  ASSERT_TRUE(result.has_value());
+  EXPECT_EQ(result->value(), 1);
+}
+
+TEST(OperationsTest, OperatorGreaterThanDelegatesToDispatcher) {
+  using namespace mcpplibs::primitives::operators;
+  using value_t =
+      primitive<int, policy::value::checked, policy::error::expected>;
+
+  auto const result = (value_t{9} > value_t{1});
+
+  ASSERT_TRUE(result.has_value());
+  EXPECT_EQ(result->value(), 1);
+}
+
+TEST(OperationsTest, OperatorLessThanOrEqualDelegatesToDispatcher) {
+  using namespace mcpplibs::primitives::operators;
+  using value_t =
+      primitive<int, policy::value::checked, policy::error::expected>;
+
+  auto const less_result = (value_t{3} <= value_t{7});
+  auto const equal_result = (value_t{5} <= value_t{5});
+
+  ASSERT_TRUE(less_result.has_value());
+  ASSERT_TRUE(equal_result.has_value());
+  EXPECT_EQ(less_result->value(), 1);
+  EXPECT_EQ(equal_result->value(), 1);
+}
+
+TEST(OperationsTest, OperatorGreaterThanOrEqualDelegatesToDispatcher) {
+  using namespace mcpplibs::primitives::operators;
+  using value_t =
+      primitive<int, policy::value::checked, policy::error::expected>;
+
+  auto const greater_result = (value_t{9} >= value_t{1});
+  auto const equal_result = (value_t{5} >= value_t{5});
+
+  ASSERT_TRUE(greater_result.has_value());
+  ASSERT_TRUE(equal_result.has_value());
+  EXPECT_EQ(greater_result->value(), 1);
+  EXPECT_EQ(equal_result->value(), 1);
+}
+
+TEST(OperationsTest, FourWayComparisonOperatorsWorkTogether) {
+  using namespace mcpplibs::primitives::operators;
+  using value_t =
+      primitive<int, policy::value::checked, policy::error::expected>;
+
+  auto const a = value_t{10};
+  auto const b = value_t{20};
+  auto const c = value_t{10};
+
+  auto const a_lt_b = (a < b);
+  auto const a_gt_b = (a > b);
+  auto const a_le_b = (a <= b);
+  auto const a_ge_b = (a >= b);
+  auto const a_lt_c = (a < c);
+  auto const a_le_c = (a <= c);
+  auto const a_ge_c = (a >= c);
+  auto const a_gt_c = (a > c);
+
+  ASSERT_TRUE(a_lt_b.has_value());
+  ASSERT_TRUE(a_gt_b.has_value());
+  ASSERT_TRUE(a_le_b.has_value());
+  ASSERT_TRUE(a_ge_b.has_value());
+  ASSERT_TRUE(a_lt_c.has_value());
+  ASSERT_TRUE(a_le_c.has_value());
+  ASSERT_TRUE(a_ge_c.has_value());
+  ASSERT_TRUE(a_gt_c.has_value());
+
+  EXPECT_EQ(a_lt_b->value(), 1);
+  EXPECT_EQ(a_gt_b->value(), 0);
+  EXPECT_EQ(a_le_b->value(), 1);
+  EXPECT_EQ(a_ge_b->value(), 0);
+  EXPECT_EQ(a_lt_c->value(), 0);
+  EXPECT_EQ(a_le_c->value(), 1);
+  EXPECT_EQ(a_ge_c->value(), 1);
+  EXPECT_EQ(a_gt_c->value(), 0);
+}
+
+TEST(OperationsTest, ComparisonOperatorsWorkWithMixedTypes) {
+  using namespace mcpplibs::primitives::operators;
+  using value_t = primitive<int, policy::value::checked, policy::error::expected,
+                           policy::type::compatible>;
+
+  auto const lhs = value_t{10};
+  short const rhs = 20;
+
+  auto const lt_lr = lhs < rhs;
+  auto const lt_rl = rhs < lhs;
+  auto const gt_lr = lhs > rhs;
+  auto const gt_rl = rhs > lhs;
+  auto const le_lr = lhs <= rhs;
+  auto const le_rl = rhs <= lhs;
+  auto const ge_lr = lhs >= rhs;
+  auto const ge_rl = rhs >= lhs;
+
+  ASSERT_TRUE(lt_lr.has_value());
+  ASSERT_TRUE(lt_rl.has_value());
+  ASSERT_TRUE(gt_lr.has_value());
+  ASSERT_TRUE(gt_rl.has_value());
+  ASSERT_TRUE(le_lr.has_value());
+  ASSERT_TRUE(le_rl.has_value());
+  ASSERT_TRUE(ge_lr.has_value());
+  ASSERT_TRUE(ge_rl.has_value());
+
+  EXPECT_EQ(lt_lr->value(), 1);
+  EXPECT_EQ(lt_rl->value(), 0);
+  EXPECT_EQ(gt_lr->value(), 0);
+  EXPECT_EQ(gt_rl->value(), 1);
+  EXPECT_EQ(le_lr->value(), 1);
+  EXPECT_EQ(le_rl->value(), 0);
+  EXPECT_EQ(ge_lr->value(), 0);
+  EXPECT_EQ(ge_rl->value(), 1);
 }

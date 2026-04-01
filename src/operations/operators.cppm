@@ -524,6 +524,94 @@ constexpr auto three_way_compare(Lhs const &lhs, Rhs const &rhs)
   return three_way_compare<bridge_lhs_t, Rhs, ErrorPayload>(bridge_lhs, rhs);
 }
 
+template <meta::primitive_type Lhs, meta::primitive_type Rhs,
+          typename ErrorPayload = policy::error::kind>
+constexpr auto less_than(Lhs const &lhs, Rhs const &rhs)
+    -> primitive_dispatch_result_t<LessThan, Lhs, Rhs, ErrorPayload> {
+  return apply<LessThan, Lhs, Rhs, ErrorPayload>(lhs, rhs);
+}
+
+template <meta::primitive_type Lhs, underlying_operand Rhs,
+          typename ErrorPayload = policy::error::kind>
+constexpr auto less_than(Lhs const &lhs, Rhs const &rhs)
+    -> mixed_primitive_dispatch_result_t<LessThan, Lhs, Rhs, ErrorPayload> {
+  return apply<LessThan, Lhs, Rhs, ErrorPayload>(lhs, rhs);
+}
+
+template <underlying_operand Lhs, meta::primitive_type Rhs,
+          typename ErrorPayload = policy::error::kind>
+constexpr auto less_than(Lhs const &lhs, Rhs const &rhs)
+    -> flipped_mixed_primitive_dispatch_result_t<LessThan, Lhs, Rhs,
+                                                 ErrorPayload> {
+  return apply<LessThan, Lhs, Rhs, ErrorPayload>(lhs, rhs);
+}
+
+template <meta::primitive_type Lhs, meta::primitive_type Rhs,
+          typename ErrorPayload = policy::error::kind>
+constexpr auto greater_than(Lhs const &lhs, Rhs const &rhs)
+    -> primitive_dispatch_result_t<GreaterThan, Lhs, Rhs, ErrorPayload> {
+  return apply<GreaterThan, Lhs, Rhs, ErrorPayload>(lhs, rhs);
+}
+
+template <meta::primitive_type Lhs, underlying_operand Rhs,
+          typename ErrorPayload = policy::error::kind>
+constexpr auto greater_than(Lhs const &lhs, Rhs const &rhs)
+    -> mixed_primitive_dispatch_result_t<GreaterThan, Lhs, Rhs, ErrorPayload> {
+  return apply<GreaterThan, Lhs, Rhs, ErrorPayload>(lhs, rhs);
+}
+
+template <underlying_operand Lhs, meta::primitive_type Rhs,
+          typename ErrorPayload = policy::error::kind>
+constexpr auto greater_than(Lhs const &lhs, Rhs const &rhs)
+    -> flipped_mixed_primitive_dispatch_result_t<GreaterThan, Lhs, Rhs,
+                                                  ErrorPayload> {
+  return apply<GreaterThan, Lhs, Rhs, ErrorPayload>(lhs, rhs);
+}
+
+template <meta::primitive_type Lhs, meta::primitive_type Rhs,
+          typename ErrorPayload = policy::error::kind>
+constexpr auto less_than_or_equal(Lhs const &lhs, Rhs const &rhs)
+    -> primitive_dispatch_result_t<LessThanOrEqual, Lhs, Rhs, ErrorPayload> {
+  return apply<LessThanOrEqual, Lhs, Rhs, ErrorPayload>(lhs, rhs);
+}
+
+template <meta::primitive_type Lhs, underlying_operand Rhs,
+          typename ErrorPayload = policy::error::kind>
+constexpr auto less_than_or_equal(Lhs const &lhs, Rhs const &rhs)
+    -> mixed_primitive_dispatch_result_t<LessThanOrEqual, Lhs, Rhs, ErrorPayload> {
+  return apply<LessThanOrEqual, Lhs, Rhs, ErrorPayload>(lhs, rhs);
+}
+
+template <underlying_operand Lhs, meta::primitive_type Rhs,
+          typename ErrorPayload = policy::error::kind>
+constexpr auto less_than_or_equal(Lhs const &lhs, Rhs const &rhs)
+    -> flipped_mixed_primitive_dispatch_result_t<LessThanOrEqual, Lhs, Rhs,
+                                                  ErrorPayload> {
+  return apply<LessThanOrEqual, Lhs, Rhs, ErrorPayload>(lhs, rhs);
+}
+
+template <meta::primitive_type Lhs, meta::primitive_type Rhs,
+          typename ErrorPayload = policy::error::kind>
+constexpr auto greater_than_or_equal(Lhs const &lhs, Rhs const &rhs)
+    -> primitive_dispatch_result_t<GreaterThanOrEqual, Lhs, Rhs, ErrorPayload> {
+  return apply<GreaterThanOrEqual, Lhs, Rhs, ErrorPayload>(lhs, rhs);
+}
+
+template <meta::primitive_type Lhs, underlying_operand Rhs,
+          typename ErrorPayload = policy::error::kind>
+constexpr auto greater_than_or_equal(Lhs const &lhs, Rhs const &rhs)
+    -> mixed_primitive_dispatch_result_t<GreaterThanOrEqual, Lhs, Rhs, ErrorPayload> {
+  return apply<GreaterThanOrEqual, Lhs, Rhs, ErrorPayload>(lhs, rhs);
+}
+
+template <underlying_operand Lhs, meta::primitive_type Rhs,
+          typename ErrorPayload = policy::error::kind>
+constexpr auto greater_than_or_equal(Lhs const &lhs, Rhs const &rhs)
+    -> flipped_mixed_primitive_dispatch_result_t<GreaterThanOrEqual, Lhs, Rhs,
+                                                  ErrorPayload> {
+  return apply<GreaterThanOrEqual, Lhs, Rhs, ErrorPayload>(lhs, rhs);
+}
+
 template <operation OpTag, meta::primitive_type Lhs, meta::primitive_type Rhs,
           typename ErrorPayload = policy::error::kind>
 constexpr auto apply_assign(Lhs &lhs, Rhs const &rhs)
@@ -964,6 +1052,90 @@ template <underlying_operand Lhs, meta::primitive_type Rhs>
 constexpr auto operator<=>(Lhs const &lhs, Rhs const &rhs)
     -> operations::flipped_mixed_three_way_dispatch_result_t<Lhs, Rhs> {
   return operations::three_way_compare(lhs, rhs);
+}
+
+template <meta::primitive_type Lhs,
+          meta::primitive_type Rhs>
+constexpr auto operator<(Lhs const &lhs, Rhs const &rhs)
+    -> operations::primitive_dispatch_result_t<operations::LessThan, Lhs, Rhs> {
+  return operations::less_than(lhs, rhs);
+}
+
+template <meta::primitive_type Lhs, underlying_operand Rhs>
+constexpr auto operator<(Lhs const &lhs, Rhs const &rhs)
+    -> operations::mixed_primitive_dispatch_result_t<operations::LessThan, Lhs,
+                                                     Rhs> {
+  return operations::less_than(lhs, rhs);
+}
+
+template <underlying_operand Lhs, meta::primitive_type Rhs>
+constexpr auto operator<(Lhs const &lhs, Rhs const &rhs)
+    -> operations::flipped_mixed_primitive_dispatch_result_t<operations::LessThan,
+                                                             Lhs, Rhs> {
+  return operations::less_than(lhs, rhs);
+}
+
+template <meta::primitive_type Lhs,
+          meta::primitive_type Rhs>
+constexpr auto operator>(Lhs const &lhs, Rhs const &rhs)
+    -> operations::primitive_dispatch_result_t<operations::GreaterThan, Lhs, Rhs> {
+  return operations::greater_than(lhs, rhs);
+}
+
+template <meta::primitive_type Lhs, underlying_operand Rhs>
+constexpr auto operator>(Lhs const &lhs, Rhs const &rhs)
+    -> operations::mixed_primitive_dispatch_result_t<operations::GreaterThan, Lhs,
+                                                     Rhs> {
+  return operations::greater_than(lhs, rhs);
+}
+
+template <underlying_operand Lhs, meta::primitive_type Rhs>
+constexpr auto operator>(Lhs const &lhs, Rhs const &rhs)
+    -> operations::flipped_mixed_primitive_dispatch_result_t<operations::GreaterThan,
+                                                             Lhs, Rhs> {
+  return operations::greater_than(lhs, rhs);
+}
+
+template <meta::primitive_type Lhs,
+          meta::primitive_type Rhs>
+constexpr auto operator<=(Lhs const &lhs, Rhs const &rhs)
+    -> operations::primitive_dispatch_result_t<operations::LessThanOrEqual, Lhs, Rhs> {
+  return operations::less_than_or_equal(lhs, rhs);
+}
+
+template <meta::primitive_type Lhs, underlying_operand Rhs>
+constexpr auto operator<=(Lhs const &lhs, Rhs const &rhs)
+    -> operations::mixed_primitive_dispatch_result_t<operations::LessThanOrEqual, Lhs,
+                                                     Rhs> {
+  return operations::less_than_or_equal(lhs, rhs);
+}
+
+template <underlying_operand Lhs, meta::primitive_type Rhs>
+constexpr auto operator<=(Lhs const &lhs, Rhs const &rhs)
+    -> operations::flipped_mixed_primitive_dispatch_result_t<operations::LessThanOrEqual,
+                                                             Lhs, Rhs> {
+  return operations::less_than_or_equal(lhs, rhs);
+}
+
+template <meta::primitive_type Lhs,
+          meta::primitive_type Rhs>
+constexpr auto operator>=(Lhs const &lhs, Rhs const &rhs)
+    -> operations::primitive_dispatch_result_t<operations::GreaterThanOrEqual, Lhs, Rhs> {
+  return operations::greater_than_or_equal(lhs, rhs);
+}
+
+template <meta::primitive_type Lhs, underlying_operand Rhs>
+constexpr auto operator>=(Lhs const &lhs, Rhs const &rhs)
+    -> operations::mixed_primitive_dispatch_result_t<operations::GreaterThanOrEqual, Lhs,
+                                                     Rhs> {
+  return operations::greater_than_or_equal(lhs, rhs);
+}
+
+template <underlying_operand Lhs, meta::primitive_type Rhs>
+constexpr auto operator>=(Lhs const &lhs, Rhs const &rhs)
+    -> operations::flipped_mixed_primitive_dispatch_result_t<operations::GreaterThanOrEqual,
+                                                             Lhs, Rhs> {
+  return operations::greater_than_or_equal(lhs, rhs);
 }
 
 template <meta::primitive_type Lhs,

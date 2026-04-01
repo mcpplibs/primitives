@@ -27,6 +27,10 @@ struct BitwiseXor {};
 struct Equal {};
 struct NotEqual {};
 struct ThreeWayCompare {};
+struct LessThan {};
+struct GreaterThan {};
+struct LessThanOrEqual {};
+struct GreaterThanOrEqual {};
 
 template <> struct traits<Increment> {
   using op_tag = Increment;
@@ -166,6 +170,38 @@ template <> struct traits<NotEqual> {
 
 template <> struct traits<ThreeWayCompare> {
   using op_tag = ThreeWayCompare;
+
+  static constexpr bool enabled = true;
+  static constexpr auto arity = dimension::binary;
+  static constexpr auto capability_mask = capability::comparison;
+};
+
+template <> struct traits<LessThan> {
+  using op_tag = LessThan;
+
+  static constexpr bool enabled = true;
+  static constexpr auto arity = dimension::binary;
+  static constexpr auto capability_mask = capability::comparison;
+};
+
+template <> struct traits<GreaterThan> {
+  using op_tag = GreaterThan;
+
+  static constexpr bool enabled = true;
+  static constexpr auto arity = dimension::binary;
+  static constexpr auto capability_mask = capability::comparison;
+};
+
+template <> struct traits<LessThanOrEqual> {
+  using op_tag = LessThanOrEqual;
+
+  static constexpr bool enabled = true;
+  static constexpr auto arity = dimension::binary;
+  static constexpr auto capability_mask = capability::comparison;
+};
+
+template <> struct traits<GreaterThanOrEqual> {
+  using op_tag = GreaterThanOrEqual;
 
   static constexpr bool enabled = true;
   static constexpr auto arity = dimension::binary;
